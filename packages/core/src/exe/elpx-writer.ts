@@ -2,6 +2,7 @@ import type { ElpxProject } from "./model.ts";
 import { buildContentXml, CONTENT_DTD } from "./content-xml.ts";
 import { loadTemplate } from "./template.ts";
 import { DEFAULT_SCREENSHOT_PNG } from "./assets/default-screenshot.ts";
+import { buildExportHtmlFiles } from "./html-export.ts";
 
 export type WriteElpxOptions = {
   /**
@@ -32,25 +33,17 @@ export async function writeElpx(
   zip.file("content.xml", xml);
   zip.file("content.dtd", CONTENT_DTD);
 
+  clearGeneratedHtml(zip);
+  for (const file of buildExportHtmlFiles(project)) {
+    zip.file(file.path, file.contents);
+  }
+
   // Always ensure a root-level screenshot.png exists. eXeLearning v4
   // requires the first 8 bytes to be the PNG magic signature.
   if (!zip.file("screenshot.png")) {
     zip.file("screenshot.png", options.screenshotBytes ?? DEFAULT_SCREENSHOT_PNG);
   } else if (options.screenshotBytes) {
     zip.file("screenshot.png", options.screenshotBytes);
-  }
-
-  // Ensure a placeholder index.html exists. eXeLearning regenerates the
-  // real one on import.
-  if (!zip.file("index.html")) {
-    zip.file(
-      "index.html",
-      `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${escapeHtml(
-        project.title
-      )}</title></head><body><h1>${escapeHtml(
-        project.title
-      )}</h1><p>Open this <code>.elpx</code> in eXeLearning.</p></body></html>`
-    );
   }
 
   for (const res of project.resources) {
@@ -70,6 +63,13 @@ export async function writeElpx(
   });
 }
 
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+function clearGeneratedHtml(zip: Awaited<ReturnType<typeof loadTemplate>>) {
+  zip.remove("index.html");
+  zip.remove("search_index.js");
+  zip.remove("libs/elpx-manifest.js");
+  zip.forEach((path, file) => {
+    if (!file.dir && /^html\/[^/]+\.html$/i.test(path)) {
+      zip.remove(path);
+    }
+  });
 }

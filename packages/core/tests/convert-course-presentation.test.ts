@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import JSZip from "jszip";
 import { convert } from "../src/convert/convert.ts";
 import { makeH5pZip } from "./_helpers.ts";
 
@@ -32,5 +33,10 @@ describe("convert H5P.CoursePresentation", () => {
     const slideTitles = result.project.pages.map((p) => p.title);
     expect(slideTitles).toContain("Slide 1");
     expect(slideTitles).toContain("Slide 2");
+
+    const zip = await JSZip.loadAsync(result.elpx);
+    expect(zip.file("index.html")).not.toBeNull();
+    expect(zip.file("html/slide-1.html")).not.toBeNull();
+    expect(zip.file("html/slide-2.html")).not.toBeNull();
   });
 });
