@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Dropzone } from "./components/Dropzone.tsx";
 import { ConversionOptionsForm, type UiOptions } from "./components/ConversionOptions.tsx";
 import { CompatibilityReport } from "./components/CompatibilityReport.tsx";
@@ -30,6 +30,14 @@ export function App() {
   const [conv, setConv] = useState<Conv | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [templateBytes, setTemplateBytes] = useState<Uint8Array | undefined>(undefined);
+
+  useEffect(() => {
+    fetch(import.meta.env.BASE_URL + "template.elpx")
+      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error("template.elpx not found"))))
+      .then((buf) => setTemplateBytes(new Uint8Array(buf)))
+      .catch((err) => setError(`Could not load eXe template: ${err.message}`));
+  }, []);
 
   async function onFilesDropped(dropped: File[]) {
     setFiles(dropped);
@@ -65,7 +73,8 @@ export function App() {
         includeOriginalH5p: options.includeOriginalH5p,
         title: options.title || undefined,
         language: options.language || undefined,
-        strict: false
+        strict: false,
+        templateBytes
       });
       const out = (files[0]?.name ?? "output").replace(/\.h5p$/i, "") + ".elpx";
       setConv({ elpx: result.elpx, report: result.report, outputName: out });

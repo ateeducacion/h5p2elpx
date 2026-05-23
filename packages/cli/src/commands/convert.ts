@@ -1,5 +1,7 @@
 import { readFile, writeFile, readdir, stat } from "node:fs/promises";
-import { basename, join } from "node:path";
+import { basename, join, resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { existsSync } from "node:fs";
 import {
   convert,
   summarizeReport,
@@ -19,6 +21,17 @@ type CliOpts = {
   pretty?: boolean;
   strict?: boolean;
 };
+
+function findDefaultTemplate(): string | undefined {
+  const here = dirname(fileURLToPath(import.meta.url));
+  // packages/cli/src/commands → walk up to repo root → fixtures/elpx/sample.elpx
+  const candidates = [
+    resolve(here, "../../../../fixtures/elpx/sample.elpx"),
+    resolve(here, "../../../fixtures/elpx/sample.elpx"),
+    resolve(process.cwd(), "fixtures/elpx/sample.elpx")
+  ];
+  return candidates.find((p) => existsSync(p));
+}
 
 async function gatherInputs(input: string): Promise<ConvertInput[]> {
   const s = await stat(input);
@@ -44,8 +57,9 @@ async function gatherInputs(input: string): Promise<ConvertInput[]> {
 
 export async function runConvert(input: string, opts: CliOpts): Promise<void> {
   const inputs = await gatherInputs(input);
-  const templateBytes = opts.template
-    ? new Uint8Array(await readFile(opts.template))
+  const templatePath = opts.template ?? findDefaultTemplate();
+  const templateBytes = templatePath
+    ? new Uint8Array(await readFile(templatePath))
     : undefined;
 
   const result = await convert(inputs, {

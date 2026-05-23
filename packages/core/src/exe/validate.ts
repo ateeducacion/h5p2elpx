@@ -23,14 +23,11 @@ export async function validateElpx(data: Uint8Array): Promise<ValidationResult> 
     };
   }
 
-  // Prefer h5p2elpx's canonical content (present when we wrote the file or
-  // when our writer injected it alongside a real eXe template).
-  const contentXml = zip.file("h5p2elpx-content.xml") ?? zip.file("content.xml");
+  const contentXml = zip.file("content.xml");
   if (!contentXml) {
-    issues.push({ level: "error", message: "Missing content.xml (or h5p2elpx-content.xml)" });
+    issues.push({ level: "error", message: "Missing content.xml" });
     return { ok: false, issues, stats };
   }
-
   if (!zip.file("content.dtd")) {
     issues.push({ level: "warning", message: "Missing content.dtd" });
   }
@@ -45,38 +42,46 @@ export async function validateElpx(data: Uint8Array): Promise<ValidationResult> 
     return { ok: false, issues, stats };
   }
 
-  const project = parsed?.elpx?.project;
-  if (!project) {
-    issues.push({ level: "error", message: "content.xml has no <project> element" });
+  const root = parsed?.ode;
+  if (!root) {
+    issues.push({ level: "error", message: "content.xml has no <ode> root element" });
     return { ok: false, issues, stats };
   }
-  const pages = toArray(project?.pages?.page);
-  stats.pages = pages.length;
-  if (pages.length === 0) {
-    issues.push({ level: "error", message: "Project has no pages" });
+
+  const navStructures = toArray(root?.odeNavStructures?.odeNavStructure);
+  stats.pages = navStructures.length;
+  if (navStructures.length === 0) {
+    issues.push({ level: "error", message: "Project has no pages (odeNavStructures is empty)" });
   }
 
   const referencedPaths: string[] = [];
-  for (const page of pages) {
-    if (!page["@_id"]) issues.push({ level: "error", message: "Page missing id" });
-    const blocks = toArray(page?.blocks?.block);
-    for (const block of blocks) {
-      if (!block["@_id"]) issues.push({ level: "error", message: "Block missing id" });
-      const ideviceList = toArray(block?.iDevices?.iDevice);
-      for (const idev of ideviceList) {
+  for (const page of navStructures) {
+    if (!page.odePageId) {
+      issues.push({ level: "error", message: "Page missing odePageId" });
+    }
+    const pagStructures = toArray(page?.odePagStructures?.odePagStructure);
+    for (const block of pagStructures) {
+      if (!block.odeBlockId) {
+        issues.push({ level: "error", message: "Block missing odeBlockId" });
+      }
+      const components = toArray(block?.odeComponents?.odeComponent);
+      for (const comp of components) {
         stats.iDevices += 1;
-        for (const k of ["@_id", "@_typeName", "@_order"]) {
-          if (idev[k] === undefined) {
-            issues.push({ level: "error", message: `iDevice missing ${k.slice(2)}` });
+        for (const k of ["odePageId", "odeBlockId", "odeIdeviceId", "odeIdeviceTypeName"]) {
+          if (comp[k] === undefined || comp[k] === "") {
+            issues.push({ level: "error", message: `iDevice missing ${k}` });
           }
         }
-        if (idev.htmlView === undefined) {
-          issues.push({ level: "error", message: "iDevice missing htmlView" });
+        if (comp.odeComponentsOrder === undefined) {
+          issues.push({ level: "error", message: "iDevice missing odeComponentsOrder" });
         }
-        if (idev.jsonProperties === undefined) {
-          issues.push({ level: "error", message: "iDevice missing jsonProperties" });
+        if (comp.htmlView === undefined) {
+          issues.push({ level: "warning", message: "iDevice missing htmlView" });
         }
-        const html = typeof idev.htmlView === "string" ? idev.htmlView : "";
+        if (comp.jsonProperties === undefined) {
+          issues.push({ level: "warning", message: "iDevice missing jsonProperties" });
+        }
+        const html = typeof comp.htmlView === "string" ? comp.htmlView : "";
         const m = html.match(/(?:src|href)="([^"]+)"/g);
         if (m) {
           for (const attr of m) {

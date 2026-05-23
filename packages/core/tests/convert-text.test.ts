@@ -5,7 +5,7 @@ import { validateElpx } from "../src/exe/validate.ts";
 import { makeH5pZip } from "./_helpers.ts";
 
 describe("convert text H5P", () => {
-  it("produces a valid .elpx with a text iDevice", async () => {
+  it("produces a valid .elpx with a text iDevice in real eXe ode format", async () => {
     const bytes = await makeH5pZip({
       title: "Greeting",
       mainLibrary: "H5P.Text",
@@ -21,7 +21,10 @@ describe("convert text H5P", () => {
 
     const zip = await JSZip.loadAsync(result.elpx);
     const xml = await zip.file("content.xml")!.async("string");
+    expect(xml).toContain('xmlns="http://www.intef.es/xsd/ode"');
+    expect(xml).toContain("<odeNavStructures>");
+    expect(xml).toContain("<odeIdeviceTypeName>text</odeIdeviceTypeName>");
+    expect(xml).toContain("exe-text-template");
     expect(xml).toContain("Hola");
-    expect(xml).toContain("<![CDATA[");
   });
 });
