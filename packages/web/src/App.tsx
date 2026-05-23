@@ -3,6 +3,8 @@ import { Dropzone } from "./components/Dropzone.tsx";
 import { ConversionOptionsForm, type UiOptions } from "./components/ConversionOptions.tsx";
 import { CompatibilityReport } from "./components/CompatibilityReport.tsx";
 import { DownloadPanel } from "./components/DownloadPanel.tsx";
+import { Footer } from "./components/Footer.tsx";
+import { GithubCorner } from "./components/GithubCorner.tsx";
 import {
   convert,
   readH5p,
@@ -86,31 +88,35 @@ export function App() {
   }
 
   return (
-    <main
-      style={{
-        fontFamily: "system-ui, sans-serif",
-        maxWidth: 880,
-        margin: "2rem auto",
-        padding: "0 1rem"
-      }}
-    >
-      <h1>h5p2elpx</h1>
-      <p>
-        Convert H5P packages into editable eXeLearning <code>.elpx</code> projects, right in your
-        browser.
-      </p>
-      <Dropzone onFiles={onFilesDropped} files={files} />
-      {preview.length > 0 && <CompatibilityReport entries={preview} />}
-      <ConversionOptionsForm value={options} onChange={setOptions} />
-      <button
-        onClick={onConvert}
-        disabled={busy || files.length === 0}
-        style={{ marginTop: "1rem", padding: "0.6rem 1.2rem" }}
+    <>
+      <GithubCorner href="https://github.com/ateeducacion/h5p2elpx" />
+      <main
+        style={{
+          fontFamily: "system-ui, sans-serif",
+          maxWidth: 880,
+          margin: "2rem auto",
+          padding: "0 1rem"
+        }}
       >
-        {busy ? "Converting…" : "Convert"}
-      </button>
-      {error && <p style={{ color: "crimson" }}>Error: {error}</p>}
-      {conv && <DownloadPanel elpx={conv.elpx} report={conv.report} filename={conv.outputName} />}
-    </main>
+        <h1>h5p2elpx</h1>
+        <p>
+          Convert H5P packages into editable eXeLearning <code>.elpx</code> projects, right in your
+          browser.
+        </p>
+        <Dropzone onFiles={onFilesDropped} files={files} />
+        {preview.length > 0 && <CompatibilityReport entries={preview} />}
+        <ConversionOptionsForm value={options} onChange={setOptions} />
+        <button
+          onClick={onConvert}
+          disabled={busy || files.length === 0}
+          style={{ marginTop: "1rem", padding: "0.6rem 1.2rem" }}
+        >
+          {busy ? "Converting…" : "Convert"}
+        </button>
+        {error && <p style={{ color: "crimson" }}>Error: {error}</p>}
+        {conv && <DownloadPanel elpx={conv.elpx} report={conv.report} filename={conv.outputName} />}
+        <Footer />
+      </main>
+    </>
   );
 }
