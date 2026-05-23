@@ -21,10 +21,14 @@ describe("convert text H5P", () => {
 
     const zip = await JSZip.loadAsync(result.elpx);
     const xml = await zip.file("content.xml")!.async("string");
+    const indexHtml = await zip.file("index.html")!.async("string");
     expect(xml).toContain('xmlns="http://www.intef.es/xsd/ode"');
     expect(xml).toContain("<odeNavStructures>");
     expect(xml).toContain("<odeIdeviceTypeName>text</odeIdeviceTypeName>");
     expect(xml).toContain("exe-text-template");
     expect(xml).toContain("Hola");
+    expect(indexHtml).toContain("Hola");
+    expect(indexHtml).toContain('class="idevice_node text"');
+    expect(zip.file("search_index.js")).not.toBeNull();
   });
 });
