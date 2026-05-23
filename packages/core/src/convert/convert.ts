@@ -4,6 +4,7 @@ import { normalizePackage } from "../normalize/normalize.ts";
 import type { NormalizedNode, NormalizedSlideDeckNode } from "../normalize/nodes.ts";
 import { AssetCollector, buildUrlRewriters } from "../h5p/asset-extractor.ts";
 import { rewriteUrls, sanitizeHtml, escapeHtml } from "../utils/html.ts";
+import { buildVideoEmbed } from "../utils/embed.ts";
 import { libraryRefString } from "../h5p/library-ref.ts";
 import {
   buildTextIdevice,
@@ -247,9 +248,7 @@ function emitNode(
       const block = newBlock(hostPage);
       const src = ctx.forHtml(node.src);
       const poster = node.poster ? ctx.forHtml(node.poster) : undefined;
-      const html = `<video controls src="${escapeHtml(src)}"${
-        poster ? ` poster="${escapeHtml(poster)}"` : ""
-      }></video>`;
+      const html = buildVideoEmbed(src, poster ? { poster } : {});
       addIdevice(
         block,
         buildTextIdevice({
