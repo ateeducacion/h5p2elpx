@@ -23,7 +23,9 @@ export async function validateElpx(data: Uint8Array): Promise<ValidationResult> 
     };
   }
 
-  const contentXml = zip.file("content.xml") ?? zip.file("h5p2elpx-content.xml");
+  // Prefer h5p2elpx's canonical content (present when we wrote the file or
+  // when our writer injected it alongside a real eXe template).
+  const contentXml = zip.file("h5p2elpx-content.xml") ?? zip.file("content.xml");
   if (!contentXml) {
     issues.push({ level: "error", message: "Missing content.xml (or h5p2elpx-content.xml)" });
     return { ok: false, issues, stats };
