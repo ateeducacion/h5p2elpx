@@ -3,23 +3,24 @@ import { readH5p } from "../h5p/read-h5p.ts";
 import { normalizePackage } from "../normalize/normalize.ts";
 import type {
   NormalizedNode,
-  NormalizedSlideDeckNode,
-  NormalizedSlideNode,
-  NormalizedPageNode,
-  NormalizedContainerNode
+  NormalizedSlideDeckNode
 } from "../normalize/nodes.ts";
-import { buildAssetRewriter } from "../h5p/asset-extractor.ts";
+import {
+  AssetCollector,
+  buildUrlRewriters,
+  type AssetPlanEntry
+} from "../h5p/asset-extractor.ts";
 import { rewriteUrls, sanitizeHtml, escapeHtml } from "../utils/html.ts";
-import { slugify } from "../utils/slug.ts";
 import { libraryRefString } from "../h5p/library-ref.ts";
-import { guessMime } from "../utils/mime.ts";
 import {
   buildTextIdevice,
   buildUnsupportedIdevice,
   buildTrueOrFalseIdevice,
-  buildQuickQuestionsIdevice,
   buildFormIdevice,
-  buildFlipcardsIdevice
+  buildFlipcardsIdevice,
+  blanksToFill,
+  type FormQuestion,
+  type SelectionQuestion
 } from "../exe/idevices/index.ts";
 import { newBlockId, newPageId, newProjectId } from "../exe/ids.ts";
 import type {
@@ -58,7 +59,7 @@ export async function convert(
 ): Promise<ConvertResult> {
   const opts: ConversionOptions = { ...DEFAULT_OPTIONS, ...partial };
   const report = emptyReport([]);
-  const allResources: ElpxResource[] = [];
+  const assets = new AssetCollector();
   const originals: Array<{ name: string; data: Uint8Array }> = [];
 
   const project: ElpxProject = {
@@ -66,17 +67,15 @@ export async function convert(
     title: opts.title ?? "Imported H5P content",
     language: opts.language,
     pages: [],
-    resources: allResources
+    resources: []
   };
 
-  let pageOrder = 0;
   let singlePage: ElpxPage | null = null;
-
   if (opts.layout === "blocks") {
     singlePage = {
       id: newPageId(),
       title: project.title,
-      order: pageOrder++,
+      order: 0,
       blocks: []
     };
     project.pages.push(singlePage);
@@ -95,7 +94,6 @@ export async function convert(
     const sourceFile = pkg.sourceFilename ?? "package.h5p";
     report.input.files.push(sourceFile);
 
-    const activityId = slugify(sourceFile.replace(/\.h5p$/i, ""));
     const activityReport: ConversionActivityReport = {
       sourceFile,
       title: pkg.title,
@@ -107,30 +105,28 @@ export async function convert(
       errors: []
     };
 
-    // copy assets
-    for (const asset of pkg.assets) {
-      const rel = asset.path.replace(/^content\//, "");
-      allResources.push({
-        path: `content/resources/h5p2elpx/${activityId}/${rel}`,
-        data: asset.data,
-        mimeType: asset.mimeType ?? guessMime(asset.filename)
+    // Plan all asset paths up-front so the URL rewriter resolves both
+    // htmlView and jsonProperties URLs consistently.
+    for (const asset of pkg.assets) assets.add(pkg, asset);
+    const perPkg = assets.perPackage(pkg);
+    const { forHtml, forJson } = buildUrlRewriters(perPkg);
+
+    if (opts.includeOriginalH5p && pkg.rawH5p) {
+      originals.push({
+        name: (sourceFile.replace(/\.h5p$/i, "") || "package") + ".h5p",
+        data: pkg.rawH5p
       });
     }
-    if (opts.includeOriginalH5p && pkg.rawH5p) {
-      originals.push({ name: `${activityId}.h5p`, data: pkg.rawH5p });
-    }
 
-    const rewriter = buildAssetRewriter(activityId, pkg);
     const ast = normalizePackage(pkg);
 
     const ctx: BuildCtx = {
-      activityId,
-      rewriter,
+      forHtml,
+      forJson,
       activityReport,
       options: opts
     };
 
-    // pick host page
     let hostPage: ElpxPage;
     if (opts.layout === "blocks") {
       hostPage = singlePage!;
@@ -138,37 +134,51 @@ export async function convert(
       hostPage = {
         id: newPageId(),
         title: pkg.title || sourceFile,
-        order: pageOrder++,
+        order: project.pages.length,
         blocks: []
       };
       project.pages.push(hostPage);
     }
 
-    emitNode(ast, project, hostPage, ctx, pageOrder);
-    pageOrder = project.pages.length;
+    emitNode(ast, project, hostPage, ctx);
 
-    // statuses
     const unsupportedCount = activityReport.unsupportedItems.length;
     if (unsupportedCount > 0) {
-      activityReport.status = activityReport.mappedTo!.length > 0 ? "partial" : "unsupported";
+      activityReport.status =
+        activityReport.mappedTo!.length > 0 ? "partial" : "unsupported";
     }
     report.summary.totalActivities += 1;
     if (activityReport.status === "converted") report.summary.converted += 1;
-    else if (activityReport.status === "partial") report.summary.partiallyConverted += 1;
-    else if (activityReport.status === "unsupported") report.summary.unsupported += 1;
+    else if (activityReport.status === "partial")
+      report.summary.partiallyConverted += 1;
+    else if (activityReport.status === "unsupported")
+      report.summary.unsupported += 1;
     report.summary.warnings += activityReport.warnings.length;
     report.summary.errors += activityReport.errors.length;
     report.activities.push(activityReport);
   }
 
-  if (opts.strict && report.summary.unsupported + report.summary.partiallyConverted > 0) {
+  if (
+    opts.strict &&
+    report.summary.unsupported + report.summary.partiallyConverted > 0
+  ) {
     const list = report.activities
-      .flatMap((a) => a.unsupportedItems.map((u) => `- ${u.sourceType}: ${u.reason}`))
+      .flatMap((a) =>
+        a.unsupportedItems.map((u) => `- ${u.sourceType}: ${u.reason}`)
+      )
       .join("\n");
     throw new Error(
       `Strict mode: conversion contains unsupported H5P content.\n${list}`
     );
   }
+
+  // Materialise the asset plan into the elpx resources list.
+  const resources: ElpxResource[] = assets.all().map((e) => ({
+    path: e.outPath,
+    data: e.data,
+    mimeType: e.mimeType
+  }));
+  project.resources = resources;
 
   const elpx = await writeElpx(project, {
     templateBytes: opts.templateBytes,
@@ -178,23 +188,11 @@ export async function convert(
 }
 
 type BuildCtx = {
-  activityId: string;
-  rewriter: (src: string) => string;
+  forHtml: (src: string) => string;
+  forJson: (src: string) => string;
   activityReport: ConversionActivityReport;
   options: ConversionOptions;
 };
-
-function ensureBlock(page: ElpxPage): ElpxBlock {
-  if (page.blocks.length === 0) {
-    page.blocks.push({
-      id: newBlockId(),
-      pageId: page.id,
-      order: 0,
-      iDevices: []
-    });
-  }
-  return page.blocks[page.blocks.length - 1]!;
-}
 
 function newBlock(page: ElpxPage): ElpxBlock {
   const block: ElpxBlock = {
@@ -216,13 +214,12 @@ function emitNode(
   node: NormalizedNode,
   project: ElpxProject,
   hostPage: ElpxPage,
-  ctx: BuildCtx,
-  pageCursor: number
-): number {
+  ctx: BuildCtx
+): void {
   switch (node.kind) {
     case "text": {
       const block = newBlock(hostPage);
-      const html = rewriteUrls(sanitizeHtml(node.html), ctx.rewriter);
+      const html = rewriteUrls(sanitizeHtml(node.html), ctx.forHtml);
       addIdevice(
         block,
         buildTextIdevice({
@@ -234,11 +231,11 @@ function emitNode(
         })
       );
       ctx.activityReport.mappedTo!.push("text");
-      return pageCursor;
+      return;
     }
     case "image": {
       const block = newBlock(hostPage);
-      const src = ctx.rewriter(node.src);
+      const src = ctx.forHtml(node.src);
       const html = `<figure><img src="${escapeHtml(src)}" alt="${escapeHtml(
         node.alt ?? ""
       )}" />${
@@ -255,11 +252,11 @@ function emitNode(
         })
       );
       ctx.activityReport.mappedTo!.push("text(image)");
-      return pageCursor;
+      return;
     }
     case "audio": {
       const block = newBlock(hostPage);
-      const src = ctx.rewriter(node.src);
+      const src = ctx.forHtml(node.src);
       const html = `<audio controls src="${escapeHtml(src)}"></audio>`;
       addIdevice(
         block,
@@ -272,12 +269,12 @@ function emitNode(
         })
       );
       ctx.activityReport.mappedTo!.push("text(audio)");
-      return pageCursor;
+      return;
     }
     case "video": {
       const block = newBlock(hostPage);
-      const src = ctx.rewriter(node.src);
-      const poster = node.poster ? ctx.rewriter(node.poster) : undefined;
+      const src = ctx.forHtml(node.src);
+      const poster = node.poster ? ctx.forHtml(node.poster) : undefined;
       const html = `<video controls src="${escapeHtml(src)}"${
         poster ? ` poster="${escapeHtml(poster)}"` : ""
       }></video>`;
@@ -292,68 +289,100 @@ function emitNode(
         })
       );
       ctx.activityReport.mappedTo!.push("text(video)");
-      return pageCursor;
+      return;
     }
     case "question": {
       const block = newBlock(hostPage);
       if (node.questionType === "truefalse" && node.answers) {
-        const correctAns = node.answers.find((a) => a.correct)?.text?.toLowerCase();
+        const trueCorrect = !!node.answers.find(
+          (a) => a.text?.toLowerCase() === "true"
+        )?.correct;
         addIdevice(
           block,
           buildTrueOrFalseIdevice({
             pageId: hostPage.id,
             blockId: block.id,
             order: 0,
-            prompt: node.prompt,
-            answer: correctAns === "true"
+            questions: [
+              {
+                question: node.prompt,
+                feedback: node.feedback ?? "",
+                suggestion: "",
+                solution: trueCorrect ? 1 : 0
+              }
+            ]
           })
         );
         ctx.activityReport.mappedTo!.push("trueorfalse");
-      } else if (node.questionType === "multichoice" && node.answers) {
-        addIdevice(
-          block,
-          buildQuickQuestionsIdevice({
-            pageId: hostPage.id,
-            blockId: block.id,
-            order: 0,
-            prompt: node.prompt,
-            answers: node.answers
-          })
-        );
-        ctx.activityReport.mappedTo!.push("quick-questions");
-      } else if (node.questionType === "blanks") {
+        return;
+      }
+      if (node.questionType === "multichoice" && node.answers) {
+        const correctCount = node.answers.filter((a) => a.correct).length;
+        const selectionType: "single" | "multiple" =
+          correctCount > 1 ? "multiple" : "single";
+        const q: SelectionQuestion = {
+          activityType: "selection",
+          selectionType,
+          baseText: node.prompt,
+          answers: node.answers.map((a) =>
+            a.feedback
+              ? [!!a.correct, a.text, a.feedback]
+              : [!!a.correct, a.text]
+          )
+        };
         addIdevice(
           block,
           buildFormIdevice({
             pageId: hostPage.id,
             blockId: block.id,
             order: 0,
-            prompt: node.prompt,
-            questionsHtml: (node.answers ?? []).map((a) => `<p>${a.text}</p>`).join("\n")
+            questions: [q],
+            feedbackAfter: node.feedback
           })
         );
-        ctx.activityReport.mappedTo!.push("form");
-      } else {
-        ctx.activityReport.unsupportedItems.push({
-          sourceType: node.sourceType,
-          reason: `Question type ${node.questionType} not mapped`
-        });
-        emitUnsupported(node.sourceType, hostPage, ctx, "Question structure could not be mapped");
+        ctx.activityReport.mappedTo!.push("form(selection)");
+        return;
       }
-      return pageCursor;
+      if (node.questionType === "blanks") {
+        // node.answers carries the raw blank-text strings; convert *answer* → <u>answer</u>
+        const questions: FormQuestion[] = (node.answers ?? []).map((a) =>
+          blanksToFill(a.text)
+        );
+        if (questions.length === 0) {
+          // sometimes the prompt itself contains *answer* markers (DragText, etc.)
+          questions.push(blanksToFill(node.prompt));
+        }
+        addIdevice(
+          block,
+          buildFormIdevice({
+            pageId: hostPage.id,
+            blockId: block.id,
+            order: 0,
+            questions,
+            instructions: node.prompt
+          })
+        );
+        ctx.activityReport.mappedTo!.push("form(fill)");
+        return;
+      }
+      ctx.activityReport.unsupportedItems.push({
+        sourceType: node.sourceType,
+        reason: `Question type ${node.questionType} not mapped`
+      });
+      emitUnsupported(node.sourceType, hostPage, ctx, "Question structure could not be mapped");
+      return;
     }
     case "container": {
-      for (const child of node.children) emitNode(child, project, hostPage, ctx, pageCursor);
-      return pageCursor;
+      for (const child of node.children) emitNode(child, project, hostPage, ctx);
+      return;
     }
     case "slide-deck": {
-      return emitSlideDeck(node, project, hostPage, ctx, pageCursor);
+      emitSlideDeck(node, project, hostPage, ctx);
+      return;
     }
     case "slide": {
-      const block = newBlock(hostPage);
-      block.iDevices.push(); // no-op; emit children as separate blocks for clarity
-      for (const child of node.children) emitNode(child, project, hostPage, ctx, pageCursor);
-      return pageCursor;
+      for (const child of node.children) emitNode(child, project, hostPage, ctx);
+      return;
     }
     case "page": {
       if (ctx.options.layout === "preserve") {
@@ -364,11 +393,11 @@ function emitNode(
           blocks: []
         };
         project.pages.push(newP);
-        for (const c of node.children) emitNode(c, project, newP, ctx, project.pages.length);
-        return project.pages.length;
+        for (const c of node.children) emitNode(c, project, newP, ctx);
+        return;
       }
-      for (const c of node.children) emitNode(c, project, hostPage, ctx, pageCursor);
-      return pageCursor;
+      for (const c of node.children) emitNode(c, project, hostPage, ctx);
+      return;
     }
     case "flipcards": {
       const block = newBlock(hostPage);
@@ -378,15 +407,18 @@ function emitNode(
           pageId: hostPage.id,
           blockId: block.id,
           order: 0,
-          cards: node.cards
+          cards: node.cards.map((c) => ({
+            front: { text: c.front },
+            back: { text: c.back }
+          }))
         })
       );
       ctx.activityReport.mappedTo!.push("flipcards");
-      return pageCursor;
+      return;
     }
     case "unsupported": {
       handleUnsupported(node, hostPage, ctx);
-      return pageCursor;
+      return;
     }
   }
 }
@@ -395,9 +427,8 @@ function emitSlideDeck(
   deck: NormalizedSlideDeckNode,
   project: ElpxProject,
   hostPage: ElpxPage,
-  ctx: BuildCtx,
-  pageCursor: number
-): number {
+  ctx: BuildCtx
+): void {
   if (ctx.options.layout === "preserve") {
     for (const slide of deck.slides) {
       const slidePage: ElpxPage = {
@@ -408,14 +439,13 @@ function emitSlideDeck(
         blocks: []
       };
       project.pages.push(slidePage);
-      for (const child of slide.children) emitNode(child, project, slidePage, ctx, project.pages.length);
+      for (const child of slide.children) emitNode(child, project, slidePage, ctx);
     }
-    return project.pages.length;
+    return;
   }
   for (const slide of deck.slides) {
-    for (const child of slide.children) emitNode(child, project, hostPage, ctx, pageCursor);
+    for (const child of slide.children) emitNode(child, project, hostPage, ctx);
   }
-  return pageCursor;
 }
 
 function handleUnsupported(

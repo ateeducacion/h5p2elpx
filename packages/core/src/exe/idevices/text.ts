@@ -10,15 +10,35 @@ export type TextIdeviceInput = {
 };
 
 /**
- * eXeLearning's `text` iDevice expects:
- *   - htmlView wrapped in `<div class="exe-text-template">…</div>`
- *   - jsonProperties with the editable HTML in `textTextarea` (plus the
- *     boilerplate fields eXe shows in the form: duration, participants,
- *     feedback).
+ * Mirrors the `text` iDevice shape documented in
+ * `doc/elpx-format/idevices/snippets.md` (Pattern 1, Standard JSON):
+ *
+ *   htmlView:
+ *     <div class="exe-text-template">
+ *       <div class="textIdeviceContent">
+ *         <div class="exe-text-activity">
+ *           <div><div class="exe-text">{html}</div></div>
+ *         </div>
+ *       </div>
+ *     </div>
+ *
+ *   jsonProperties:
+ *     { ideviceId, textInfoDurationInput, textInfoDurationTextInput,
+ *       textInfoParticipantsInput, textInfoParticipantsTextInput,
+ *       textTextarea (= raw html), textFeedbackInput, textFeedbackTextarea }
  */
 export function buildTextIdevice(input: TextIdeviceInput): ElpxIdevice {
   const id = newIdeviceId();
-  const htmlView = `<div class="exe-text-template">\n    ${input.html}\n</div>`;
+  const html = input.html ?? "";
+  const htmlView = [
+    `<div class="exe-text-template">`,
+    `  <div class="textIdeviceContent">`,
+    `    <div class="exe-text-activity">`,
+    `      <div><div class="exe-text">${html}</div></div>`,
+    `    </div>`,
+    `  </div>`,
+    `</div>`
+  ].join("\n");
   return {
     id,
     pageId: input.pageId,
@@ -32,7 +52,7 @@ export function buildTextIdevice(input: TextIdeviceInput): ElpxIdevice {
       textInfoDurationTextInput: "Duración",
       textInfoParticipantsInput: "",
       textInfoParticipantsTextInput: "Agrupamiento",
-      textTextarea: input.html,
+      textTextarea: html,
       textFeedbackInput: "Mostrar retroalimentación",
       textFeedbackTextarea: ""
     },

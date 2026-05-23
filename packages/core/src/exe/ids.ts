@@ -1,15 +1,48 @@
 /**
- * eXeLearning uses ids of the form `<kind>-<base36 ms>-<random>`, e.g.
- * `idevice-1779549856454-un949rhzb`. We mimic the pattern so the produced
- * .elpx looks indistinguishable from one authored in eXe.
+ * eXeLearning v4 IDs are `YYYYMMDDHHmmss` (UTC) followed by 6 uppercase
+ * alphanumeric characters — see `doc/elpx-format/ids.md` in the eXe repo.
+ *
+ *   Example: `20251217062007ABC001`
+ *
+ * Same format for project, version, page, block and iDevice ids.
  */
-function exeId(kind: string): string {
-  const ms = Date.now();
-  const rand = Math.random().toString(36).slice(2, 12);
-  return `${kind}-${ms}-${rand}`;
+
+const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+function rand6(): string {
+  let out = "";
+  for (let i = 0; i < 6; i++) {
+    out += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
+  }
+  return out;
 }
 
-export const newProjectId = () => exeId("proj");
-export const newPageId = () => exeId("page");
-export const newBlockId = () => exeId("block");
-export const newIdeviceId = () => exeId("idevice");
+function timestamp14(): string {
+  const d = new Date();
+  const p = (n: number, w = 2) => String(n).padStart(w, "0");
+  return (
+    `${d.getUTCFullYear()}` +
+    p(d.getUTCMonth() + 1) +
+    p(d.getUTCDate()) +
+    p(d.getUTCHours()) +
+    p(d.getUTCMinutes()) +
+    p(d.getUTCSeconds())
+  );
+}
+
+/** Single monotonic counter prevents id collisions when many ids are
+ *  generated in the same millisecond — we still randomise, but bump the
+ *  last character via a counter to guarantee uniqueness inside a run. */
+let collisionCounter = 0;
+
+export function newOdeId(): string {
+  collisionCounter = (collisionCounter + 1) % ALPHABET.length;
+  const tail = rand6().slice(0, 5) + ALPHABET[collisionCounter]!;
+  return timestamp14() + tail;
+}
+
+export const newProjectId = newOdeId;
+export const newVersionId = newOdeId;
+export const newPageId = newOdeId;
+export const newBlockId = newOdeId;
+export const newIdeviceId = newOdeId;

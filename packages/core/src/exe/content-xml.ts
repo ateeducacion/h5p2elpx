@@ -1,24 +1,27 @@
 import { XMLBuilder } from "fast-xml-parser";
 import type { ElpxIdevice, ElpxProject } from "./model.ts";
+import { newOdeId } from "./ids.ts";
 
 /**
- * Build the real eXeLearning `content.xml` (ODE format, namespace
- * http://www.intef.es/xsd/ode, version 2.0). This is the XML eXeLearning
- * itself reads on import.
+ * Generate eXeLearning `content.xml` in the ODE v2.0 format used by
+ * eXeLearning v4. Mirrors the structure produced by
+ * `src/shared/export/generators/OdeXmlGenerator.ts` in the eXe repo:
  *
- * Structure:
- *   <ode>
+ *   <ode xmlns="http://www.intef.es/xsd/ode" version="2.0">
  *     <userPreferences/>
- *     <odeResources/>          ← project ids + version
- *     <odeProperties/>         ← title, lang, theme, ...
- *     <odeNavStructures>       ← one entry per page (nav sidebar)
+ *     <odeResources/>      ← odeId, odeVersionId, exe_version="3.0"
+ *     <odeProperties/>     ← pp_title, pp_lang, pp_theme, ...
+ *     <odeNavStructures>   ← one entry per page (nav sidebar)
  *       <odeNavStructure>
- *         <odePagStructures>   ← one entry per block on the page
+ *         <odePagStructures>   ← blocks
  *           <odePagStructure>
- *             <odeComponents>  ← one entry per iDevice in the block
+ *             <odeComponents>  ← iDevices
  *               <odeComponent>
  *                 <htmlView>CDATA</htmlView>
  *                 <jsonProperties>CDATA</jsonProperties>
+ *
+ * htmlView and jsonProperties are ALWAYS CDATA-wrapped, even when their
+ * contents have no XML-significant characters — matches OdeXmlGenerator.
  */
 
 const builder = new XMLBuilder({
@@ -42,40 +45,46 @@ const DEFAULT_PAG_PROPS = [
   kv("cssClass", "")
 ];
 
+/**
+ * The three component-level properties eXeLearning always emits per the
+ * snippets in `doc/elpx-format/idevices/snippets.md`. `value` is omitted
+ * (self-closing) when empty.
+ */
+function defaultComponentProps() {
+  return {
+    odeComponentsProperty: [
+      { key: "identifier", value: "" },
+      { key: "visibility", value: "true" },
+      { key: "cssClass", value: "" }
+    ]
+  };
+}
+
 function buildComponent(idev: ElpxIdevice) {
   return {
     odePageId: idev.pageId,
     odeBlockId: idev.blockId,
     odeIdeviceId: idev.id,
     odeIdeviceTypeName: idev.typeName,
-    htmlView: { __cdata: idev.htmlView },
+    htmlView: { __cdata: idev.htmlView ?? "" },
     jsonProperties: { __cdata: JSON.stringify(idev.jsonProperties ?? {}) },
     odeComponentsOrder: String(idev.order),
-    odeComponentsProperties: {}
+    odeComponentsProperties: defaultComponentProps()
   };
 }
 
 export type BuildContentXmlOptions = {
-  /** Project identifiers to put in <odeResources>. Auto-generated if omitted. */
   odeId?: string;
   odeVersionId?: string;
+  /** Value of the `exe_version` ode resource. Defaults to "3.0" — the
+   *  ODE_VERSION constant in eXe v4. */
   exeVersion?: string;
-  exelearningVersion?: string;
-  exportSource?: string;
 };
 
-function nowOdeStamp(): string {
-  const d = new Date();
-  const p = (n: number, w = 2) => String(n).padStart(w, "0");
-  const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}${p(d.getUTCHours())}${p(d.getUTCMinutes())}${p(d.getUTCSeconds())}${rand}`;
-}
-
 export function buildContentXml(project: ElpxProject, opts: BuildContentXmlOptions = {}): string {
-  const odeId = opts.odeId ?? nowOdeStamp();
-  const odeVersionId = opts.odeVersionId ?? nowOdeStamp();
-  const exeVersion = opts.exeVersion ?? "0.0.0-h5p2elpx";
-  const exelearningVersion = opts.exelearningVersion ?? "v0.0.0-h5p2elpx";
+  const odeId = opts.odeId ?? newOdeId();
+  const odeVersionId = opts.odeVersionId ?? newOdeId();
+  const exeVersion = opts.exeVersion ?? "3.0";
 
   const navStructures = project.pages
     .slice()
@@ -127,8 +136,7 @@ export function buildContentXml(project: ElpxProject, opts: BuildContentXmlOptio
         odeResource: [
           kv("odeId", odeId),
           kv("odeVersionId", odeVersionId),
-          kv("exe_version", exeVersion),
-          ...(opts.exportSource ? [kv("exportSource", opts.exportSource)] : [])
+          kv("exe_version", exeVersion)
         ]
       },
       odeProperties: {
@@ -138,7 +146,6 @@ export function buildContentXml(project: ElpxProject, opts: BuildContentXmlOptio
           kv("pp_license", "creative commons: attribution - share alike 4.0"),
           kv("pp_licenseUrl", "https://creativecommons.org/licenses/by-sa/4.0/"),
           kv("pp_theme", "base"),
-          kv("pp_exelearning_version", exelearningVersion),
           kv("pp_modified", String(Date.now())),
           kv("pp_addAccessibilityToolbar", "false"),
           kv("pp_addExeLink", "true"),

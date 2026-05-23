@@ -1,8 +1,17 @@
 export { buildTextIdevice } from "./text.ts";
 export { buildUnsupportedIdevice } from "./unsupported.ts";
 export { buildTrueOrFalseIdevice } from "./trueorfalse.ts";
-export { buildQuickQuestionsIdevice } from "./quick-questions.ts";
-export { buildFormIdevice } from "./form.ts";
+export { buildFormIdevice, blanksToFill } from "./form.ts";
 export { buildFlipcardsIdevice } from "./flipcards.ts";
-export { buildImageGalleryIdevice } from "./image-gallery.ts";
-export { buildDragDropIdevice } from "./dragdrop.ts";
+export type {
+  TrueOrFalseQuestion,
+  TrueOrFalseInput
+} from "./trueorfalse.ts";
+export type {
+  FormInput,
+  FormQuestion,
+  SelectionQuestion,
+  FillQuestion,
+  TrueFalseFormQuestion
+} from "./form.ts";
+export type { FlipcardsInput, FlipcardEntry, FlipcardSide } from "./flipcards.ts";

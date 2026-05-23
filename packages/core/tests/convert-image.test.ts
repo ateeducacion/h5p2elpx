@@ -4,7 +4,7 @@ import { convert } from "../src/convert/convert.ts";
 import { makeH5pZip } from "./_helpers.ts";
 
 describe("convert image H5P", () => {
-  it("copies the asset and rewrites the src path", async () => {
+  it("copies the asset under content/resources/ (flat, preserving sub-folders) and rewrites the src path", async () => {
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
     const bytes = await makeH5pZip({
       mainLibrary: "H5P.Image",
@@ -16,8 +16,15 @@ describe("convert image H5P", () => {
       { layout: "blocks" }
     );
     const zip = await JSZip.loadAsync(result.elpx);
-    expect(zip.file("content/resources/h5p2elpx/img/images/p.png")).not.toBeNull();
+    // Flat path under content/resources/, preserving the source's sub-folder.
+    expect(zip.file("content/resources/images/p.png")).not.toBeNull();
+    // The h5p2elpx/<activityId> nesting must NOT appear.
+    let foundLegacy = false;
+    zip.forEach((path) => {
+      if (path.includes("h5p2elpx/")) foundLegacy = true;
+    });
+    expect(foundLegacy).toBe(false);
     const xml = await zip.file("content.xml")!.async("string");
-    expect(xml).toContain("resources/h5p2elpx/img/images/p.png");
+    expect(xml).toContain("content/resources/images/p.png");
   });
 });
