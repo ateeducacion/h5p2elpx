@@ -24,11 +24,13 @@ type CliOpts = {
 
 function findDefaultTemplate(): string | undefined {
   const here = dirname(fileURLToPath(import.meta.url));
-  // packages/cli/src/commands → walk up to repo root → fixtures/elpx/sample.elpx
+  // packages/cli/src/commands → walk up to repo root → fixtures/elpx/template.elpx
+  // The template is built from the official exelearning-static-vX.Y.Z.zip
+  // bundle by scripts/build-template.ts.
   const candidates = [
-    resolve(here, "../../../../fixtures/elpx/sample.elpx"),
-    resolve(here, "../../../fixtures/elpx/sample.elpx"),
-    resolve(process.cwd(), "fixtures/elpx/sample.elpx")
+    resolve(here, "../../../../fixtures/elpx/template.elpx"),
+    resolve(here, "../../../fixtures/elpx/template.elpx"),
+    resolve(process.cwd(), "fixtures/elpx/template.elpx")
   ];
   return candidates.find((p) => existsSync(p));
 }

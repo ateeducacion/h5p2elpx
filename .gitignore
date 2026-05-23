@@ -6,3 +6,4 @@ dist/
 bun.lockb
 .vite/
 coverage/
+node_modules/.cache/

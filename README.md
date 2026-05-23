@@ -21,6 +21,23 @@ cd h5p2elpx
 bun install
 ```
 
+The eXeLearning runtime template (`fixtures/elpx/template.elpx`) is already
+committed. To rebuild it from a fresh
+[eXeLearning release](https://github.com/exelearning/exelearning/releases)
+(default: `v4.0.0`, theme `base`):
+
+```bash
+bun run build-template            # latest pinned default
+bun run build-template v4.0.0 base
+```
+
+The script downloads `exelearning-static-vX.Y.Z.zip`, unpacks
+`bundles/{idevices,libs,common,content-css}.zip` and
+`bundles/themes/<theme>.zip`, and assembles them into the expected `.elpx`
+layout (`idevices/`, `libs/`, `theme/`, `html/`, `content/css/`,
+`index.html`, `content.xml`, `content.dtd`). The CI deploy workflow runs
+this on every push so GitHub Pages always ships an up-to-date template.
+
 ## CLI
 
 ```bash
