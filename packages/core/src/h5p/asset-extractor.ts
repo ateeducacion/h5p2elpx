@@ -4,36 +4,39 @@ import { guessMime } from "../utils/mime.ts";
 /**
  * Resource layout per eXeLearning's `doc/elpx-format/assets.md`:
  *
- *   - On disk: `content/resources/<filename>` (flat by default).
- *     Sub-folders are preserved only when the source already had them.
- *   - In `<htmlView>`: relative URL, e.g. `content/resources/photo.jpg`
- *     (or `../content/resources/photo.jpg` from `html/*.html`).
- *   - In `<jsonProperties>`: token form `{{context_path}}/photo.jpg`,
- *     resolved by the runtime to the directory above.
+ *   - On disk: `content/resources/<filename>` (flat). eXeLearning treats
+ *     the root of `content/resources/` as where assets live unless the
+ *     **author** organised them in folders. H5P's internal `images/`,
+ *     `audios/`, `videos/`, `files/` subdirectories are storage convention,
+ *     not user choices, so we drop them on the way out.
+ *   - In `<htmlView>` and `<jsonProperties>` (both inside `content.xml`):
+ *     the path-template form `{{context_path}}/<filename>`. eXe's importer
+ *     converts that back to `asset://<uuid>` on load via
+ *     `convertContextPathToAssetRefs()`; the page renderer resolves it to
+ *     a relative path at HTML render time.
  *
- * To handle collisions when multiple H5P packages contribute assets, we
- * keep the original sub-folder when one exists in the H5P; bare filenames
- * are suffixed (`photo.jpg`, `photo-2.jpg`).
+ * Collisions across packages are resolved by suffixing the basename
+ * (`photo.jpg`, `photo-2.jpg`).
  */
 
 export type AssetPlanEntry = {
-  /** Path inside the .elpx ZIP, e.g. `content/resources/images/photo.jpg` */
+  /** Path inside the .elpx ZIP, e.g. `content/resources/photo.jpg` */
   outPath: string;
-  /** Relative URL for use in htmlView (e.g. `content/resources/...`) */
-  htmlUrl: string;
-  /** Token URL for use in jsonProperties (`{{context_path}}/...`) */
-  jsonUrl: string;
-  /** Bytes to copy into the ZIP */
+  /** URL token to embed in BOTH htmlView and jsonProperties (per assets.md
+   *  the same `{{context_path}}/...` form is used in both). */
+  url: string;
   data: Uint8Array;
-  /** Detected MIME type, if any */
   mimeType?: string;
 };
 
-export type AssetPlan = {
-  entries: AssetPlanEntry[];
-  /** Mapping from a package's relative path (`images/photo.jpg`) → entry */
-  byRelPath: Map<string, AssetPlanEntry>;
-};
+/** H5P stores assets under one of these well-known subfolders; eXe doesn't
+ *  use any of them — they get flattened out. Anything else is treated as
+ *  an author-chosen folder and preserved. */
+const H5P_INTERNAL_DIRS = /^(images|audios|videos|files|content)\/+/i;
+
+function flattenH5pPath(rel: string): string {
+  return rel.replace(H5P_INTERNAL_DIRS, "");
+}
 
 export class AssetCollector {
   private taken = new Set<string>();
@@ -47,13 +50,11 @@ export class AssetCollector {
     const cached = this.byKey.get(cacheKey);
     if (cached) return cached;
 
-    // Preserve the original sub-folder structure when present, else flat.
-    const initial = relInsidePackage; // e.g. "images/photo.jpg" or "photo.jpg"
-    const finalRel = this.allocate(initial);
+    const flat = flattenH5pPath(relInsidePackage);
+    const finalRel = this.allocate(flat);
     const entry: AssetPlanEntry = {
       outPath: `content/resources/${finalRel}`,
-      htmlUrl: `content/resources/${finalRel}`,
-      jsonUrl: `{{context_path}}/${finalRel}`,
+      url: `{{context_path}}/${finalRel}`,
       data: asset.data,
       mimeType: asset.mimeType ?? guessMime(asset.filename)
     };
@@ -62,8 +63,9 @@ export class AssetCollector {
     return entry;
   }
 
-  /** Map of every asset added so far, keyed by the package-relative path
-   *  (`images/photo.jpg`). Used by URL rewriters. */
+  /** Map of every asset added so far, keyed by the original package-relative
+   *  path (e.g. `images/photo.jpg`) so URL rewriters can find an entry when
+   *  H5P content references the asset by its source path. */
   perPackage(pkg: H5PPackage): Map<string, AssetPlanEntry> {
     const out = new Map<string, AssetPlanEntry>();
     const prefix = `${pkg.sourceFilename ?? "pkg"}|`;
@@ -96,26 +98,22 @@ export class AssetCollector {
   }
 }
 
-/** Build per-package URL mappers given a populated AssetCollector and the
- *  package whose URLs are being rewritten. Returns one mapper for HTML
- *  contexts (relative paths) and one for JSON contexts ({{context_path}}). */
+/** URL rewriter — same `{{context_path}}/<file>` form is used in both
+ *  `htmlView` and `jsonProperties` (the importer converts to `asset://`
+ *  on load; the page renderer resolves to a relative path at HTML render
+ *  time). Both names are kept for backward compatibility with callers. */
 export function buildUrlRewriters(perPackage: Map<string, AssetPlanEntry>) {
-  function rewrite(src: string, picker: (e: AssetPlanEntry) => string): string {
+  function rewrite(src: string): string {
     if (!src) return src;
     if (/^https?:|^data:|^mailto:|^tel:|^#/i.test(src)) return src;
     const normalized = src.replace(/^\.?\//, "");
     const entry = perPackage.get(normalized);
-    if (entry) return picker(entry);
+    if (entry) return entry.url;
     return src;
   }
-  return {
-    forHtml: (src: string) => rewrite(src, (e) => e.htmlUrl),
-    forJson: (src: string) => rewrite(src, (e) => e.jsonUrl)
-  };
+  return { forHtml: rewrite, forJson: rewrite };
 }
 
-/** Convenience: return all H5P assets unchanged (used by callers that
- *  want to know what was in the package before planning paths). */
 export function extractAssets(pkg: H5PPackage): H5PAsset[] {
   return pkg.assets;
 }

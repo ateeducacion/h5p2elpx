@@ -9,7 +9,7 @@ export {
   buildUrlRewriters,
   extractAssets
 } from "./h5p/asset-extractor.ts";
-export type { AssetPlan, AssetPlanEntry } from "./h5p/asset-extractor.ts";
+export type { AssetPlanEntry } from "./h5p/asset-extractor.ts";
 
 export * from "./normalize/nodes.ts";
 export { normalizePackage } from "./normalize/normalize.ts";

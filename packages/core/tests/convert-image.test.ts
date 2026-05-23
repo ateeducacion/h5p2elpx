@@ -1,10 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import JSZip from "jszip";
 import { convert } from "../src/convert/convert.ts";
 import { makeH5pZip } from "./_helpers.ts";
 
 describe("convert image H5P", () => {
-  it("copies the asset under content/resources/ (flat, preserving sub-folders) and rewrites the src path", async () => {
+  it("flattens H5P's images/ subfolder, lands at content/resources/, and references via {{context_path}}", async () => {
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
     const bytes = await makeH5pZip({
       mainLibrary: "H5P.Image",
@@ -15,15 +15,23 @@ describe("convert image H5P", () => {
       layout: "blocks"
     });
     const zip = await JSZip.loadAsync(result.elpx);
-    // Flat path under content/resources/, preserving the source's sub-folder.
-    expect(zip.file("content/resources/images/p.png")).not.toBeNull();
-    // The h5p2elpx/<activityId> nesting must NOT appear.
+
+    // Asset is flat at the root of content/resources/, no H5P images/ subfolder.
+    expect(zip.file("content/resources/p.png")).not.toBeNull();
+    expect(zip.file("content/resources/images/p.png")).toBeNull();
+
+    // No legacy per-activity nesting either.
     let foundLegacy = false;
     zip.forEach((path) => {
       if (path.includes("h5p2elpx/")) foundLegacy = true;
     });
     expect(foundLegacy).toBe(false);
+
     const xml = await zip.file("content.xml")!.async("string");
-    expect(xml).toContain("content/resources/images/p.png");
+    // htmlView MUST use the {{context_path}}/<file> token form, not a
+    // hard-coded relative path — eXe's importer converts the token to
+    // asset://<uuid> on load.
+    expect(xml).toContain("{{context_path}}/p.png");
+    expect(xml).not.toContain("content/resources/images/p.png");
   });
 });
