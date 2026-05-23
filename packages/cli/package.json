@@ -2,6 +2,7 @@
   "name": "@h5p2elpx/cli",
   "version": "0.1.0",
   "type": "module",
+  "license": "AGPL-3.0-or-later",
   "bin": {
     "h5p2elpx": "src/index.ts"
   },

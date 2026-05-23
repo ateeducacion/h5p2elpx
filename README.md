@@ -33,10 +33,11 @@ bun run build-template v4.0.0 base
 
 The script downloads `exelearning-static-vX.Y.Z.zip`, unpacks
 `bundles/{idevices,libs,common,content-css}.zip` and
-`bundles/themes/<theme>.zip`, and assembles them into the expected `.elpx`
-layout (`idevices/`, `libs/`, `theme/`, `html/`, `content/css/`,
-`index.html`, `content.xml`, `content.dtd`). The CI deploy workflow runs
-this on every push so GitHub Pages always ships an up-to-date template.
+`bundles/themes/<theme>.zip`, and assembles them into the runtime parts of the
+`.elpx` template (`idevices/`, `libs/`, `theme/`, `html/`, `content/css/`,
+`index.html`, etc.). `h5p2elpx` always regenerates `content.xml` and
+`content.dtd` during conversion. The GitHub Pages workflow runs this on every
+push so the bundled web template stays up to date.
 
 ## CLI
 
@@ -96,12 +97,13 @@ Deployed automatically to GitHub Pages on every push to `main` via
 | 1 | `H5P.InteractiveBook` | one eXe page per chapter |
 | 1 | `H5P.Table` | HTML `<table>` in a text iDevice |
 | 2 | `H5P.TrueFalse` | trueorfalse iDevice |
-| 2 | `H5P.MultiChoice` | quick-questions iDevice |
-| 2 | `H5P.SingleChoiceSet` | one quick-questions iDevice per choice |
+| 2 | `H5P.MultiChoice` | form iDevice (`activityType: "selection"`) |
+| 2 | `H5P.SingleChoiceSet` | one form iDevice per choice |
 | 2 | `H5P.Blanks` | form iDevice |
 | 2 | `H5P.Dialogcards`, `H5P.MemoryGame` | flipcards iDevice |
-| 2 | `H5P.Summary` | quick-questions iDevices |
-| 3 | `H5P.DragText`, `H5P.MarkTheWords` | form / text fallback |
+| 2 | `H5P.Summary` | form iDevices |
+| 3 | `H5P.DragText` | form iDevice |
+| 3 | `H5P.MarkTheWords` | text fallback |
 | 3 | `H5P.DragQuestion` | structured fallback (drag list + drop zones) |
 | 3 | `H5P.ImageHotspots` | image + ordered hotspot list |
 | anything else | visible warning iDevice (unless `--unsupported drop`) |
@@ -158,9 +160,10 @@ CI: `.github/workflows/test.yml` runs typecheck + tests on every push and PR.
 
 ## Known limitations
 
-* The generated `content.xml` is `h5p2elpx`'s own canonical format. Pass a real
-  minimal `.elpx` template via `--template` to produce a project that opens in
-  desktop eXeLearning without further wiring.
+* The generated `content.xml` targets the real eXeLearning ODE v2.0 format.
+  `h5p2elpx` rewrites `content.xml`/`content.dtd` on every conversion while
+  preserving the runtime assets from the bundled template (or a custom one
+  passed via `--template`).
 * H5P.InteractiveVideo loses its interactions (only the underlying video src
   survives).
 * H5P.DragQuestion loses geometric positions (becomes a descriptive list).
@@ -169,4 +172,4 @@ CI: `.github/workflows/test.yml` runs typecheck + tests on every push and PR.
 
 ## License
 
-GPL-2.0 (see `LICENSE`).
+AGPL-3.0-or-later (see `LICENSE`).
