@@ -316,7 +316,8 @@ function rewriteExportString(
 }
 
 function relativeHref(fromPath: string, toPath: string): string {
-  if (fromPath === toPath) return fromPath === "index.html" ? "index.html" : `../${toPath}`;
+  if (fromPath === toPath)
+    return fromPath === "index.html" ? "index.html" : toPath.replace(/^html\//, "");
   if (fromPath === "index.html") return toPath;
   if (toPath === "index.html") return "../index.html";
   return `../${toPath}`;
