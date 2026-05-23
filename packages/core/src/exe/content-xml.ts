@@ -79,12 +79,17 @@ export type BuildContentXmlOptions = {
   /** Value of the `exe_version` ode resource. Defaults to "3.0" — the
    *  ODE_VERSION constant in eXe v4. */
   exeVersion?: string;
+  /** Theme name written into `<userPreferences>` and `pp_theme`. Must
+   *  match the theme files actually shipped under `theme/` in the .elpx.
+   *  Defaults to `"base"`. */
+  theme?: string;
 };
 
 export function buildContentXml(project: ElpxProject, opts: BuildContentXmlOptions = {}): string {
   const odeId = opts.odeId ?? newOdeId();
   const odeVersionId = opts.odeVersionId ?? newOdeId();
   const exeVersion = opts.exeVersion ?? "3.0";
+  const theme = opts.theme ?? "base";
 
   const navStructures = project.pages
     .slice()
@@ -130,7 +135,7 @@ export function buildContentXml(project: ElpxProject, opts: BuildContentXmlOptio
       "@_xmlns": "http://www.intef.es/xsd/ode",
       "@_version": "2.0",
       userPreferences: {
-        userPreference: [kv("theme", "base")]
+        userPreference: [kv("theme", theme)]
       },
       odeResources: {
         odeResource: [
@@ -145,7 +150,7 @@ export function buildContentXml(project: ElpxProject, opts: BuildContentXmlOptio
           kv("pp_lang", project.language ?? "en"),
           kv("pp_license", "creative commons: attribution - share alike 4.0"),
           kv("pp_licenseUrl", "https://creativecommons.org/licenses/by-sa/4.0/"),
-          kv("pp_theme", "base"),
+          kv("pp_theme", theme),
           kv("pp_modified", String(Date.now())),
           kv("pp_addAccessibilityToolbar", "false"),
           kv("pp_addExeLink", "true"),

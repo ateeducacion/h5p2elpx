@@ -57,17 +57,30 @@ async function convertText(opts: Record<string, unknown> = {}) {
     expect(html).not.toContain("mathjax");
   });
 
-  it("theme=nova swaps theme/* and drops the themes/ staging dir", async () => {
+  it("theme=nova swaps theme/* and writes the same name into content.xml", async () => {
     const result = await convertText({ theme: "nova" });
     const zip = await JSZip.loadAsync(result.elpx);
-    // theme/ files come from the nova bundle
     expect(zip.file("theme/style.css")).not.toBeNull();
-    // staging area for unselected themes is gone
     const stagingRemnants: string[] = [];
     zip.forEach((path) => {
       if (path.startsWith("themes/")) stagingRemnants.push(path);
     });
     expect(stagingRemnants).toEqual([]);
+    const xml = await zip.file("content.xml")!.async("string");
+    expect(xml).toMatch(/<key>theme<\/key>\s*<value>nova<\/value>/);
+    expect(xml).toMatch(/<key>pp_theme<\/key>\s*<value>nova<\/value>/);
+    const themeConfig = await zip.file("theme/config.xml")!.async("string");
+    expect(themeConfig).toContain("<name>nova</name>");
+  });
+
+  it("theme=flux carries through to content.xml + theme/config.xml", async () => {
+    const result = await convertText({ theme: "flux" });
+    const zip = await JSZip.loadAsync(result.elpx);
+    const xml = await zip.file("content.xml")!.async("string");
+    expect(xml).toMatch(/<key>theme<\/key>\s*<value>flux<\/value>/);
+    expect(xml).toMatch(/<key>pp_theme<\/key>\s*<value>flux<\/value>/);
+    const themeConfig = await zip.file("theme/config.xml")!.async("string");
+    expect(themeConfig).toContain("<name>flux</name>");
   });
 
   it("theme=base (default) also drops the themes/ staging dir", async () => {

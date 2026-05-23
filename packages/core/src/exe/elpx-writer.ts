@@ -103,7 +103,7 @@ export async function writeElpx(
 
   // Always overwrite content.xml + content.dtd with our generated ones —
   // the template's nav structures don't apply to the converted project.
-  const xml = buildContentXml(project);
+  const xml = buildContentXml(project, { theme: options.theme });
   zip.file("content.xml", xml);
   zip.file("content.dtd", CONTENT_DTD);
 
