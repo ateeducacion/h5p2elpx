@@ -4,7 +4,7 @@ import { ConversionOptionsForm, type UiOptions } from "./components/ConversionOp
 import { CompatibilityReport } from "./components/CompatibilityReport.tsx";
 import { DownloadPanel } from "./components/DownloadPanel.tsx";
 import { Footer } from "./components/Footer.tsx";
-import { GithubCorner } from "./components/GithubCorner.tsx";
+import { Topbar } from "./components/Topbar.tsx";
 import {
   convert,
   readH5p,
@@ -88,35 +88,59 @@ export function App() {
   }
 
   return (
-    <>
-      <GithubCorner href="https://github.com/ateeducacion/h5p2elpx" />
-      <main
-        style={{
-          fontFamily: "system-ui, sans-serif",
-          maxWidth: 880,
-          margin: "2rem auto",
-          padding: "0 1rem"
-        }}
-      >
-        <h1>h5p2elpx</h1>
-        <p>
-          Convert H5P packages into editable eXeLearning <code>.elpx</code> projects, right in your
-          browser.
-        </p>
-        <Dropzone onFiles={onFilesDropped} files={files} />
-        {preview.length > 0 && <CompatibilityReport entries={preview} />}
-        <ConversionOptionsForm value={options} onChange={setOptions} />
-        <button
-          onClick={onConvert}
-          disabled={busy || files.length === 0}
-          style={{ marginTop: "1rem", padding: "0.6rem 1.2rem" }}
+    <main
+      style={{
+        fontFamily: "system-ui, sans-serif",
+        maxWidth: 880,
+        margin: "2rem auto",
+        padding: "0 1rem"
+      }}
+    >
+      <Topbar githubUrl="https://github.com/ateeducacion/h5p2elpx" />
+      <header style={{ margin: "0 0 32px" }}>
+        <p
+          style={{
+            margin: "0 0 4px",
+            fontSize: "0.85rem",
+            fontWeight: 300,
+            color: "#666",
+            textTransform: "uppercase",
+            letterSpacing: "0.12em"
+          }}
         >
-          {busy ? "Converting…" : "Convert"}
-        </button>
-        {error && <p style={{ color: "crimson" }}>Error: {error}</p>}
-        {conv && <DownloadPanel elpx={conv.elpx} report={conv.report} filename={conv.outputName} />}
-        <Footer />
-      </main>
-    </>
+          Browser tool · 100% client-side
+        </p>
+        <h1
+          style={{
+            margin: "0 0 12px",
+            color: "#078e8e",
+            fontSize: "clamp(2rem, 4vw, 2.6rem)",
+            fontWeight: 400,
+            lineHeight: 1.15,
+            letterSpacing: "-0.01em"
+          }}
+        >
+          Convert <span style={{ color: "#054d4d" }}>H5P</span> to editable{" "}
+          <span style={{ color: "#054d4d" }}>eXeLearning</span>
+        </h1>
+        <p style={{ margin: 0, color: "#555", fontSize: "1.05rem" }}>
+          Drop a <code>.h5p</code> package and download an <code>.elpx</code> project you can open
+          and edit in eXeLearning. Nothing leaves your browser.
+        </p>
+      </header>
+      <Dropzone onFiles={onFilesDropped} files={files} />
+      {preview.length > 0 && <CompatibilityReport entries={preview} />}
+      <ConversionOptionsForm value={options} onChange={setOptions} />
+      <button
+        onClick={onConvert}
+        disabled={busy || files.length === 0}
+        style={{ marginTop: "1rem", padding: "0.6rem 1.2rem" }}
+      >
+        {busy ? "Converting…" : "Convert"}
+      </button>
+      {error && <p style={{ color: "crimson" }}>Error: {error}</p>}
+      {conv && <DownloadPanel elpx={conv.elpx} report={conv.report} filename={conv.outputName} />}
+      <Footer />
+    </main>
   );
 }
