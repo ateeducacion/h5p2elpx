@@ -32,7 +32,7 @@ jobs:
           VITE_BASE: /${{ github.event.repository.name }}/
         run: bun run --cwd packages/web build
       - uses: actions/configure-pages@v6
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: packages/web/dist
 
