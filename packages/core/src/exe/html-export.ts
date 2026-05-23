@@ -70,7 +70,9 @@ function renderPage(
 ): string {
   const prefix = current.path === "index.html" ? "" : "../";
   const types = Array.from(
-    new Set(current.page.blocks.flatMap((block) => block.iDevices.map((idevice) => idevice.typeName)))
+    new Set(
+      current.page.blocks.flatMap((block) => block.iDevices.map((idevice) => idevice.typeName))
+    )
   ).sort();
   const prev = index > 0 ? pages[index - 1] : undefined;
   const next = index < pages.length - 1 ? pages[index + 1] : undefined;
@@ -331,10 +333,7 @@ function buildPlaceholderIndex(title: string, language?: string): string {
 }
 
 function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function escapeAttr(value: string): string {
