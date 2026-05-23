@@ -1,0 +1,8 @@
+.DS_Store
+.omc/
+node_modules/
+dist/
+*.log
+bun.lockb
+.vite/
+coverage/

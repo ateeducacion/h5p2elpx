@@ -1,0 +1,12 @@
+{
+  "name": "@h5p2elpx/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "h5p2elpx": "src/index.ts"
+  },
+  "dependencies": {
+    "@h5p2elpx/core": "workspace:*",
+    "commander": "^12.1.0"
+  }
+}
