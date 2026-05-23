@@ -1,15 +1,8 @@
 import type { H5PPackage } from "../h5p/h5p-types.ts";
 import { readH5p } from "../h5p/read-h5p.ts";
 import { normalizePackage } from "../normalize/normalize.ts";
-import type {
-  NormalizedNode,
-  NormalizedSlideDeckNode
-} from "../normalize/nodes.ts";
-import {
-  AssetCollector,
-  buildUrlRewriters,
-  type AssetPlanEntry
-} from "../h5p/asset-extractor.ts";
+import type { NormalizedNode, NormalizedSlideDeckNode } from "../normalize/nodes.ts";
+import { AssetCollector, buildUrlRewriters } from "../h5p/asset-extractor.ts";
 import { rewriteUrls, sanitizeHtml, escapeHtml } from "../utils/html.ts";
 import { libraryRefString } from "../h5p/library-ref.ts";
 import {
@@ -23,18 +16,9 @@ import {
   type SelectionQuestion
 } from "../exe/idevices/index.ts";
 import { newBlockId, newPageId, newProjectId } from "../exe/ids.ts";
-import type {
-  ElpxBlock,
-  ElpxIdevice,
-  ElpxPage,
-  ElpxProject,
-  ElpxResource
-} from "../exe/model.ts";
+import type { ElpxBlock, ElpxIdevice, ElpxPage, ElpxProject, ElpxResource } from "../exe/model.ts";
 import { writeElpx } from "../exe/elpx-writer.ts";
-import {
-  DEFAULT_OPTIONS,
-  type ConversionOptions
-} from "./conversion-options.ts";
+import { DEFAULT_OPTIONS, type ConversionOptions } from "./conversion-options.ts";
 import {
   emptyReport,
   TOOL_VERSION,
@@ -113,7 +97,7 @@ export async function convert(
 
     if (opts.includeOriginalH5p && pkg.rawH5p) {
       originals.push({
-        name: (sourceFile.replace(/\.h5p$/i, "") || "package") + ".h5p",
+        name: `${sourceFile.replace(/\.h5p$/i, "") || "package"}.h5p`,
         data: pkg.rawH5p
       });
     }
@@ -144,32 +128,22 @@ export async function convert(
 
     const unsupportedCount = activityReport.unsupportedItems.length;
     if (unsupportedCount > 0) {
-      activityReport.status =
-        activityReport.mappedTo!.length > 0 ? "partial" : "unsupported";
+      activityReport.status = activityReport.mappedTo!.length > 0 ? "partial" : "unsupported";
     }
     report.summary.totalActivities += 1;
     if (activityReport.status === "converted") report.summary.converted += 1;
-    else if (activityReport.status === "partial")
-      report.summary.partiallyConverted += 1;
-    else if (activityReport.status === "unsupported")
-      report.summary.unsupported += 1;
+    else if (activityReport.status === "partial") report.summary.partiallyConverted += 1;
+    else if (activityReport.status === "unsupported") report.summary.unsupported += 1;
     report.summary.warnings += activityReport.warnings.length;
     report.summary.errors += activityReport.errors.length;
     report.activities.push(activityReport);
   }
 
-  if (
-    opts.strict &&
-    report.summary.unsupported + report.summary.partiallyConverted > 0
-  ) {
+  if (opts.strict && report.summary.unsupported + report.summary.partiallyConverted > 0) {
     const list = report.activities
-      .flatMap((a) =>
-        a.unsupportedItems.map((u) => `- ${u.sourceType}: ${u.reason}`)
-      )
+      .flatMap((a) => a.unsupportedItems.map((u) => `- ${u.sourceType}: ${u.reason}`))
       .join("\n");
-    throw new Error(
-      `Strict mode: conversion contains unsupported H5P content.\n${list}`
-    );
+    throw new Error(`Strict mode: conversion contains unsupported H5P content.\n${list}`);
   }
 
   // Materialise the asset plan into the elpx resources list.
@@ -236,9 +210,7 @@ function emitNode(
     case "image": {
       const block = newBlock(hostPage);
       const src = ctx.forHtml(node.src);
-      const html = `<figure><img src="${escapeHtml(src)}" alt="${escapeHtml(
-        node.alt ?? ""
-      )}" />${
+      const html = `<figure><img src="${escapeHtml(src)}" alt="${escapeHtml(node.alt ?? "")}" />${
         node.caption ? `<figcaption>${escapeHtml(node.caption)}</figcaption>` : ""
       }</figure>`;
       addIdevice(
@@ -294,9 +266,7 @@ function emitNode(
     case "question": {
       const block = newBlock(hostPage);
       if (node.questionType === "truefalse" && node.answers) {
-        const trueCorrect = !!node.answers.find(
-          (a) => a.text?.toLowerCase() === "true"
-        )?.correct;
+        const trueCorrect = !!node.answers.find((a) => a.text?.toLowerCase() === "true")?.correct;
         addIdevice(
           block,
           buildTrueOrFalseIdevice({
@@ -318,16 +288,13 @@ function emitNode(
       }
       if (node.questionType === "multichoice" && node.answers) {
         const correctCount = node.answers.filter((a) => a.correct).length;
-        const selectionType: "single" | "multiple" =
-          correctCount > 1 ? "multiple" : "single";
+        const selectionType: "single" | "multiple" = correctCount > 1 ? "multiple" : "single";
         const q: SelectionQuestion = {
           activityType: "selection",
           selectionType,
           baseText: node.prompt,
           answers: node.answers.map((a) =>
-            a.feedback
-              ? [!!a.correct, a.text, a.feedback]
-              : [!!a.correct, a.text]
+            a.feedback ? [!!a.correct, a.text, a.feedback] : [!!a.correct, a.text]
           )
         };
         addIdevice(
@@ -345,9 +312,7 @@ function emitNode(
       }
       if (node.questionType === "blanks") {
         // node.answers carries the raw blank-text strings; convert *answer* → <u>answer</u>
-        const questions: FormQuestion[] = (node.answers ?? []).map((a) =>
-          blanksToFill(a.text)
-        );
+        const questions: FormQuestion[] = (node.answers ?? []).map((a) => blanksToFill(a.text));
         if (questions.length === 0) {
           // sometimes the prompt itself contains *answer* markers (DragText, etc.)
           questions.push(blanksToFill(node.prompt));
@@ -476,12 +441,7 @@ function handleUnsupported(
   emitUnsupported(node.originalLibrary, hostPage, ctx, node.reason);
 }
 
-function emitUnsupported(
-  library: string,
-  hostPage: ElpxPage,
-  _ctx: BuildCtx,
-  reason: string
-) {
+function emitUnsupported(library: string, hostPage: ElpxPage, _ctx: BuildCtx, reason: string) {
   const block = newBlock(hostPage);
   addIdevice(
     block,

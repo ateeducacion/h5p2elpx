@@ -53,9 +53,7 @@ export function buildTrueOrFalseIdevice(input: TrueOrFalseInput): ElpxIdevice {
   };
   const htmlView = [
     `<div class="trueorfalse-Container" data-game="trueorfalse" id="${id}-container">`,
-    input.instructions
-      ? `  <div class="trueorfalse-Instructions">${input.instructions}</div>`
-      : "",
+    input.instructions ? `  <div class="trueorfalse-Instructions">${input.instructions}</div>` : "",
     `  <div class="trueorfalse-Game" id="${id}-game"></div>`,
     `</div>`
   ]

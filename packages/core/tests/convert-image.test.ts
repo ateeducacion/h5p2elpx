@@ -11,10 +11,9 @@ describe("convert image H5P", () => {
       content: { file: { path: "images/p.png" }, alt: "alt" },
       extras: { "content/images/p.png": png }
     });
-    const result = await convert(
-      [{ kind: "h5p-bytes", data: bytes, filename: "img.h5p" }],
-      { layout: "blocks" }
-    );
+    const result = await convert([{ kind: "h5p-bytes", data: bytes, filename: "img.h5p" }], {
+      layout: "blocks"
+    });
     const zip = await JSZip.loadAsync(result.elpx);
     // Flat path under content/resources/, preserving the source's sub-folder.
     expect(zip.file("content/resources/images/p.png")).not.toBeNull();

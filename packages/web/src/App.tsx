@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Dropzone } from "./components/Dropzone.tsx";
 import { ConversionOptionsForm, type UiOptions } from "./components/ConversionOptions.tsx";
 import { CompatibilityReport } from "./components/CompatibilityReport.tsx";
@@ -33,7 +33,7 @@ export function App() {
   const [templateBytes, setTemplateBytes] = useState<Uint8Array | undefined>(undefined);
 
   useEffect(() => {
-    fetch(import.meta.env.BASE_URL + "template.elpx")
+    fetch(`${import.meta.env.BASE_URL}template.elpx`)
       .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error("template.elpx not found"))))
       .then((buf) => setTemplateBytes(new Uint8Array(buf)))
       .catch((err) => setError(`Could not load eXe template: ${err.message}`));
@@ -76,7 +76,7 @@ export function App() {
         strict: false,
         templateBytes
       });
-      const out = (files[0]?.name ?? "output").replace(/\.h5p$/i, "") + ".elpx";
+      const out = `${(files[0]?.name ?? "output").replace(/\.h5p$/i, "")}.elpx`;
       setConv({ elpx: result.elpx, report: result.report, outputName: out });
     } catch (err) {
       setError((err as Error).message);
@@ -86,13 +86,27 @@ export function App() {
   }
 
   return (
-    <main style={{ fontFamily: "system-ui, sans-serif", maxWidth: 880, margin: "2rem auto", padding: "0 1rem" }}>
+    <main
+      style={{
+        fontFamily: "system-ui, sans-serif",
+        maxWidth: 880,
+        margin: "2rem auto",
+        padding: "0 1rem"
+      }}
+    >
       <h1>h5p2elpx</h1>
-      <p>Convert H5P packages into editable eXeLearning <code>.elpx</code> projects, right in your browser.</p>
+      <p>
+        Convert H5P packages into editable eXeLearning <code>.elpx</code> projects, right in your
+        browser.
+      </p>
       <Dropzone onFiles={onFilesDropped} files={files} />
       {preview.length > 0 && <CompatibilityReport entries={preview} />}
       <ConversionOptionsForm value={options} onChange={setOptions} />
-      <button onClick={onConvert} disabled={busy || files.length === 0} style={{ marginTop: "1rem", padding: "0.6rem 1.2rem" }}>
+      <button
+        onClick={onConvert}
+        disabled={busy || files.length === 0}
+        style={{ marginTop: "1rem", padding: "0.6rem 1.2rem" }}
+      >
         {busy ? "Converting…" : "Convert"}
       </button>
       {error && <p style={{ color: "crimson" }}>Error: {error}</p>}

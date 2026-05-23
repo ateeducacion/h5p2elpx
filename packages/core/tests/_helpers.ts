@@ -4,7 +4,11 @@ export type H5pFixtureInput = {
   title?: string;
   language?: string;
   mainLibrary: string;
-  preloadedDependencies?: Array<{ machineName: string; majorVersion: number; minorVersion: number }>;
+  preloadedDependencies?: Array<{
+    machineName: string;
+    majorVersion: number;
+    minorVersion: number;
+  }>;
   content: unknown;
   /** path → bytes (under content/, e.g. `content/images/photo.png`) */
   extras?: Record<string, Uint8Array>;

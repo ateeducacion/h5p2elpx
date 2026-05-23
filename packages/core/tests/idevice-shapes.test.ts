@@ -20,7 +20,10 @@ describe("ID format", () => {
 describe("text iDevice shape", () => {
   it("wraps content in exe-text-template/textIdeviceContent and emits the eXe form fields", () => {
     const idev = buildTextIdevice({
-      pageId: "p", blockId: "b", order: 0, html: "<p>hi</p>"
+      pageId: "p",
+      blockId: "b",
+      order: 0,
+      html: "<p>hi</p>"
     });
     expect(idev.typeName).toBe("text");
     expect(idev.htmlView).toContain('class="exe-text-template"');
@@ -36,7 +39,9 @@ describe("text iDevice shape", () => {
 describe("trueorfalse iDevice shape", () => {
   it("emits typeGame, questionsGame and the 30 i18n msgs", () => {
     const idev = buildTrueOrFalseIdevice({
-      pageId: "p", blockId: "b", order: 0,
+      pageId: "p",
+      blockId: "b",
+      order: 0,
       questions: [{ question: "<p>The sky is blue</p>", solution: 1 }]
     });
     expect(idev.typeName).toBe("trueorfalse");
@@ -55,19 +60,29 @@ describe("trueorfalse iDevice shape", () => {
 describe("form iDevice (selection + fill)", () => {
   it("selection: encodes answers as [boolean, label] tuples", () => {
     const idev = buildFormIdevice({
-      pageId: "p", blockId: "b", order: 0,
-      questions: [{
-        activityType: "selection",
-        selectionType: "single",
-        baseText: "Pick one",
-        answers: [[false, "Wrong"], [true, "Right"]]
-      }]
+      pageId: "p",
+      blockId: "b",
+      order: 0,
+      questions: [
+        {
+          activityType: "selection",
+          selectionType: "single",
+          baseText: "Pick one",
+          answers: [
+            [false, "Wrong"],
+            [true, "Right"]
+          ]
+        }
+      ]
     });
     expect(idev.typeName).toBe("form");
     const q = (idev.jsonProperties as any).questionsData[0];
     expect(q.activityType).toBe("selection");
     expect(q.selectionType).toBe("single");
-    expect(q.answers).toEqual([[false, "Wrong"], [true, "Right"]]);
+    expect(q.answers).toEqual([
+      [false, "Wrong"],
+      [true, "Right"]
+    ]);
   });
 
   it("fill: blanksToFill converts *answer* markers to <u>answer</u> with answers[] populated", () => {
@@ -81,12 +96,16 @@ describe("form iDevice (selection + fill)", () => {
 describe("flipcards iDevice (Pattern 2: URI-encoded JSON in hidden div)", () => {
   it("emits a flipcards-DataGame js-hidden div with URI-encoded JSON", () => {
     const idev = buildFlipcardsIdevice({
-      pageId: "p", blockId: "b", order: 0,
+      pageId: "p",
+      blockId: "b",
+      order: 0,
       cards: [{ front: { text: "Q" }, back: { text: "A" } }]
     });
     expect(idev.typeName).toBe("flipcards");
     expect(idev.htmlView).toContain('class="flipcards-DataGame js-hidden"');
-    const dataDiv = idev.htmlView.match(/<div class="flipcards-DataGame js-hidden"[^>]*>([^<]+)<\/div>/)![1]!;
+    const dataDiv = idev.htmlView.match(
+      /<div class="flipcards-DataGame js-hidden"[^>]*>([^<]+)<\/div>/
+    )![1]!;
     const decoded = JSON.parse(decodeURIComponent(dataDiv));
     expect(decoded.typeGame).toBe("Flipcards");
     expect(decoded.cards).toHaveLength(1);

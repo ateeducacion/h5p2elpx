@@ -1,4 +1,3 @@
-import JSZip from "jszip";
 import type { ElpxProject } from "./model.ts";
 import { buildContentXml, CONTENT_DTD } from "./content-xml.ts";
 import { loadTemplate } from "./template.ts";

@@ -11,7 +11,9 @@ export function adapt(content: any): NormalizedNode {
       const title = h?.header ?? "(hotspot)";
       const body = Array.isArray(h?.content)
         ? h.content
-            .map((c: any) => (typeof c?.action?.params?.text === "string" ? c.action.params.text : ""))
+            .map((c: any) =>
+              typeof c?.action?.params?.text === "string" ? c.action.params.text : ""
+            )
             .join("\n")
         : "";
       return `<li><strong>${title}</strong><div>${body}</div></li>`;

@@ -52,9 +52,7 @@ export function buildFlipcardsIdevice(input: FlipcardsInput): ElpxIdevice {
   const htmlView = [
     `<div class="flipcards-Container" id="${id}-container">`,
     `  <div class="flipcards-DataGame js-hidden" data-id="${id}">${dataEncoded}</div>`,
-    input.instructions
-      ? `  <div class="flipcards-Instructions">${input.instructions}</div>`
-      : "",
+    input.instructions ? `  <div class="flipcards-Instructions">${input.instructions}</div>` : "",
     `  <ul class="flipcards-Cards">`,
     cardList,
     `  </ul>`,

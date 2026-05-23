@@ -6,13 +6,16 @@ export function sanitizeHtml(input: string): string {
   out = out.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
   out = out.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "");
   out = out.replace(/ on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
-  out = out.replace(/\s(href|src)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi, (m, attr, q1, q2, q3) => {
-    const val = q1 ?? q2 ?? q3 ?? "";
-    if (val.startsWith("javascript:") || val.startsWith("data:text/html")) {
-      return ` ${attr}="#"`;
+  out = out.replace(
+    /\s(href|src)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi,
+    (m, attr, q1, q2, q3) => {
+      const val = q1 ?? q2 ?? q3 ?? "";
+      if (val.startsWith("javascript:") || val.startsWith("data:text/html")) {
+        return ` ${attr}="#"`;
+      }
+      return m;
     }
-    return m;
-  });
+  );
   return out;
 }
 

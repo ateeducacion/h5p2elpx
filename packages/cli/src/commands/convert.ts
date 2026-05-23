@@ -60,9 +60,7 @@ async function gatherInputs(input: string): Promise<ConvertInput[]> {
 export async function runConvert(input: string, opts: CliOpts): Promise<void> {
   const inputs = await gatherInputs(input);
   const templatePath = opts.template ?? findDefaultTemplate();
-  const templateBytes = templatePath
-    ? new Uint8Array(await readFile(templatePath))
-    : undefined;
+  const templateBytes = templatePath ? new Uint8Array(await readFile(templatePath)) : undefined;
 
   const result = await convert(inputs, {
     layout: opts.layout,

@@ -15,5 +15,9 @@ jobs:
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
-      - run: bunx tsc --noEmit
-      - run: bunx vitest run
+      - name: Lint (biome)
+        run: bunx biome check .
+      - name: Typecheck
+        run: bunx tsc --noEmit
+      - name: Tests
+        run: bunx vitest run

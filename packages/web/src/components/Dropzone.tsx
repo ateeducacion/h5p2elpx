@@ -11,7 +11,9 @@ export function Dropzone({ onFiles, files }: Props) {
     (e: React.DragEvent) => {
       e.preventDefault();
       setHover(false);
-      const dropped = Array.from(e.dataTransfer.files).filter((f) => f.name.toLowerCase().endsWith(".h5p"));
+      const dropped = Array.from(e.dataTransfer.files).filter((f) =>
+        f.name.toLowerCase().endsWith(".h5p")
+      );
       if (dropped.length) onFiles(dropped);
     },
     [onFiles]
@@ -32,7 +34,9 @@ export function Dropzone({ onFiles, files }: Props) {
         background: hover ? "#eff6ff" : "#fafafa"
       }}
     >
-      <p style={{ margin: 0 }}>Drag & drop one or more <code>.h5p</code> files here</p>
+      <p style={{ margin: 0 }}>
+        Drag & drop one or more <code>.h5p</code> files here
+      </p>
       <p style={{ margin: "0.5rem 0 0", fontSize: "0.85em" }}>
         or pick:{" "}
         <input
@@ -48,7 +52,9 @@ export function Dropzone({ onFiles, files }: Props) {
       {files.length > 0 && (
         <ul style={{ textAlign: "left", marginTop: "1rem" }}>
           {files.map((f) => (
-            <li key={f.name}>{f.name} <small>({f.size.toLocaleString()} bytes)</small></li>
+            <li key={f.name}>
+              {f.name} <small>({f.size.toLocaleString()} bytes)</small>
+            </li>
           ))}
         </ul>
       )}

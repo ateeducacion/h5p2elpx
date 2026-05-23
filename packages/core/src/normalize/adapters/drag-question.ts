@@ -22,11 +22,11 @@ export function adapt(content: any): NormalizedNode {
     `<div class="h5p2elpx-dragquestion-fallback">`,
     `  <p><strong>Draggable items:</strong></p>`,
     `  <ul>`,
-    ...elements.map((e) => `    <li>${escape(getLabel(e))}</li>`),
+    ...elements.map((e) => `    <li>${escapeHtml(getLabel(e))}</li>`),
     `  </ul>`,
     `  <p><strong>Drop zones:</strong></p>`,
     `  <ul>`,
-    ...dropZones.map((d) => `    <li>${escape(d?.label ?? "(unnamed)")}</li>`),
+    ...dropZones.map((d) => `    <li>${escapeHtml(d?.label ?? "(unnamed)")}</li>`),
     `  </ul>`,
     `</div>`
   ].join("\n");
@@ -44,6 +44,6 @@ function getLabel(el: any): string {
   return "(draggable)";
 }
 
-function escape(s: string): string {
+function escapeHtml(s: string): string {
   return String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }

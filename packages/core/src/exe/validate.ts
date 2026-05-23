@@ -118,8 +118,7 @@ export async function validateElpx(data: Uint8Array): Promise<ValidationResult> 
           issues.push({ level: "error", message: "iDevice missing odeComponentsOrder" });
         }
         const html = typeof comp.htmlView === "string" ? comp.htmlView : "";
-        const jsonProps =
-          typeof comp.jsonProperties === "string" ? comp.jsonProperties : "";
+        const jsonProps = typeof comp.jsonProperties === "string" ? comp.jsonProperties : "";
         // collect referenced asset paths from both htmlView (relative) and
         // jsonProperties ({{context_path}}/...)
         for (const attr of html.match(/(?:src|href|poster)="([^"]+)"/g) ?? []) {

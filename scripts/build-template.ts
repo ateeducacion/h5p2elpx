@@ -42,9 +42,7 @@ async function findStaticAsset(tag: string): Promise<string> {
   const r = await fetch(`https://api.github.com/repos/${REPO}/releases/tags/${tag}`);
   if (!r.ok) throw new Error(`No release ${tag} on ${REPO}`);
   const json: any = await r.json();
-  const asset = (json.assets ?? []).find((a: any) =>
-    /^exelearning-static-v.*\.zip$/.test(a.name)
-  );
+  const asset = (json.assets ?? []).find((a: any) => /^exelearning-static-v.*\.zip$/.test(a.name));
   if (!asset) throw new Error(`No exelearning-static-*.zip asset on ${tag}`);
   return asset.browser_download_url;
 }
@@ -62,12 +60,7 @@ async function download(url: string): Promise<Uint8Array> {
   return bytes;
 }
 
-async function copyInto(
-  dest: JSZip,
-  source: JSZip,
-  prefix: string,
-  sourcePrefix = ""
-) {
+async function copyInto(dest: JSZip, source: JSZip, prefix: string, sourcePrefix = "") {
   const entries: Array<{ path: string; file: JSZip.JSZipObject }> = [];
   source.forEach((path, file) => {
     if (!file.dir) entries.push({ path, file });

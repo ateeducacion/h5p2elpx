@@ -6,7 +6,7 @@ import type { H5PLibraryRef } from "./h5p-types.ts";
  */
 export function parseLibraryRef(input: string): H5PLibraryRef {
   const trimmed = input.trim();
-  const match = trimmed.match(/^([A-Za-z0-9_.]+)[\s\-]?(\d+)?\.?(\d+)?\.?(\d+)?$/);
+  const match = trimmed.match(/^([A-Za-z0-9_.]+)[\s-]?(\d+)?\.?(\d+)?\.?(\d+)?$/);
   if (!match) return { machineName: trimmed };
   const [, name, major, minor, patch] = match;
   return {
@@ -18,7 +18,9 @@ export function parseLibraryRef(input: string): H5PLibraryRef {
 }
 
 export function libraryRefString(ref: H5PLibraryRef): string {
-  const v = [ref.majorVersion, ref.minorVersion, ref.patchVersion].filter((n) => n !== undefined).join(".");
+  const v = [ref.majorVersion, ref.minorVersion, ref.patchVersion]
+    .filter((n) => n !== undefined)
+    .join(".");
   return v ? `${ref.machineName} ${v}` : ref.machineName;
 }
 

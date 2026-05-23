@@ -15,15 +15,18 @@ describe("real eXeLearning .elpx fixtures", () => {
   for (const file of realElpx) {
     const path = resolve(ELPX_FIXTURES, file);
     const skip = !existsSync(path);
-    (skip ? it.skip : it)(`${file} is a ZIP with content.xml + content.dtd and validates`, async () => {
-      const bytes = new Uint8Array(await readFile(path));
-      const zip = await JSZip.loadAsync(bytes);
-      expect(zip.file("content.xml")).not.toBeNull();
-      expect(zip.file("content.dtd")).not.toBeNull();
-      const v = await validateElpx(bytes);
-      expect(v.ok).toBe(true);
-      expect(v.stats.pages).toBeGreaterThan(0);
-    });
+    (skip ? it.skip : it)(
+      `${file} is a ZIP with content.xml + content.dtd and validates`,
+      async () => {
+        const bytes = new Uint8Array(await readFile(path));
+        const zip = await JSZip.loadAsync(bytes);
+        expect(zip.file("content.xml")).not.toBeNull();
+        expect(zip.file("content.dtd")).not.toBeNull();
+        const v = await validateElpx(bytes);
+        expect(v.ok).toBe(true);
+        expect(v.stats.pages).toBeGreaterThan(0);
+      }
+    );
   }
 
   it("conversion preserves the template's theme/libs/idevices while replacing content.xml", async () => {
@@ -35,10 +38,9 @@ describe("real eXeLearning .elpx fixtures", () => {
       mainLibrary: "H5P.Text",
       content: { text: "<p>hello via template</p>" }
     });
-    const result = await convert(
-      [{ kind: "h5p-bytes", data: h5p, filename: "t.h5p" }],
-      { templateBytes }
-    );
+    const result = await convert([{ kind: "h5p-bytes", data: h5p, filename: "t.h5p" }], {
+      templateBytes
+    });
 
     const out = await JSZip.loadAsync(result.elpx);
     expect(out.file("theme/style.css")).not.toBeNull();

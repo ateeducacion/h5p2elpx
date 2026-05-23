@@ -11,8 +11,7 @@ export function adapt(content: any): NormalizedNode {
     sourceType: machineName,
     kind: "video",
     src: typeof first?.path === "string" ? first.path : "",
-    poster: typeof content?.visuals?.poster?.path === "string"
-      ? content.visuals.poster.path
-      : undefined
+    poster:
+      typeof content?.visuals?.poster?.path === "string" ? content.visuals.poster.path : undefined
   };
 }

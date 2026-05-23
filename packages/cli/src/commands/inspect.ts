@@ -8,10 +8,14 @@ export async function runInspect(input: string): Promise<void> {
   console.log(`Title:        ${pkg.title}`);
   console.log(`Language:     ${pkg.language ?? "(unspecified)"}`);
   console.log(`Main library: ${libraryRefString(pkg.mainLibrary)}`);
-  console.log(`Supported:    ${supported.has(pkg.mainLibrary.machineName) ? "yes" : "no (will use fallback)"}`);
+  console.log(
+    `Supported:    ${supported.has(pkg.mainLibrary.machineName) ? "yes" : "no (will use fallback)"}`
+  );
   console.log(`Assets:       ${pkg.assets.length}`);
   console.log("Dependencies:");
   for (const d of pkg.dependencies) {
-    console.log(`  - ${libraryRefString(d)}${supported.has(d.machineName) ? "" : "  (no adapter)"}`);
+    console.log(
+      `  - ${libraryRefString(d)}${supported.has(d.machineName) ? "" : "  (no adapter)"}`
+    );
   }
 }

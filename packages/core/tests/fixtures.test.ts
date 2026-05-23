@@ -22,9 +22,7 @@ describe("real H5P sample fixtures (end-to-end)", () => {
       `${sample.file}: converts and validates`,
       async () => {
         const bytes = new Uint8Array(await readFile(path));
-        const result = await convert([
-          { kind: "h5p-bytes", data: bytes, filename: sample.file }
-        ]);
+        const result = await convert([{ kind: "h5p-bytes", data: bytes, filename: sample.file }]);
         expect(result.report.activities.length).toBe(1);
         expect(result.report.activities[0]!.mainLibrary).toContain(sample.expectMainLibrary);
         expect(result.report.summary.errors).toBe(0);

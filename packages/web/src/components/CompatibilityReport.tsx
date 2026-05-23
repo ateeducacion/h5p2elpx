@@ -29,5 +29,9 @@ export function CompatibilityReport({ entries }: { entries: CompatibilityEntry[]
   );
 }
 
-const th: React.CSSProperties = { borderBottom: "1px solid #ccc", textAlign: "left", padding: "4px 6px" };
+const th: React.CSSProperties = {
+  borderBottom: "1px solid #ccc",
+  textAlign: "left",
+  padding: "4px 6px"
+};
 const td: React.CSSProperties = { borderBottom: "1px solid #eee", padding: "4px 6px" };

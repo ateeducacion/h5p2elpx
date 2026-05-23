@@ -8,10 +8,7 @@ describe("unsupported handling", () => {
       mainLibrary: "H5P.MadeUpInteraction",
       content: { foo: "bar" }
     });
-    const result = await convert(
-      [{ kind: "h5p-bytes", data: bytes, filename: "x.h5p" }],
-      {}
-    );
+    const result = await convert([{ kind: "h5p-bytes", data: bytes, filename: "x.h5p" }], {});
     expect(result.report.summary.unsupported).toBe(1);
     expect(result.report.activities[0]!.unsupportedItems.length).toBe(1);
     // Visible iDevice present
@@ -24,10 +21,9 @@ describe("unsupported handling", () => {
       mainLibrary: "H5P.MadeUpInteraction",
       content: {}
     });
-    const result = await convert(
-      [{ kind: "h5p-bytes", data: bytes, filename: "x.h5p" }],
-      { unsupported: "drop" }
-    );
+    const result = await convert([{ kind: "h5p-bytes", data: bytes, filename: "x.h5p" }], {
+      unsupported: "drop"
+    });
     expect(result.report.activities[0]!.unsupportedItems.length).toBe(1);
     const flat = result.project.pages.flatMap((p) => p.blocks.flatMap((b) => b.iDevices));
     expect(flat.some((i) => i.htmlView.includes("Unsupported H5P content"))).toBe(false);

@@ -24,10 +24,9 @@ describe("convert H5P.CoursePresentation", () => {
         }
       }
     });
-    const result = await convert(
-      [{ kind: "h5p-bytes", data: bytes, filename: "cp.h5p" }],
-      { layout: "preserve" }
-    );
+    const result = await convert([{ kind: "h5p-bytes", data: bytes, filename: "cp.h5p" }], {
+      layout: "preserve"
+    });
     // root page + 2 slide pages
     expect(result.project.pages.length).toBeGreaterThanOrEqual(3);
     const slideTitles = result.project.pages.map((p) => p.title);

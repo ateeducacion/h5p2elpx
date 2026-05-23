@@ -1,0 +1,72 @@
+# Makefile for h5p2elpx
+# Convenience wrappers around the bun scripts. Style aligned with the
+# eXeLearning Makefile so contributors familiar with that project see
+# the same verbs.
+
+.DEFAULT_GOAL := help
+
+# Detect bun
+check-bun:
+	@command -v bun >/dev/null 2>&1 || { \
+		echo "[ERROR] Bun is not installed. Install from https://bun.sh"; \
+		exit 1; \
+	}
+
+# Install dependencies (first run / after pulls)
+install: check-bun
+	bun install
+
+# Run biome lint (read-only — fails on issues)
+lint: check-bun
+	bunx biome check .
+
+# Auto-fix what biome can fix, then run typecheck
+fix: check-bun
+	bunx biome check --write .
+
+# Typecheck
+typecheck: check-bun
+	bunx tsc --noEmit
+
+# Run the test suite once
+test: check-bun
+	bunx vitest run
+
+# Watch-mode tests
+test-watch: check-bun
+	bunx vitest
+
+# Build the eXeLearning template (download official static bundle)
+template: check-bun
+	bun run build-template
+	cp fixtures/elpx/template.elpx packages/web/public/template.elpx
+
+# Start the web dev server (Vite). Default port 5173.
+up: check-bun
+	bun run --cwd packages/web dev
+
+# Build the production web bundle
+web-build: check-bun
+	bun run --cwd packages/web build
+
+# CI / pre-push gate: typecheck + lint + tests
+ci: check-bun
+	bunx tsc --noEmit
+	bunx biome check .
+	bunx vitest run
+
+help:
+	@echo "h5p2elpx — make targets"
+	@echo ""
+	@echo "  make install     Install dependencies"
+	@echo "  make lint        Run biome lint (read-only)"
+	@echo "  make fix         Auto-fix lint + formatting"
+	@echo "  make typecheck   Run tsc --noEmit"
+	@echo "  make test        Run vitest once"
+	@echo "  make test-watch  Run vitest in watch mode"
+	@echo "  make template    Rebuild fixtures/elpx/template.elpx from upstream"
+	@echo "  make up          Start the web dev server"
+	@echo "  make web-build   Build the production web bundle"
+	@echo "  make ci          Run the same gate CI runs"
+
+.PHONY: check-bun install lint fix typecheck test test-watch template up web-build ci help

@@ -137,10 +137,20 @@ and in the browser.
 
 ## Development
 
+We use [Bun](https://bun.sh) and [Biome](https://biomejs.dev) — verbs are
+the same as eXeLearning's:
+
 ```bash
-bun install
-bun test            # vitest run
-bunx tsc --noEmit
+make install        # bun install
+make lint           # biome check . (read-only)
+make fix            # biome check --write . (auto-fix lint + format)
+make typecheck      # tsc --noEmit
+make test           # vitest run
+make test-watch     # vitest in watch mode
+make up             # start the Vite dev server (web app)
+make web-build      # build the production web bundle
+make template       # rebuild fixtures/elpx/template.elpx from upstream
+make ci             # the same gate CI runs
 ```
 
 CI: `.github/workflows/test.yml` runs typecheck + tests on every push and PR.
