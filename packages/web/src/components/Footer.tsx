@@ -11,11 +11,6 @@ export function Footer() {
           Área de Tecnología Educativa
         </a>
       </p>
-      <span className="made-with-exe">
-        <a href="https://exelearning.net/" target="_blank" rel="noopener noreferrer">
-          Creado con eXeLearning
-        </a>
-      </span>
     </footer>
   );
 }
