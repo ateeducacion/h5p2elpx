@@ -33,7 +33,10 @@ export function App() {
     unsupported: "keep",
     includeOriginalH5p: false,
     title: "",
-    language: ""
+    language: "",
+    theme: "base",
+    enableSearch: true,
+    enableMathJax: false
   });
   const [conv, setConv] = useState<Conv | null>(null);
   const [busy, setBusy] = useState(false);
@@ -90,7 +93,10 @@ export function App() {
         title: options.title || undefined,
         language: options.language || undefined,
         strict: false,
-        templateBytes
+        templateBytes,
+        theme: options.theme,
+        enableSearch: options.enableSearch,
+        enableMathJax: options.enableMathJax
       });
       const out = `${(files[0]?.name ?? "output").replace(/\.h5p$/i, "")}.elpx`;
       setConv({ elpx: result.elpx, report: result.report, outputName: out });

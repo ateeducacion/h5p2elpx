@@ -30,6 +30,9 @@ program
   .option("--template <file>", "Path to a minimal .elpx template")
   .option("--pretty", "Pretty-print XML output", false)
   .option("--strict", "Fail if unsupported content is present", false)
+  .option("--theme <name>", "Output theme: base|nova|zen|neo|flux|universal", "base")
+  .option("--no-search", "Don't generate search_index.js / search box")
+  .option("--mathjax", "Inject MathJax v3 (CDN) into every page", false)
   .action(async (input: string, opts) => {
     await runConvert(input, opts);
   });

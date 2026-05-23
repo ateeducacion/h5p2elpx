@@ -20,6 +20,10 @@ type CliOpts = {
   template?: string;
   pretty?: boolean;
   strict?: boolean;
+  theme?: string;
+  /** commander's --no-search flips this to false (default true). */
+  search?: boolean;
+  mathjax?: boolean;
 };
 
 function findDefaultTemplate(): string | undefined {
@@ -70,7 +74,10 @@ export async function runConvert(input: string, opts: CliOpts): Promise<void> {
     language: opts.lang,
     strict: !!opts.strict,
     pretty: !!opts.pretty,
-    templateBytes
+    templateBytes,
+    theme: opts.theme,
+    enableSearch: opts.search !== false,
+    enableMathJax: !!opts.mathjax
   });
 
   await writeFile(opts.output, result.elpx);

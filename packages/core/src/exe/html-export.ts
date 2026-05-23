@@ -13,7 +13,20 @@ type PageExportMeta = {
   titleSlug?: string;
 };
 
-export function buildExportHtmlFiles(project: ElpxProject): ExportFile[] {
+export type HtmlExportOptions = {
+  /** Generate `search_index.js` and link it from every page. Default: true. */
+  enableSearch?: boolean;
+  /** Add the MathJax v3 CDN script tag to every page. Default: false. */
+  enableMathJax?: boolean;
+};
+
+export function buildExportHtmlFiles(
+  project: ElpxProject,
+  opts: HtmlExportOptions = {}
+): ExportFile[] {
+  const enableSearch = opts.enableSearch !== false;
+  const enableMathJax = !!opts.enableMathJax;
+
   if (project.pages.length === 0) {
     return [
       {
@@ -27,13 +40,15 @@ export function buildExportHtmlFiles(project: ElpxProject): ExportFile[] {
   const pageMap = new Map(pages.map((entry) => [entry.page.id, entry]));
   const files = pages.map((entry, index) => ({
     path: entry.path,
-    contents: renderPage(project, pages, pageMap, entry, index)
+    contents: renderPage(project, pages, pageMap, entry, index, { enableSearch, enableMathJax })
   }));
 
-  files.push({
-    path: "search_index.js",
-    contents: `window.exeSearchData = ${JSON.stringify(buildSearchIndex(pages, pageMap))};\n`
-  });
+  if (enableSearch) {
+    files.push({
+      path: "search_index.js",
+      contents: `window.exeSearchData = ${JSON.stringify(buildSearchIndex(pages, pageMap))};\n`
+    });
+  }
 
   return files;
 }
@@ -66,7 +81,8 @@ function renderPage(
   pages: PageExportMeta[],
   pageMap: Map<string, PageExportMeta>,
   current: PageExportMeta,
-  index: number
+  index: number,
+  opts: { enableSearch: boolean; enableMathJax: boolean }
 ): string {
   const prefix = current.path === "index.html" ? "" : "../";
   const types = Array.from(
@@ -99,7 +115,10 @@ function renderPage(
     `<script src="${prefix}libs/common_i18n.js"></script>`,
     `<script src="${prefix}libs/common.js"></script>`,
     `<script src="${prefix}libs/exe_export.js"></script>`,
-    `<script src="${prefix}search_index.js"></script>`,
+    opts.enableSearch ? `<script src="${prefix}search_index.js"></script>` : "",
+    opts.enableMathJax
+      ? '<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>'
+      : "",
     `<script src="${prefix}libs/bootstrap/bootstrap.bundle.min.js"></script>`,
     `<link rel="stylesheet" href="${prefix}libs/bootstrap/bootstrap.min.css">`,
     ideviceAssets,

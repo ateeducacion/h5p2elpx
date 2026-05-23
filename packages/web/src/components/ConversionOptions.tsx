@@ -3,6 +3,9 @@ import type { ConversionOptions } from "@h5p2elpx/core";
 export type UiOptions = Pick<ConversionOptions, "layout" | "unsupported" | "includeOriginalH5p"> & {
   title: string;
   language: string;
+  theme: string;
+  enableSearch: boolean;
+  enableMathJax: boolean;
 };
 
 type Props = {
@@ -67,6 +70,47 @@ export function ConversionOptionsForm({ value, onChange }: Props) {
         <p className="hint">
           ISO 639-1 code used in <code>content.xml</code>.
         </p>
+      </div>
+
+      <div className="opt">
+        <label htmlFor="o-theme">Theme</label>
+        <select id="o-theme" value={value.theme} onChange={(e) => set("theme", e.target.value)}>
+          <option value="base">base</option>
+          <option value="nova">nova</option>
+          <option value="zen">zen</option>
+          <option value="neo">neo</option>
+          <option value="flux">flux</option>
+          <option value="universal">universal</option>
+        </select>
+        <p className="hint">eXeLearning visual theme applied to the exported pages.</p>
+      </div>
+
+      <div className="opt">
+        <label>Page extras</label>
+        <label className="opt-toggle" style={{ marginTop: 4 }}>
+          <input
+            type="checkbox"
+            checked={value.enableSearch}
+            onChange={(e) => set("enableSearch", e.target.checked)}
+          />
+          <span>
+            <span className="lbl">Generate search index</span>
+            <p className="hint">
+              Ships <code>search_index.js</code> so eXe's site search works.
+            </p>
+          </span>
+        </label>
+        <label className="opt-toggle" style={{ marginTop: 6 }}>
+          <input
+            type="checkbox"
+            checked={value.enableMathJax}
+            onChange={(e) => set("enableMathJax", e.target.checked)}
+          />
+          <span>
+            <span className="lbl">Enable MathJax</span>
+            <p className="hint">Renders LaTeX via the MathJax v3 CDN.</p>
+          </span>
+        </label>
       </div>
 
       <label className={`opt-toggle full${value.includeOriginalH5p ? " on" : ""}`}>

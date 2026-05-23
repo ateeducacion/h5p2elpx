@@ -157,7 +157,10 @@ export async function convert(
 
   const elpx = await writeElpx(project, {
     templateBytes: opts.templateBytes,
-    originalH5pPackages: opts.includeOriginalH5p ? originals : undefined
+    originalH5pPackages: opts.includeOriginalH5p ? originals : undefined,
+    theme: opts.theme,
+    enableSearch: opts.enableSearch,
+    enableMathJax: opts.enableMathJax
   });
   return { elpx, report, project };
 }

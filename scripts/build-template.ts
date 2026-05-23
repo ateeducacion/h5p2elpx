@@ -152,7 +152,24 @@ async function main() {
   const libs = await loadBundle("libs.zip");
   const common = await loadBundle("common.zip");
   const contentCss = await loadBundle("content-css.zip");
-  const theme = await loadBundle(`themes/${DEFAULT_THEME}.zip`);
+
+  // Discover and bundle every theme zip available in the upstream
+  // release, so the writer can pick one at conversion time.
+  const themeNames: string[] = [];
+  staticZip.forEach((path) => {
+    const m = path.match(/^static\/bundles\/themes\/([^/]+)\.zip$/);
+    if (m?.[1]) themeNames.push(m[1]);
+  });
+  console.log(`Bundling themes: ${themeNames.join(", ")}`);
+  const themes: Record<string, JSZip> = {};
+  for (const name of themeNames) {
+    themes[name] = await loadBundle(`themes/${name}.zip`);
+  }
+  // Default theme files at theme/ (so the template renders out of the
+  // box without a writer pass). Writer will overwrite with the chosen
+  // one and drop the staging themes/ dir.
+  const defaultTheme = themes[DEFAULT_THEME] ?? themes[themeNames[0] ?? "base"];
+  if (!defaultTheme) throw new Error("No themes found in upstream bundle");
 
   const template = new JSZip();
   await copyInto(template, idevices, "idevices/");
@@ -160,7 +177,11 @@ async function main() {
   await copyInto(template, common, "html/");
   // content-css.zip already contains `content/css/...`
   await copyInto(template, contentCss, "");
-  await copyInto(template, theme, "theme/");
+  await copyInto(template, defaultTheme, "theme/");
+  // Stage every theme under themes/<name>/ for runtime selection.
+  for (const [name, zip] of Object.entries(themes)) {
+    await copyInto(template, zip, `themes/${name}/`);
+  }
 
   template.file("index.html", PLACEHOLDER_INDEX);
   template.file("content.xml", EMPTY_CONTENT_XML);
@@ -172,7 +193,8 @@ async function main() {
         builtBy: "scripts/build-template.ts",
         source: assetUrl,
         exelearningTag: tag,
-        theme: DEFAULT_THEME,
+        defaultTheme: DEFAULT_THEME,
+        availableThemes: themeNames,
         builtAt: new Date().toISOString()
       },
       null,

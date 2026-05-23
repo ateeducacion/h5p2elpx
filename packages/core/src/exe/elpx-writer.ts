@@ -24,12 +24,52 @@ function collectUsedIdeviceTypes(project: ElpxProject): Set<string> {
  */
 function pruneIdevices(zip: Awaited<ReturnType<typeof loadTemplate>>, keep: Set<string>) {
   const toRemove: string[] = [];
-  zip.forEach((path, file) => {
-    if (file.dir) return;
-    const m = path.match(/^idevices\/([^/]+)\//);
+  // Match both files (`idevices/X/...`) and the bare dir entry (`idevices/X/`)
+  // so we don't leave ghost folder records in the ZIP listing.
+  zip.forEach((path) => {
+    const m = path.match(/^idevices\/([^/]+)(?:\/|$)/);
     if (m && !keep.has(m[1]!)) toRemove.push(path);
   });
   for (const p of toRemove) zip.remove(p);
+}
+
+/**
+ * Swap the active theme by copying every file from `themes/<name>/...`
+ * to `theme/...`, then removing the entire `themes/` staging area.
+ * Falls back to a no-op when the template doesn't stage the requested
+ * theme (i.e. the template was built single-theme).
+ */
+async function applyTheme(
+  zip: Awaited<ReturnType<typeof loadTemplate>>,
+  themeName: string
+): Promise<boolean> {
+  const stagingPrefix = `themes/${themeName}/`;
+  const stagedPaths: string[] = [];
+  zip.forEach((path, file) => {
+    if (!file.dir && path.startsWith(stagingPrefix)) stagedPaths.push(path);
+  });
+  if (stagedPaths.length === 0) return false;
+
+  // Wipe the current theme/ dir and copy the chosen one over.
+  const currentThemePaths: string[] = [];
+  zip.forEach((path, file) => {
+    if (!file.dir && path.startsWith("theme/")) currentThemePaths.push(path);
+  });
+  for (const p of currentThemePaths) zip.remove(p);
+
+  for (const src of stagedPaths) {
+    const rel = src.slice(stagingPrefix.length);
+    const data = await zip.file(src)!.async("uint8array");
+    zip.file(`theme/${rel}`, data);
+  }
+  // Drop the entire themes/ staging dir — no need to ship the
+  // unselected themes.
+  const stagingToRemove: string[] = [];
+  zip.forEach((path, file) => {
+    if (!file.dir && path.startsWith("themes/")) stagingToRemove.push(path);
+  });
+  for (const p of stagingToRemove) zip.remove(p);
+  return true;
 }
 
 export type WriteElpxOptions = {
@@ -47,6 +87,12 @@ export type WriteElpxOptions = {
   originalH5pPackages?: Array<{ name: string; data: Uint8Array }>;
   /** Custom screenshot.png bytes (PNG required). Defaults to a 1×1 placeholder. */
   screenshotBytes?: Uint8Array;
+  /** Theme to apply (must be staged under themes/<name>/ in the template). */
+  theme?: string;
+  /** Generate search_index.js and link it from pages. Default true. */
+  enableSearch?: boolean;
+  /** Add MathJax v3 CDN script tag to pages. Default false. */
+  enableMathJax?: boolean;
 };
 
 export async function writeElpx(
@@ -62,12 +108,20 @@ export async function writeElpx(
   zip.file("content.dtd", CONTENT_DTD);
 
   clearGeneratedHtml(zip);
-  for (const file of buildExportHtmlFiles(project)) {
+  for (const file of buildExportHtmlFiles(project, {
+    enableSearch: options.enableSearch,
+    enableMathJax: options.enableMathJax
+  })) {
     zip.file(file.path, file.contents);
   }
 
   // Ship only the iDevice runtimes that actually appear in the project.
   pruneIdevices(zip, collectUsedIdeviceTypes(project));
+
+  // Apply chosen theme (if the template stages multiple). Always drop
+  // the themes/ staging dir so it doesn't ship unselected themes.
+  if (options.theme) await applyTheme(zip, options.theme);
+  await dropThemesStagingIfPresent(zip);
 
   // Always ensure a root-level screenshot.png exists. eXeLearning v4
   // requires the first 8 bytes to be the PNG magic signature.
@@ -103,4 +157,14 @@ function clearGeneratedHtml(zip: Awaited<ReturnType<typeof loadTemplate>>) {
       zip.remove(path);
     }
   });
+}
+
+async function dropThemesStagingIfPresent(
+  zip: Awaited<ReturnType<typeof loadTemplate>>
+): Promise<void> {
+  const stagingPaths: string[] = [];
+  zip.forEach((path) => {
+    if (path.startsWith("themes/")) stagingPaths.push(path);
+  });
+  for (const p of stagingPaths) zip.remove(p);
 }
