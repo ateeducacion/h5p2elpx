@@ -1,11 +1,54 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
+# Dependabot configuration for h5p2elpx
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
 version: 2
 updates:
-  - package-ecosystem: "github-actions" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  # GitHub Actions used by .github/workflows/*.yml
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  # npm / Bun workspace package.json files (root + each package).
+  # Dependabot has no native Bun ecosystem yet; the npm ecosystem parses
+  # workspace package.json files correctly and Bun consumes the same lockfile.
+  - package-ecosystem: "npm"
+    directories:
+      - "/"
+      - "/packages/core"
+      - "/packages/cli"
+      - "/packages/web"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "npm"
+    groups:
+      # Bundle minor/patch bumps so the PR queue stays small
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+      # React + types move together
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+      # Vite + plugin
+      vite:
+        patterns:
+          - "vite"
+          - "@vitejs/*"
+    ignore:
+      # Pin React to v18 line until we choose to migrate
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
