@@ -1,24 +1,21 @@
 export function Footer() {
   return (
-    <footer
-      style={{
-        marginTop: "3rem",
-        padding: "1.5rem 0",
-        borderTop: "1px solid #e5e5e5",
-        textAlign: "center",
-        color: "#666",
-        fontSize: "0.9em"
-      }}
-    >
-      Made with <span style={{ color: "#e25555" }}>❤</span> by{" "}
-      <a
-        href="https://www3.gobiernodecanarias.org/medusa/ecoescuela/ate/"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ color: "inherit", textDecoration: "underline" }}
-      >
-        Área de Tecnología Educativa
-      </a>
+    <footer className="foot">
+      <p>
+        Made with <span className="heart">❤</span> by{" "}
+        <a
+          href="https://www3.gobiernodecanarias.org/medusa/ecoescuela/ate/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Área de Tecnología Educativa
+        </a>
+      </p>
+      <span className="made-with-exe">
+        <a href="https://exelearning.net/" target="_blank" rel="noopener noreferrer">
+          Creado con eXeLearning
+        </a>
+      </span>
     </footer>
   );
 }

@@ -1,37 +1,32 @@
-import React from "react";
 import type { CompatibilityEntry } from "@h5p2elpx/core";
+
+type Status = "ok" | "partial" | "no";
+
+const STATUS_LABEL: Record<Status, string> = {
+  ok: "Supported",
+  partial: "Partial",
+  no: "Unsupported"
+};
 
 export function CompatibilityReport({ entries }: { entries: CompatibilityEntry[] }) {
   return (
-    <div style={{ marginTop: "1rem" }}>
-      <h3>Compatibility preview</h3>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr>
-            <th style={th}>File</th>
-            <th style={th}>Main H5P library</th>
-            <th style={th}>Supported</th>
-          </tr>
-        </thead>
-        <tbody>
-          {entries.map((e) => (
-            <tr key={e.sourceFile}>
-              <td style={td}>{e.sourceFile}</td>
-              <td style={td}>{e.mainLibrary}</td>
-              <td style={{ ...td, color: e.supported ? "green" : "#a16207" }}>
-                {e.supported ? "yes" : "fallback"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="compat">
+      {entries.map((e) => {
+        // Core's CompatibilityEntry only tells us supported/unsupported.
+        // We treat boolean=true as "ok", false as "no". Adapters that
+        // emit warning items per package would need a richer signal.
+        const status: Status = e.supported ? "ok" : "no";
+        return (
+          <div className="compat-row" key={e.sourceFile}>
+            <div className="col-file">
+              <span className="ico">H5P</span>
+              <span title={e.sourceFile}>{e.sourceFile}</span>
+            </div>
+            <div className="col-lib">{e.mainLibrary}</div>
+            <span className={`badge ${status}`}>{STATUS_LABEL[status]}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
-
-const th: React.CSSProperties = {
-  borderBottom: "1px solid #ccc",
-  textAlign: "left",
-  padding: "4px 6px"
-};
-const td: React.CSSProperties = { borderBottom: "1px solid #eee", padding: "4px 6px" };

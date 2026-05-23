@@ -1,17 +1,23 @@
-import { useEffect, useState } from "react";
-import { Dropzone } from "./components/Dropzone.tsx";
-import { ConversionOptionsForm, type UiOptions } from "./components/ConversionOptions.tsx";
-import { CompatibilityReport } from "./components/CompatibilityReport.tsx";
-import { DownloadPanel } from "./components/DownloadPanel.tsx";
-import { Footer } from "./components/Footer.tsx";
-import { Topbar } from "./components/Topbar.tsx";
+import { useEffect, useMemo, useState } from "react";
 import {
-  convert,
-  readH5p,
   buildCompatibilityPreview,
   type CompatibilityEntry,
-  type ConversionReport
+  convert,
+  type ConversionReport,
+  readH5p
 } from "@h5p2elpx/core";
+import { Box } from "./components/Box.tsx";
+import { CompatibilityReport } from "./components/CompatibilityReport.tsx";
+import { ConversionOptionsForm, type UiOptions } from "./components/ConversionOptions.tsx";
+import { ConvertBar } from "./components/ConvertBar.tsx";
+import { DownloadPanel } from "./components/DownloadPanel.tsx";
+import { Dropzone } from "./components/Dropzone.tsx";
+import { Footer } from "./components/Footer.tsx";
+import { GithubCorner } from "./components/GithubCorner.tsx";
+import { Stepper } from "./components/Stepper.tsx";
+import { Topbar } from "./components/Topbar.tsx";
+
+const REPO_URL = "https://github.com/ateeducacion/h5p2elpx";
 
 type Conv = {
   elpx: Uint8Array;
@@ -42,12 +48,13 @@ export function App() {
   }, []);
 
   async function onFilesDropped(dropped: File[]) {
-    setFiles(dropped);
+    const merged = [...files, ...dropped];
+    setFiles(merged);
     setConv(null);
     setError(null);
     try {
       const pkgs = await Promise.all(
-        dropped.map(async (f) =>
+        merged.map(async (f) =>
           readH5p(new Uint8Array(await f.arrayBuffer()), { sourceFilename: f.name })
         )
       );
@@ -55,6 +62,13 @@ export function App() {
     } catch (err) {
       setError((err as Error).message);
     }
+  }
+
+  function onRemoveFile(idx: number) {
+    const next = files.filter((_, i) => i !== idx);
+    setFiles(next);
+    setPreview(preview.filter((_, i) => i !== idx));
+    setConv(null);
   }
 
   async function onConvert() {
@@ -87,60 +101,70 @@ export function App() {
     }
   }
 
+  const hasFiles = files.length > 0;
+  const hasReport = conv !== null;
+  const allOk = useMemo(() => preview.length > 0 && preview.every((p) => p.supported), [preview]);
+
   return (
-    <main
-      style={{
-        fontFamily: "system-ui, sans-serif",
-        maxWidth: 880,
-        margin: "2rem auto",
-        padding: "0 1rem"
-      }}
-    >
-      <Topbar githubUrl="https://github.com/ateeducacion/h5p2elpx" />
-      <header style={{ margin: "0 0 32px" }}>
-        <p
-          style={{
-            margin: "0 0 4px",
-            fontSize: "0.85rem",
-            fontWeight: 300,
-            color: "#666",
-            textTransform: "uppercase",
-            letterSpacing: "0.12em"
-          }}
+    <>
+      <GithubCorner href={REPO_URL} />
+      <div className="shell">
+        <Topbar githubUrl={REPO_URL} />
+
+        <header className="hero">
+          <p className="package-title">Browser tool · 100% client-side</p>
+          <h1>
+            Convert <span className="accent">H5P</span> to editable{" "}
+            <span className="accent">eXeLearning</span>
+          </h1>
+          <p className="lede">
+            Drop a <code>.h5p</code> package and download an <code>.elpx</code> project you can open
+            and edit in eXeLearning. Nothing leaves your browser.
+          </p>
+        </header>
+
+        <Stepper state={{ hasFiles, hasReport }} />
+
+        {error && <div className="error-banner">{error}</div>}
+
+        <Box
+          icon="share"
+          title="1 · Upload H5P packages"
+          meta={hasFiles ? `${files.length} file${files.length > 1 ? "s" : ""} ready` : undefined}
         >
-          Browser tool · 100% client-side
-        </p>
-        <h1
-          style={{
-            margin: "0 0 12px",
-            color: "#078e8e",
-            fontSize: "clamp(2rem, 4vw, 2.6rem)",
-            fontWeight: 400,
-            lineHeight: 1.15,
-            letterSpacing: "-0.01em"
-          }}
-        >
-          Convert <span style={{ color: "#054d4d" }}>H5P</span> to editable{" "}
-          <span style={{ color: "#054d4d" }}>eXeLearning</span>
-        </h1>
-        <p style={{ margin: 0, color: "#555", fontSize: "1.05rem" }}>
-          Drop a <code>.h5p</code> package and download an <code>.elpx</code> project you can open
-          and edit in eXeLearning. Nothing leaves your browser.
-        </p>
-      </header>
-      <Dropzone onFiles={onFilesDropped} files={files} />
-      {preview.length > 0 && <CompatibilityReport entries={preview} />}
-      <ConversionOptionsForm value={options} onChange={setOptions} />
-      <button
-        onClick={onConvert}
-        disabled={busy || files.length === 0}
-        style={{ marginTop: "1rem", padding: "0.6rem 1.2rem" }}
-      >
-        {busy ? "Converting…" : "Convert"}
-      </button>
-      {error && <p style={{ color: "crimson" }}>Error: {error}</p>}
-      {conv && <DownloadPanel elpx={conv.elpx} report={conv.report} filename={conv.outputName} />}
-      <Footer />
-    </main>
+          <Dropzone onFiles={onFilesDropped} files={files} onRemove={onRemoveFile} />
+        </Box>
+
+        {hasFiles && (
+          <Box
+            icon="competencies"
+            title="2 · Compatibility preview"
+            meta={allOk ? "All files supported" : "Some content needs attention"}
+          >
+            <CompatibilityReport entries={preview} />
+          </Box>
+        )}
+
+        {hasFiles && (
+          <Box icon="agreement" title="3 · Conversion options">
+            <ConversionOptionsForm value={options} onChange={setOptions} />
+          </Box>
+        )}
+
+        {hasFiles && (
+          <ConvertBar
+            fileCount={files.length}
+            layout={options.layout}
+            includeOriginal={options.includeOriginalH5p}
+            busy={busy}
+            onConvert={onConvert}
+          />
+        )}
+
+        {conv && <DownloadPanel elpx={conv.elpx} report={conv.report} filename={conv.outputName} />}
+
+        <Footer />
+      </div>
+    </>
   );
 }

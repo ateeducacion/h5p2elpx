@@ -12,57 +12,74 @@ type Props = {
 
 export function ConversionOptionsForm({ value, onChange }: Props) {
   const set = <K extends keyof UiOptions>(k: K, v: UiOptions[K]) => onChange({ ...value, [k]: v });
+
   return (
-    <fieldset
-      style={{ marginTop: "1rem", padding: "1rem", border: "1px solid #ddd", borderRadius: 8 }}
-    >
-      <legend>Options</legend>
-      <label style={{ display: "block", marginBottom: 6 }}>
-        Layout:{" "}
+    <div className="opt-grid">
+      <div className="opt">
+        <label htmlFor="o-layout">Layout</label>
         <select
+          id="o-layout"
           value={value.layout}
           onChange={(e) => set("layout", e.target.value as UiOptions["layout"])}
         >
-          <option value="blocks">blocks (one page)</option>
-          <option value="pages">pages (one page per file)</option>
-          <option value="preserve">preserve (keep structure)</option>
+          <option value="preserve">Preserve — keep H5P structure</option>
+          <option value="blocks">Blocks — one page, one block per chunk</option>
+          <option value="pages">Pages — one page per file</option>
         </select>
-      </label>
-      <label style={{ display: "block", marginBottom: 6 }}>
-        Unsupported:{" "}
+        <p className="hint">How H5P containers map to eXeLearning pages.</p>
+      </div>
+
+      <div className="opt">
+        <label htmlFor="o-unsup">Unsupported content</label>
         <select
+          id="o-unsup"
           value={value.unsupported}
           onChange={(e) => set("unsupported", e.target.value as UiOptions["unsupported"])}
         >
-          <option value="keep">keep (warning iDevice)</option>
-          <option value="text">text (small notice)</option>
-          <option value="drop">drop (omit, still reported)</option>
+          <option value="keep">Keep — insert a warning iDevice</option>
+          <option value="text">Convert to plain text</option>
+          <option value="drop">Drop silently</option>
         </select>
-      </label>
-      <label style={{ display: "block", marginBottom: 6 }}>
+        <p className="hint">What to do when an H5P type has no mapping.</p>
+      </div>
+
+      <div className="opt">
+        <label htmlFor="o-title">Project title</label>
+        <input
+          id="o-title"
+          type="text"
+          placeholder="Imported H5P content"
+          value={value.title}
+          onChange={(e) => set("title", e.target.value)}
+        />
+        <p className="hint">Shown as the package title in eXeLearning.</p>
+      </div>
+
+      <div className="opt">
+        <label htmlFor="o-lang">Language</label>
+        <input
+          id="o-lang"
+          type="text"
+          placeholder="en, es, fr, ca…"
+          value={value.language}
+          onChange={(e) => set("language", e.target.value)}
+        />
+        <p className="hint">
+          ISO 639-1 code used in <code>content.xml</code>.
+        </p>
+      </div>
+
+      <label className={`opt-toggle full${value.includeOriginalH5p ? " on" : ""}`}>
         <input
           type="checkbox"
           checked={value.includeOriginalH5p}
           onChange={(e) => set("includeOriginalH5p", e.target.checked)}
-        />{" "}
-        Include original .h5p inside the .elpx
-      </label>
-      <label style={{ display: "block", marginBottom: 6 }}>
-        Title:{" "}
-        <input
-          value={value.title}
-          onChange={(e) => set("title", e.target.value)}
-          placeholder="Imported H5P content"
         />
+        <span>
+          <span className="lbl">Include the original .h5p inside the .elpx</span>
+          <p className="hint">Useful as a backup — the source package travels with the project.</p>
+        </span>
       </label>
-      <label style={{ display: "block" }}>
-        Language:{" "}
-        <input
-          value={value.language}
-          onChange={(e) => set("language", e.target.value)}
-          placeholder="en"
-        />
-      </label>
-    </fieldset>
+    </div>
   );
 }
