@@ -4,6 +4,34 @@ import { loadTemplate } from "./template.ts";
 import { DEFAULT_SCREENSHOT_PNG } from "./assets/default-screenshot.ts";
 import { buildExportHtmlFiles } from "./html-export.ts";
 
+/** Iterate every iDevice typeName that appears in the project. */
+function collectUsedIdeviceTypes(project: ElpxProject): Set<string> {
+  const out = new Set<string>();
+  for (const page of project.pages) {
+    for (const block of page.blocks) {
+      for (const idev of block.iDevices) out.add(idev.typeName);
+    }
+  }
+  return out;
+}
+
+/**
+ * Drop every `idevices/<X>/...` entry whose X isn't in `keep`. The
+ * template we clone ships all ~43 iDevice runtimes (~4 MB); a real
+ * conversion usually only uses 2–5 of them, so this saves ~3 MB
+ * uncompressed on a typical .elpx and matches what eXeLearning does
+ * itself on export.
+ */
+function pruneIdevices(zip: Awaited<ReturnType<typeof loadTemplate>>, keep: Set<string>) {
+  const toRemove: string[] = [];
+  zip.forEach((path, file) => {
+    if (file.dir) return;
+    const m = path.match(/^idevices\/([^/]+)\//);
+    if (m && !keep.has(m[1]!)) toRemove.push(path);
+  });
+  for (const p of toRemove) zip.remove(p);
+}
+
 export type WriteElpxOptions = {
   /**
    * Bytes of an eXeLearning `.elpx` to use as the base. The writer strips
@@ -37,6 +65,9 @@ export async function writeElpx(
   for (const file of buildExportHtmlFiles(project)) {
     zip.file(file.path, file.contents);
   }
+
+  // Ship only the iDevice runtimes that actually appear in the project.
+  pruneIdevices(zip, collectUsedIdeviceTypes(project));
 
   // Always ensure a root-level screenshot.png exists. eXeLearning v4
   // requires the first 8 bytes to be the PNG magic signature.
