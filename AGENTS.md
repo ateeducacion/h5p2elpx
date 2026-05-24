@@ -60,6 +60,9 @@ own code that produces the same on-disk output.
 Public spec and source:
 
 - Format spec: https://h5p.org/documentation/developers/h5p-specification
+- Content type catalog (human-readable index of every H5P content type
+  and application — start here when scoping a new adapter):
+  https://h5p.org/content-types-and-applications
 - Library DB (per-content-type semantics + content shape):
   https://h5p.org/libraries
   Pick a library → `semantics.json` describes the `content.json` keys
@@ -120,6 +123,43 @@ dispatch.
 | `H5P.Dialogcards`, `H5P.MemoryGame` | `flipcards` (Pattern 2: URI-encoded JSON in hidden div) | |
 | `H5P.Table` | `text` (HTML table) | |
 | anything else | `text` fallback with "Unsupported H5P content" banner (unless `--unsupported drop`) | |
+
+## H5P types not yet mapped — candidates
+
+Triage of the unsupported entries on
+https://h5p.org/content-types-and-applications against the eXe iDevice
+catalog in
+`/Users/ernesto/Downloads/git/exelearning/doc/elpx-format/idevices/catalog.md`.
+Use this as a prioritized backlog — top rows are clean 1:1 fits, bottom
+row stays on the `text` fallback because eXe has no native equivalent.
+
+| H5P content type | machineName (likely) | Target eXe iDevice | Fit | Notes |
+| --- | --- | --- | --- | --- |
+| Image Juxtaposition | `H5P.ImageJuxtaposition` | `beforeafter` | excellent | Two images + slider — direct 1:1 |
+| Iframe Embedder | `H5P.IFrameEmbedder` | `external-website` | excellent | URL + width/height fields line up |
+| Find the Words | `H5P.FindTheWords` | `word-search` | excellent | Grid + word list |
+| Flashcards | `H5P.Flashcards` | `flipcards` | excellent | Reuse existing writer (Pattern 2) |
+| Image Pairing | `H5P.ImagePair` | `flipcards` or `relate` | good | Reuse `flipcards` writer with image pairs |
+| Image Sequencing | `H5P.ImageSequencing` | `sort` / `scrambled-list` | good | New writer needed |
+| Sort the Paragraphs | `H5P.SortParagraphs` | `scrambled-list` | good | New writer needed |
+| Image Slider | `H5P.ImageSlider` | `image-gallery` | good | New `image-gallery` writer (already on TODO) |
+| Collage | `H5P.Collage` | `image-gallery` | good | Same writer as above |
+| Quiz (Question Set) | `H5P.QuestionSet` | expand inline | good | Adapter only — emit one iDevice per child (mirror `InteractiveBook` strategy) |
+| Accordion | `H5P.Accordion` | `text` (HTML `<details>`) | acceptable | Adapter only; no new writer |
+| Questionnaire | `H5P.Questionnaire` | `form` (one per item) | acceptable | Adapter mirrors `Summary` pattern |
+| Dictation | `H5P.Dictation` | `form` (`activityType: "fill"`) | acceptable | Lossy: drops audio prompts |
+| Essay | `H5P.Essay` | `text` | acceptable | No free-text grading in eXe |
+| Find the Hotspot | `H5P.ImageHotspotQuestion` | extend `multiple-hotspot-question` | acceptable | Small variant of the existing adapter |
+| Chart, Timeline, Personality Quiz, Documentation Tool, KewAr Code, AR Scavenger, Audio Recorder, Speak the Words(+Set), Virtual Tour (360), Branching Scenario, Cornell Notes, Information Wall, Structure Strip, Advent Calendar, Impressive Presentation, Multimedia Choice, Complex Fill the Blanks, Arithmetic Quiz, Game Map, Guess the Answer | various | `text` fallback only | low | No reasonable native eXe equivalent; current fallback is correct |
+
+Top 4 worth picking up first (best ROI — each maps 1:1 to an existing
+eXe iDevice with little or no new writer code):
+
+1. `H5P.ImageJuxtaposition` → `beforeafter`
+2. `H5P.IFrameEmbedder` → `external-website`
+3. `H5P.FindTheWords` → `word-search`
+4. `H5P.Flashcards` → `flipcards` (reuses the writer used by
+   `Dialogcards` / `MemoryGame`)
 
 ## Invariants (don't break these)
 
