@@ -13,16 +13,27 @@ type RawWord = {
 const MAX_WORD_LEN = 14;
 
 /**
- * eXeLearning's crossword editor rejects any answer that contains
- * whitespace or is longer than 14 characters (see `msgMaximeSize` in
- * `crossword.js`). Strip whitespace and truncate so the grid loads;
- * preserve the original wording in the clue so learners still see
- * what they should type.
+ * Two constraints from eXeLearning's crossword runtime drive this:
+ *
+ * 1. The editor rejects any answer that contains whitespace or is
+ *    longer than 14 characters (`msgMaximeSize` in `crossword.js`).
+ * 2. The auto-layout solver's `canPlaceWord`
+ *    (`base/crossword/export/crossword.js:1680`) checks intersections
+ *    with strict `cell.letter !== word[i]` — case-sensitive
+ *    regardless of `caseSensitive`. Mixed-case answers (e.g.
+ *    "Athens" + "Agra") fail to cross at their shared `A`/`a`, so
+ *    every word lands in its own isolated corridor.
+ *
+ * Fix: strip whitespace, truncate to 14 chars, **uppercase** the
+ * result. Crosswords are traditionally uppercase anyway. The original
+ * answer text is preserved in the clue (`(answer: "New York")`) so the
+ * learner still sees the intended phrasing.
  */
 function sanitizeAnswer(rawAnswer: string, clue: string): { word: string; definition: string } {
   const stripped = rawAnswer.replace(/\s+/g, "");
-  const word = stripped.length > MAX_WORD_LEN ? stripped.slice(0, MAX_WORD_LEN) : stripped;
-  const changed = word !== rawAnswer;
+  const truncated = stripped.length > MAX_WORD_LEN ? stripped.slice(0, MAX_WORD_LEN) : stripped;
+  const word = truncated.toUpperCase();
+  const changed = truncated !== rawAnswer;
   const definition = changed ? `${clue} (answer: ${rawAnswer})` : clue;
   return { word, definition };
 }
