@@ -111,6 +111,38 @@ Deployed automatically to GitHub Pages on every push to `main` via
 | 3 | `H5P.Crossword` | `crossword` iDevice (native eXe `$eXeCrucigrama`) |
 | anything else | visible warning iDevice (unless `--unsupported drop`) |
 
+## Roadmap — H5P types not yet mapped
+
+Triage of the still-unsupported entries on
+<https://h5p.org/content-types-and-applications>, scored by how cleanly
+they fit an existing eXe iDevice. The top rows are the cheapest wins.
+Full notes (and the implementation hints) live in
+[`AGENTS.md`](AGENTS.md#h5p-types-not-yet-mapped--candidates).
+
+| H5P content type | machineName (likely) | Target eXe iDevice | Fit |
+| --- | --- | --- | --- |
+| Image Juxtaposition | `H5P.ImageJuxtaposition` | `beforeafter` | excellent |
+| Iframe Embedder | `H5P.IFrameEmbed` | `external-website` | excellent |
+| Find the Words | `H5P.FindTheWords` | `word-search` | excellent |
+| Flashcards | `H5P.Flashcards` | `flipcards` | excellent |
+| Image Pairing | `H5P.ImagePair` | `flipcards` / `relate` | good |
+| Image Sequencing | `H5P.ImageSequencing` | `sort` / `scrambled-list` | good |
+| Sort the Paragraphs | `H5P.SortParagraphs` | `scrambled-list` | good |
+| Image Slider | `H5P.ImageSlider` | `image-gallery` | good |
+| Collage | `H5P.Collage` | `image-gallery` | good |
+| Quiz (Question Set) | `H5P.QuestionSet` | expand inline (one iDevice per child) | good |
+| Accordion | `H5P.Accordion` | `text` (HTML `<details>`) | acceptable |
+| Questionnaire | `H5P.Questionnaire` | `form` (one per item) | acceptable |
+| Dictation | `H5P.Dictation` | `form` (`activityType: "fill"`) | acceptable |
+| Essay | `H5P.Essay` | `text` | acceptable |
+| Find the Hotspot | `H5P.ImageHotspotQuestion` | extend `multiple-hotspot-question` | acceptable |
+| Chart, Timeline, Personality Quiz, Documentation Tool, KewAr Code, AR Scavenger, Audio Recorder, Speak the Words(+Set), Virtual Tour (360), Branching Scenario, Cornell Notes, Information Wall, Structure Strip, Advent Calendar, Impressive Presentation, Multimedia Choice, Complex Fill the Blanks, Arithmetic Quiz, Game Map, Guess the Answer | various | `text` fallback only | low |
+
+Sample `.h5p` files for the four highest-ROI candidates are checked
+into `fixtures/h5p/` (`image-juxtaposition.h5p`, `iframe-embedder.h5p`,
+`find-the-words.h5p`, `flashcards.h5p`) plus a real H5P crossword
+example at `fixtures/h5p/crossword.h5p`.
+
 ## Architecture
 
 ```

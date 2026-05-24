@@ -1,5 +1,6 @@
 import type { ElpxIdevice } from "../model.ts";
 import { newIdeviceId } from "../ids.ts";
+import { encryptGameData } from "../encrypt.ts";
 
 export type CrosswordEntry = {
   /** The answer word (uppercased by the runtime). */
@@ -22,10 +23,22 @@ export type CrosswordInput = {
 };
 
 /**
- * Mirrors the eXeLearning `crossword` iDevice (runtime `$eXeCrucigrama`,
- * `idevices/crossword/crossword.js` — `loadDataGame` at line 1869).
- * Same Pattern 2 used by `flipcards`: a URI-encoded JSON blob inside a
- * `<div class="crucigrama-DataGame js-hidden">`.
+ * Mirrors the eXeLearning `crossword` iDevice. Two non-obvious bits:
+ *
+ *  1. The data blob inside `<div class="crucigrama-DataGame js-hidden">`
+ *     is NOT plain URI-encoded JSON. eXe XOR-encrypts every char with
+ *     key 146 and wraps it with the legacy JS `escape()` — see
+ *     `../encrypt.ts`. Plaintext URI-encoded data silently fails to load.
+ *  2. The iDevice uses the standard "text" jsonProperties pattern
+ *     (`textTextarea` holds the full htmlView, `textInfoDuration*` /
+ *     `textFeedback*` keys are present even when empty). See
+ *     `doc/elpx-format/idevices/snippets.md` → "crossword".
+ *
+ * The htmlView mirrors the runtime-generated structure in
+ * `public/files/perm/idevices/base/crossword/edition/crossword.js`
+ * (`crucigrama-IDevice` wrapper + `game-evaluation-ids`,
+ * `crucigrama-version`, `crucigrama-feedback-game`, optional
+ * `crucigrama-instructions`, `crucigrama-DataGame`, `crucigrama-bns`).
  */
 export function buildCrosswordIdevice(input: CrosswordInput): ElpxIdevice {
   const id = newIdeviceId();
@@ -47,13 +60,20 @@ export function buildCrosswordIdevice(input: CrosswordInput): ElpxIdevice {
     weighted: 100,
     isScorm: 0
   };
-  const dataEncoded = encodeURIComponent(JSON.stringify(gameData));
+  const dataEncoded = encryptGameData(JSON.stringify(gameData));
+
+  const instructionsDiv = input.instructions
+    ? `<div class="crucigrama-instructions gameQP-instructions">${input.instructions}</div>`
+    : "";
 
   const htmlView = [
-    `<div class="crucigrama-IDevice" id="${id}-container">`,
-    input.instructions ? `  <div class="crucigrama-Instructions">${input.instructions}</div>` : "",
-    `  <div class="crucigrama-DataGame js-hidden" data-id="${id}">${dataEncoded}</div>`,
-    `  <div class="crucigrama-Game" id="${id}-game"></div>`,
+    `<div class="crucigrama-IDevice">`,
+    `  <div class="game-evaluation-ids js-hidden" data-id="${id}" data-evaluationb="false" data-evaluationid=""></div>`,
+    `  <div class="crucigrama-version js-hidden">1</div>`,
+    `  <div class="crucigrama-feedback-game"></div>`,
+    instructionsDiv ? `  ${instructionsDiv}` : "",
+    `  <div class="crucigrama-DataGame js-hidden">${dataEncoded}</div>`,
+    `  <div class="crucigrama-bns js-hidden"></div>`,
     `</div>`
   ]
     .filter(Boolean)
@@ -66,7 +86,16 @@ export function buildCrosswordIdevice(input: CrosswordInput): ElpxIdevice {
     typeName: "crossword",
     title: input.title ?? "Crossword",
     htmlView,
-    jsonProperties: { ideviceId: id, dataGame: dataEncoded },
+    jsonProperties: {
+      ideviceId: id,
+      textInfoDurationInput: "",
+      textInfoDurationTextInput: "Duración",
+      textInfoParticipantsInput: "",
+      textInfoParticipantsTextInput: "Agrupamiento",
+      textTextarea: htmlView,
+      textFeedbackInput: "Mostrar retroalimentación",
+      textFeedbackTextarea: ""
+    },
     order: input.order,
     visibility: true
   };
