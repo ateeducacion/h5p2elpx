@@ -121,6 +121,31 @@ export type NormalizedWordSearchNode = BaseNode & {
   taskDescription?: string;
 };
 
+export type NormalizedHotspotMapPoint = {
+  /** Centre x (or rectangle top-left x), in the same units as the image. */
+  x: number;
+  y: number;
+  /** Rectangle bottom-right (when present, the point is rendered as a rectangle). */
+  x1?: number;
+  y1?: number;
+  title?: string;
+  toolTip?: string;
+  /** Rich-HTML popup body shown when the learner clicks the hotspot. */
+  eText?: string;
+  link?: string;
+  correct?: boolean;
+};
+
+export type NormalizedHotspotMapNode = BaseNode & {
+  kind: "hotspot-map";
+  imageUrl: string;
+  imageAlt?: string;
+  instructions?: string;
+  /** When true, the map runs as a quiz (selectsGame mode). */
+  isQuiz?: boolean;
+  points: NormalizedHotspotMapPoint[];
+};
+
 export type NormalizedNode =
   | NormalizedTextNode
   | NormalizedImageNode
@@ -137,4 +162,5 @@ export type NormalizedNode =
   | NormalizedBeforeAfterNode
   | NormalizedIframeNode
   | NormalizedWordSearchNode
+  | NormalizedHotspotMapNode
   | NormalizedUnsupportedNode;

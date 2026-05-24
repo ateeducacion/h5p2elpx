@@ -1,0 +1,93 @@
+/**
+ * English i18n bag for the eXeLearning `map` (Mapa) iDevice.
+ *
+ * Source: `public/files/perm/idevices/base/map/edition/map.js`
+ * — `refreshTranslations` (line 87) + `setMessagesInfo` (line ~196).
+ * The runtime stores this bag inside `dataGame.msgs`. Many keys are
+ * shared with crossword; this file lists every key map's editor reads
+ * (we don't reuse the crossword bag verbatim because the two diverge
+ * on enough strings — e.g. msgTypeGame).
+ */
+export const MAP_DEFAULT_MSGS: Record<string, string> = {
+  msgSubmit: "Submit",
+  msgIndicateWord: "Provide a word or phrase",
+  msgClue: "Cool! The clue is:",
+  msgErrors: "Errors",
+  msgHits: "Hits",
+  msgScore: "Score",
+  msgWeight: "Weight",
+  msgMinimize: "Minimize",
+  msgMaximize: "Maximize",
+  msgFullScreen: "Full Screen",
+  msgNoImage: "No picture question",
+  msgSuccesses: "Right! | Excellent! | Great! | Very good! | Perfect!",
+  msgFailures: "It was not that! | Incorrect! | Not correct! | Sorry! | Error!",
+  msgTryAgain: "You need at least %s% of correct answers to get the information. Please try again.",
+  msgEndGameScore: "Please start the game before saving your score.",
+  msgScoreScorm: "The score can't be saved because this page is not part of a SCORM package.",
+  msgPoint: "Point",
+  msgAnswer: "Answer",
+  msgOnlySaveScore: "You can only save the score once!",
+  msgOnlySave: "You can only save once",
+  msgInformation: "Information",
+  msgYouScore: "Your score",
+  msgOnlySaveAuto: "Your score will be saved after each question. You can only play once.",
+  msgSaveAuto: "Your score will be automatically saved after each question.",
+  msgSeveralScore: "You can save the score as many times as you want",
+  msgYouLastScore: "The last score saved is",
+  msgActityComply: "You have already done this activity.",
+  msgPlaySeveralTimes: "You can do this activity as many times as you want",
+  msgClose: "Close",
+  msgPoints: "points",
+  msgPointsA: "Points",
+  msgQuestions: "Questions",
+  msgAudio: "Audio",
+  msgAccept: "Accept",
+  msgYes: "Yes",
+  msgNo: "No",
+  msgShowAreas: "Show active areas",
+  msgShowTest: "Show questionnaire",
+  msgGoActivity: "Click here to do this activity",
+  msgSelectAnswers: "Select the correct options and click on the 'Reply' button.",
+  msgCheksOptions: "Mark all the options in the correct order and click on the 'Reply' button.",
+  msgWriteAnswer: "Write the correct word or phrase and click on the 'Reply' button.",
+  msgIdentify: "Identify",
+  msgSearch: "Find",
+  msgClickOn: "Click on",
+  msgReviewContents:
+    "You must review %s% of the contents of the activity before completing the questionnaire.",
+  msgScore10: "Everything is perfect! Do you want to repeat this activity?",
+  msgScore4:
+    "You have not passed this test. You should review its contents and try again. Do you want to repeat this activity?",
+  msgScore6:
+    "Great! You have passed the test, but you can improve it surely. Do you want to repeat this activity?",
+  msgScore8: "Almost perfect! You can still do it better. Do you want to repeat this activity?",
+  msgNotCorrect: "It is not correct! You have clicked on",
+  msgNotCorrect1: "It is not correct! You have clicked on",
+  msgNotCorrect2: "and the correct answer is",
+  msgNotCorrect3: "Try again!",
+  msgAllVisited: "Great! You have visited the required dots.",
+  msgCompleteTest: "You can do the test.",
+  msgPlayStart: "Click here to start",
+  msgSubtitles: "Subtitles",
+  msgSelectSubtitles: "Select a subtitle file. Supported formats:",
+  msgNumQuestions: "Number of questions",
+  msgHome: "Home",
+  msgReturn: "Return",
+  msgCheck: "Check",
+  msgUncompletedActivity: "Incomplete activity",
+  msgSuccessfulActivity: "Activity: Passed. Score: %s",
+  msgUnsuccessfulActivity: "Activity: Not passed. Score: %s",
+  msgTypeGame: "Map",
+  // Added by setMessagesInfo():
+  msgEProvideDefinition: "Please provide the definition of the word or phrase",
+  msgEURLValid: "You must upload or indicate the valid URL of an image",
+  msgECompletePoint: "You have to complete the question",
+  msgECompleteAllOptions: "You have to complete all the selected options",
+  msgESelectSolution: "Choose the right answer",
+  msgECompleteURLYoutube: "Please type or paste a valid URL.",
+  msgMarkPoint: "Mark a point on the image",
+  msgWriteText: "Write the popup text",
+  msgSelectAudio: "Select an audio file",
+  msgNoSuportBrowser: "Your browser is not compatible with this tool."
+};

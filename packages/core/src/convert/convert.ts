@@ -17,6 +17,7 @@ import {
   buildBeforeAfterIdevice,
   buildExternalWebsiteIdevice,
   buildWordSearchIdevice,
+  buildMapIdevice,
   blanksToFill,
   type FormQuestion,
   type SelectionQuestion
@@ -469,6 +470,25 @@ function emitNode(
         })
       );
       ctx.activityReport.mappedTo!.push("external-website");
+      return;
+    }
+    case "hotspot-map": {
+      const block = newBlock(hostPage);
+      addIdevice(
+        block,
+        buildMapIdevice({
+          pageId: hostPage.id,
+          blockId: block.id,
+          order: 0,
+          title: node.title,
+          instructions: node.instructions,
+          imageUrl: ctx.forHtml(node.imageUrl),
+          imageAlt: node.title,
+          isQuiz: node.isQuiz,
+          points: node.points
+        })
+      );
+      ctx.activityReport.mappedTo!.push("map");
       return;
     }
     case "word-search": {
