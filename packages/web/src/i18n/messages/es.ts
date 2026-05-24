@@ -113,11 +113,13 @@ export const es: Messages = {
   cli: {
     title: "Uso desde la terminal (CLI)",
     installInfo:
-      "Para usar el comando, necesitas tener instalado Node.js o Bun. No necesitas instalar la herramienta previamente; npx la ejecutará automáticamente.",
-    commandLabel: "Ejecuta el siguiente comando para realizar una conversión local:",
+      "Instala Bun, clona el repositorio y ejecuta la CLI local desde la carpeta del proyecto.",
+    commandLabel: "Copia este ejemplo y sustituye archivo.h5p por tu paquete H5P:",
     copy: "Copiar",
     copied: "¡Copiado!",
     issuesLabel: "¿Tienes problemas?",
-    issuesLink: "Reporta un error en GitHub"
+    issuesLink: "Reporta un H5P que falla",
+    issueTemplateLabel:
+      "Si un archivo no se convierte correctamente, abre un issue e incluye el archivo o una URL pública con esta plantilla breve:"
   }
 };

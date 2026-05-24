@@ -111,12 +111,14 @@ export const en = {
   cli: {
     title: "Use from terminal (CLI)",
     installInfo:
-      "To run the command, you need Node.js or Bun installed. There is no need to install the tool beforehand; npx will execute it automatically.",
-    commandLabel: "Run the following command to perform a local conversion:",
+      "Install Bun, clone the repository, and run the local CLI from the project folder.",
+    commandLabel: "Copy this example and replace file.h5p with your H5P package:",
     copy: "Copy",
     copied: "Copied!",
     issuesLabel: "Having issues?",
-    issuesLink: "Report a bug on GitHub"
+    issuesLink: "Report a broken H5P file",
+    issueTemplateLabel:
+      "When a file does not convert correctly, open an issue and include the file or a public URL with this short template:"
   }
 };
 

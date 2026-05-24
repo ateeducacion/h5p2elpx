@@ -13,13 +13,17 @@ fallback.
 
 ## Installation
 
-Requires [Bun](https://bun.sh) ≥ 1.1.
+Install [Bun](https://bun.sh), then clone this repository and install its
+dependencies:
 
 ```bash
-git clone <this repo>
+git clone https://github.com/ateeducacion/h5p2elpx.git
 cd h5p2elpx
 bun install
 ```
+
+The commands below are documented for Bun. Other JavaScript runtimes may work
+for parts of the monorepo, but they are not the supported command-line path yet.
 
 The eXeLearning runtime template (`fixtures/elpx/template.elpx`) is already
 committed. To rebuild it from a fresh
@@ -41,22 +45,24 @@ push so the bundled web template stays up to date.
 
 ## CLI
 
+Run the local CLI from the cloned repository:
+
 ```bash
 # Inspect an .h5p package (detects main library, lists dependencies)
-bun run packages/cli/src/index.ts inspect activity.h5p
+bun run cli -- inspect activity.h5p
 
-# Convert
-bun run packages/cli/src/index.ts convert activity.h5p \
+# Convert one .h5p file into an .elpx project
+bun run cli -- convert activity.h5p \
   -o activity.elpx \
   --layout preserve \
   --include-original-h5p \
   --report report.json
 
 # Convert a folder of .h5p files
-bun run packages/cli/src/index.ts convert ./h5p-folder -o bundle.elpx
+bun run cli -- convert ./h5p-folder -o bundle.elpx
 
 # Validate an .elpx
-bun run packages/cli/src/index.ts validate activity.elpx
+bun run cli -- validate activity.elpx
 ```
 
 Options for `convert`:
@@ -83,6 +89,34 @@ bun run --cwd packages/web build        # production build → packages/web/dist
 
 Deployed automatically to GitHub Pages on every push to `main` via
 `.github/workflows/pages.yml`.
+
+## Report a broken H5P file
+
+If an `.h5p` file does not convert correctly, please open a GitHub issue and
+attach the file when possible. If the file is too large or public elsewhere,
+paste a download URL instead.
+
+```markdown
+### What failed?
+
+Briefly describe what happened and what you expected.
+
+### H5P source
+
+- File attached: yes/no
+- Public or shared URL:
+- H5P content type, if known:
+
+### How did you run the conversion?
+
+- Web app or CLI:
+- Command used, if CLI:
+- Browser and operating system, if web app:
+
+### Output
+
+Paste the error message or attach `report.json` if you have one.
+```
 
 ## Compatibility matrix
 

@@ -1059,16 +1059,7 @@ code,
   font-size: var(--exe-fs-code);
   color: var(--exe-code-fg);
   white-space: pre;
-}
-
-.cli-code-cmd {
-  color: #2ecc71; /* Neon green for npx */
-  font-weight: bold;
-}
-
-.cli-code-pkg {
-  color: #3498db; /* Cyan/blue for package name */
-  font-weight: bold;
+  line-height: 1.7;
 }
 
 .cli-copy-btn {
@@ -1104,6 +1095,25 @@ code,
 
 .cli-copy-text {
   font-size: 11px;
+}
+
+.cli-issue-intro {
+  margin-top: 18px;
+}
+
+.cli-template-block {
+  margin: 0;
+  padding: 14px 16px;
+  max-height: 220px;
+  overflow: auto;
+  border: 1px solid var(--exe-border);
+  border-radius: var(--exe-radius-md);
+  background: #f7f9fb;
+  color: var(--exe-fg);
+  font-family: var(--exe-font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
 }
 
 .cli-issues {
