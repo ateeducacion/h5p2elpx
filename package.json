@@ -10,6 +10,9 @@
     "build": "bun run --filter '*' build",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "e2e:fetch-editor": "bun run scripts/fetch-exelearning-static.ts",
     "build-template": "bun run scripts/build-template.ts",
     "cli": "bun run packages/cli/src/index.ts",
     "web:dev": "bun run --cwd packages/web dev",
@@ -20,6 +23,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.10",
+    "@playwright/test": "^1.48.0",
     "@types/bun": "latest",
     "jszip": "^3.10.1",
     "typescript": "^5.9.3",
