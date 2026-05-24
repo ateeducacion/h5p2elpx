@@ -122,7 +122,7 @@ dispatch.
 | `H5P.DragText` | `form` with `activityType: "fill"` | same transform |
 | `H5P.Dialogcards`, `H5P.MemoryGame`, `H5P.Flashcards`, `H5P.ImagePair` | `flipcards` (Pattern 2: URI-encoded JSON in hidden div) | |
 | `H5P.Table` | `text` (HTML table) | |
-| `H5P.Crossword` | `crossword` iDevice (encrypted DataGame: XOR(146) + escape() — `exe/encrypt.ts`); `typeGame: "Crucigrama"`, `version: 2`, full `msgs` bag from `crossword-i18n.ts` | |
+| `H5P.Crossword` | `crossword` iDevice (encrypted DataGame: XOR(146) + escape() — `exe/encrypt.ts`); `typeGame: "Crucigrama"`, `version: 2`, full `msgs` bag from `crossword-i18n.ts`. Answers are uppercased + whitespace-stripped + 14-char-truncated (eXe's solver requires this). Words are fed **longest-first** because eXe auto-positions them and uses the first `ceil(N/2)` as vertical anchors — longer anchors give the horizontal pass more crossings. The runtime ignores any per-word `x`/`y` we set, so exact H5P-layout fidelity is not possible | |
 | `H5P.ImageJuxtaposition` | `beforeafter` (htmlView-only) | |
 | `H5P.IFrameEmbed` | `external-website` (htmlView-only) | |
 | `H5P.FindTheWords` | `word-search` (encrypted DataGame, `typeGame: "Sopa"`) | |
