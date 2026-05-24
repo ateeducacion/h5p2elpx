@@ -75,53 +75,12 @@ export function CliSection({ githubUrl }: { githubUrl: string }) {
   const command =
     lang === "es"
       ? [
-          "git clone https://github.com/ateeducacion/h5p2elpx.git",
-          "cd h5p2elpx",
-          "bun install",
-          "bun run cli -- convert archivo.h5p -o resultado.elpx"
+          "echo '@ateeducacion:registry=https://npm.pkg.github.com' >> .npmrc",
+          "bunx --bun @ateeducacion/h5p2elpx convert archivo.h5p -o resultado.elpx"
         ].join("\n")
       : [
-          "git clone https://github.com/ateeducacion/h5p2elpx.git",
-          "cd h5p2elpx",
-          "bun install",
-          "bun run cli -- convert file.h5p -o result.elpx"
-        ].join("\n");
-
-  const issueTemplate =
-    lang === "es"
-      ? [
-          "¿Qué falló?",
-          "Describe brevemente qué pasó y qué esperabas.",
-          "",
-          "Origen del H5P",
-          "- Archivo adjunto: sí/no",
-          "- URL pública o compartida:",
-          "- Tipo de contenido H5P, si lo sabes:",
-          "",
-          "¿Cómo ejecutaste la conversión?",
-          "- Web o CLI:",
-          "- Comando usado, si fue por CLI:",
-          "- Navegador y sistema operativo, si fue por web:",
-          "",
-          "Salida",
-          "Pega el mensaje de error o adjunta report.json si lo tienes."
-        ].join("\n")
-      : [
-          "What failed?",
-          "Briefly describe what happened and what you expected.",
-          "",
-          "H5P source",
-          "- File attached: yes/no",
-          "- Public or shared URL:",
-          "- H5P content type, if known:",
-          "",
-          "How did you run the conversion?",
-          "- Web app or CLI:",
-          "- Command used, if CLI:",
-          "- Browser and operating system, if web app:",
-          "",
-          "Output",
-          "Paste the error message or attach report.json if you have one."
+          "echo '@ateeducacion:registry=https://npm.pkg.github.com' >> .npmrc",
+          "bunx --bun @ateeducacion/h5p2elpx convert file.h5p -o result.elpx"
         ].join("\n");
 
   const handleCopy = async () => {
@@ -167,18 +126,13 @@ export function CliSection({ githubUrl }: { githubUrl: string }) {
                 <span className="cli-copy-text">{copied ? t("cli.copied") : t("cli.copy")}</span>
               </button>
             </div>
-
-            <p className="cli-info-text cli-issue-intro">{t("cli.issueTemplateLabel")}</p>
-            <pre className="cli-template-block">
-              <code>{issueTemplate}</code>
-            </pre>
           </div>
         </div>
       </div>
 
       <div className="cli-issues">
         <a
-          href={`${githubUrl}/issues/new?template=broken-h5p.md`}
+          href={`${githubUrl}/issues/new?template=broken-h5p.yml`}
           target="_blank"
           rel="noopener noreferrer"
           className="cli-issues-link"

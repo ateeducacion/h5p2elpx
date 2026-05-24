@@ -1,4 +1,4 @@
-import { summarizeReport, type ConversionReport } from "@h5p2elpx/core";
+import { summarizeReport, type ConversionReport } from "@ateeducacion/h5p2elpx-core";
 import { useI18n } from "../i18n/index.tsx";
 
 type Props = {

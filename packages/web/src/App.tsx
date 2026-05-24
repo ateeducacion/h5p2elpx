@@ -5,7 +5,7 @@ import {
   convert,
   type ConversionReport,
   readH5p
-} from "@h5p2elpx/core";
+} from "@ateeducacion/h5p2elpx-core";
 import { Box } from "./components/Box.tsx";
 import { CompatibilityReport } from "./components/CompatibilityReport.tsx";
 import { ConversionOptionsForm, type UiOptions } from "./components/ConversionOptions.tsx";

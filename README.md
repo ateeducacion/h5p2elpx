@@ -13,17 +13,28 @@ fallback.
 
 ## Installation
 
-Install [Bun](https://bun.sh), then clone this repository and install its
-dependencies:
+Install [Bun](https://bun.sh). The CLI is published to GitHub Packages as
+`@ateeducacion/h5p2elpx`.
+
+```bash
+echo "@ateeducacion:registry=https://npm.pkg.github.com" >> .npmrc
+bunx --bun @ateeducacion/h5p2elpx convert activity.h5p -o activity.elpx
+```
+
+If GitHub Packages asks for authentication, add a GitHub token that can read
+packages:
+
+```bash
+echo "//npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN" >> .npmrc
+```
+
+For local development, clone this repository and install its dependencies:
 
 ```bash
 git clone https://github.com/ateeducacion/h5p2elpx.git
 cd h5p2elpx
 bun install
 ```
-
-The commands below are documented for Bun. Other JavaScript runtimes may work
-for parts of the monorepo, but they are not the supported command-line path yet.
 
 The eXeLearning runtime template (`fixtures/elpx/template.elpx`) is already
 committed. To rebuild it from a fresh
@@ -45,25 +56,27 @@ push so the bundled web template stays up to date.
 
 ## CLI
 
-Run the local CLI from the cloned repository:
+Run the published CLI:
 
 ```bash
 # Inspect an .h5p package (detects main library, lists dependencies)
-bun run cli -- inspect activity.h5p
+bunx --bun @ateeducacion/h5p2elpx inspect activity.h5p
 
 # Convert one .h5p file into an .elpx project
-bun run cli -- convert activity.h5p \
+bunx --bun @ateeducacion/h5p2elpx convert activity.h5p \
   -o activity.elpx \
   --layout preserve \
   --include-original-h5p \
   --report report.json
 
 # Convert a folder of .h5p files
-bun run cli -- convert ./h5p-folder -o bundle.elpx
+bunx --bun @ateeducacion/h5p2elpx convert ./h5p-folder -o bundle.elpx
 
 # Validate an .elpx
-bun run cli -- validate activity.elpx
+bunx --bun @ateeducacion/h5p2elpx validate activity.elpx
 ```
+
+From a cloned checkout, use `bun run cli -- <command>` instead.
 
 Options for `convert`:
 
@@ -92,31 +105,9 @@ Deployed automatically to GitHub Pages on every push to `main` via
 
 ## Report a broken H5P file
 
-If an `.h5p` file does not convert correctly, please open a GitHub issue and
-attach the file when possible. If the file is too large or public elsewhere,
-paste a download URL instead.
-
-```markdown
-### What failed?
-
-Briefly describe what happened and what you expected.
-
-### H5P source
-
-- File attached: yes/no
-- Public or shared URL:
-- H5P content type, if known:
-
-### How did you run the conversion?
-
-- Web app or CLI:
-- Command used, if CLI:
-- Browser and operating system, if web app:
-
-### Output
-
-Paste the error message or attach `report.json` if you have one.
-```
+If an `.h5p` file does not convert correctly, open a GitHub issue with the
+`Broken H5P conversion` form. Attach the file when possible, or paste a public
+or shared download URL.
 
 ## Compatibility matrix
 

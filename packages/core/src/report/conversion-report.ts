@@ -1,3 +1,5 @@
+import pkg from "../../package.json";
+
 export type UnsupportedItemReport = {
   sourceType: string;
   path?: string;
@@ -31,7 +33,7 @@ export type ConversionReport = {
   activities: ConversionActivityReport[];
 };
 
-export const TOOL_VERSION = "0.1.0";
+export const TOOL_VERSION = pkg.version;
 
 export function emptyReport(inputFiles: string[]): ConversionReport {
   return {

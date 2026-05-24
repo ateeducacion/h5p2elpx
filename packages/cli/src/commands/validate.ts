@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { validateElpx } from "@h5p2elpx/core";
+import { validateElpx } from "@ateeducacion/h5p2elpx-core";
 
 export async function runValidate(input: string): Promise<void> {
   const bytes = new Uint8Array(await readFile(input));

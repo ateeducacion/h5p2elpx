@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { basename, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { convert } from "@h5p2elpx/core";
+import { convert } from "@ateeducacion/h5p2elpx-core";
 
 const HERE = fileURLToPath(new URL(".", import.meta.url));
 export const REPO_ROOT = resolve(HERE, "../../../..");

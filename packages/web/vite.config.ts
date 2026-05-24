@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@h5p2elpx/core": resolve(__dirname, "../core/src/index.ts")
+      "@ateeducacion/h5p2elpx-core": resolve(__dirname, "../core/src/index.ts")
     }
   }
 });

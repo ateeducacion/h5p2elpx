@@ -1,13 +1,25 @@
 {
-  "name": "@h5p2elpx/cli",
-  "version": "0.1.0",
+  "name": "@ateeducacion/h5p2elpx",
+  "version": "0.0.0",
   "type": "module",
   "license": "AGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ateeducacion/h5p2elpx.git",
+    "directory": "packages/cli"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  },
+  "files": [
+    "src"
+  ],
   "bin": {
     "h5p2elpx": "src/index.ts"
   },
   "dependencies": {
-    "@h5p2elpx/core": "workspace:*",
+    "@ateeducacion/h5p2elpx-core": "0.0.0",
     "commander": "^14.0.0"
   }
 }

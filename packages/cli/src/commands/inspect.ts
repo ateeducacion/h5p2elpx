@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { readH5p, libraryRefString, listRegisteredMachines } from "@h5p2elpx/core";
+import { readH5p, libraryRefString, listRegisteredMachines } from "@ateeducacion/h5p2elpx-core";
 
 export async function runInspect(input: string): Promise<void> {
   const bytes = new Uint8Array(await readFile(input));

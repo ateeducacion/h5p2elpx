@@ -20,8 +20,8 @@
     "types": ["bun"],
     "baseUrl": ".",
     "paths": {
-      "@h5p2elpx/core": ["packages/core/src/index.ts"],
-      "@h5p2elpx/core/*": ["packages/core/src/*"]
+      "@ateeducacion/h5p2elpx-core": ["packages/core/src/index.ts"],
+      "@ateeducacion/h5p2elpx-core/*": ["packages/core/src/*"]
     }
   },
   "include": ["packages/*/src/**/*", "packages/*/tests/**/*"]

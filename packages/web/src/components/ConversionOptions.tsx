@@ -1,4 +1,4 @@
-import type { ConversionOptions } from "@h5p2elpx/core";
+import type { ConversionOptions } from "@ateeducacion/h5p2elpx-core";
 import { useI18n } from "../i18n/index.tsx";
 
 export type UiOptions = Pick<ConversionOptions, "layout" | "unsupported" | "includeOriginalH5p"> & {

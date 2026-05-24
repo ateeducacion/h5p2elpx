@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { Command } from "commander";
+import pkg from "../package.json";
 import { runInspect } from "./commands/inspect.ts";
 import { runConvert } from "./commands/convert.ts";
 import { runValidate } from "./commands/validate.ts";
@@ -8,7 +9,7 @@ const program = new Command();
 program
   .name("h5p2elpx")
   .description("Convert H5P packages into editable eXeLearning .elpx projects")
-  .version("0.1.0");
+  .version(pkg.version);
 
 program
   .command("inspect <input>")

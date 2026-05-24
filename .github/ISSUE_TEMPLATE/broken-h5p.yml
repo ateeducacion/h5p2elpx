@@ -1,0 +1,59 @@
+name: Broken H5P conversion
+description: Report an .h5p file that does not convert correctly.
+title: "[H5P] "
+labels: ["bug", "h5p"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: What failed?
+      description: Briefly describe what happened and what you expected.
+      placeholder: The file converts, but the generated .elpx...
+    validations:
+      required: true
+  - type: checkboxes
+    id: source
+    attributes:
+      label: H5P source
+      options:
+        - label: I can attach the .h5p file to this issue.
+        - label: I can provide a public or shared download URL below.
+  - type: input
+    id: source-url
+    attributes:
+      label: Public or shared URL
+      placeholder: https://...
+  - type: input
+    id: content-type
+    attributes:
+      label: H5P content type
+      description: Fill this in if you know it.
+      placeholder: H5P.MultiChoice, H5P.CoursePresentation...
+  - type: dropdown
+    id: conversion-path
+    attributes:
+      label: How did you run the conversion?
+      options:
+        - Web app
+        - CLI
+        - Both
+    validations:
+      required: true
+  - type: input
+    id: command
+    attributes:
+      label: CLI command
+      description: Fill this in if you used the CLI.
+      placeholder: bunx --bun @ateeducacion/h5p2elpx convert activity.h5p -o activity.elpx
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and operating system
+      description: Fill this in if you used the web app.
+      placeholder: Chrome on macOS, Firefox on Windows...
+  - type: textarea
+    id: output
+    attributes:
+      label: Error message or report
+      description: Paste the error message or attach report.json if you have one.
+      render: text

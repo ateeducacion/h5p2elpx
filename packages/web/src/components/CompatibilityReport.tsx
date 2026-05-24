@@ -1,4 +1,4 @@
-import type { CompatibilityEntry } from "@h5p2elpx/core";
+import type { CompatibilityEntry } from "@ateeducacion/h5p2elpx-core";
 import { useI18n } from "../i18n/index.tsx";
 
 type Status = "ok" | "partial" | "no";

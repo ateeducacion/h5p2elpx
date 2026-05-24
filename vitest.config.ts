@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 export default defineConfig({
   resolve: {
     alias: {
-      "@h5p2elpx/core": resolve(__dirname, "packages/core/src/index.ts")
+      "@ateeducacion/h5p2elpx-core": resolve(__dirname, "packages/core/src/index.ts")
     }
   },
   test: {

@@ -7,7 +7,7 @@ import {
   summarizeReport,
   type ConvertInput,
   type ConversionOptions
-} from "@h5p2elpx/core";
+} from "@ateeducacion/h5p2elpx-core";
 
 type CliOpts = {
   output: string;

@@ -110,15 +110,12 @@ export const en = {
   },
   cli: {
     title: "Use from terminal (CLI)",
-    installInfo:
-      "Install Bun, clone the repository, and run the local CLI from the project folder.",
+    installInfo: "Install Bun and run the published CLI from GitHub Packages.",
     commandLabel: "Copy this example and replace file.h5p with your H5P package:",
     copy: "Copy",
     copied: "Copied!",
     issuesLabel: "Having issues?",
-    issuesLink: "Report a broken H5P file",
-    issueTemplateLabel:
-      "When a file does not convert correctly, open an issue and include the file or a public URL with this short template:"
+    issuesLink: "Report a broken H5P file"
   }
 };
 

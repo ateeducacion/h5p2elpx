@@ -1040,39 +1040,45 @@ code,
 
 .cli-code-container {
   position: relative;
-  display: flex;
-  align-items: center;
-  background: var(--exe-code-bg);
+  background: #071827;
+  border: 1px solid #244968;
   border-radius: var(--exe-radius-md);
   overflow: hidden;
 }
 
 .cli-code-block {
-  flex: 1;
   margin: 0;
-  padding: 14px 20px;
+  padding: 16px 124px 16px 18px;
   overflow-x: auto;
 }
 
 .cli-code {
+  display: block;
   font-family: var(--exe-font-mono);
-  font-size: var(--exe-fs-code);
-  color: var(--exe-code-fg);
-  white-space: pre;
+  font-size: 13px;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  color: #f8fbff;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   line-height: 1.7;
 }
 
 .cli-copy-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.08);
+  background: #f8fbff;
   border: none;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
-  height: 100%;
-  align-self: stretch;
-  padding: 0 16px;
-  color: var(--exe-code-fg);
+  border-bottom: 1px solid #244968;
+  border-left: 1px solid #244968;
+  min-height: 34px;
+  padding: 0 14px;
+  color: #071827;
   cursor: pointer;
   font-family: inherit;
   font-size: var(--exe-fs-small);
@@ -1083,8 +1089,8 @@ code,
 }
 
 .cli-copy-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  background: #dceef5;
+  color: #071827;
 }
 
 .cli-copy-btn.is-copied {
@@ -1095,25 +1101,6 @@ code,
 
 .cli-copy-text {
   font-size: 11px;
-}
-
-.cli-issue-intro {
-  margin-top: 18px;
-}
-
-.cli-template-block {
-  margin: 0;
-  padding: 14px 16px;
-  max-height: 220px;
-  overflow: auto;
-  border: 1px solid var(--exe-border);
-  border-radius: var(--exe-radius-md);
-  background: #f7f9fb;
-  color: var(--exe-fg);
-  font-family: var(--exe-font-mono);
-  font-size: 12px;
-  line-height: 1.55;
-  white-space: pre-wrap;
 }
 
 .cli-issues {
