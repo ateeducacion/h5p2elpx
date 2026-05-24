@@ -123,6 +123,11 @@ dispatch.
 
 ## Invariants (don't break these)
 
+0. **Everything that lands in the repo or on GitHub is in English.**
+   Code, identifiers, comments, log strings, docs, commit messages,
+   branch names, PR titles and PR bodies — all English, always, even when
+   the conversation with the user is in Spanish. Spanish stays in chat
+   replies only.
 1. **`packages/core` imports nothing from `node:*`.** It must run in the
    browser. CLI is the only place that touches `fs`.
 2. **IDs are always `YYYYMMDDHHmmss + 6 uppercase alphanumeric`.**
