@@ -1,4 +1,4 @@
-import pkg from "../../package.json";
+import { TOOL_VERSION } from "../version.ts";
 
 export type UnsupportedItemReport = {
   sourceType: string;
@@ -32,8 +32,6 @@ export type ConversionReport = {
   };
   activities: ConversionActivityReport[];
 };
-
-export const TOOL_VERSION = pkg.version;
 
 export function emptyReport(inputFiles: string[]): ConversionReport {
   return {

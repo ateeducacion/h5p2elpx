@@ -26,9 +26,9 @@ import { newBlockId, newPageId, newProjectId } from "../exe/ids.ts";
 import type { ElpxBlock, ElpxIdevice, ElpxPage, ElpxProject, ElpxResource } from "../exe/model.ts";
 import { writeElpx } from "../exe/elpx-writer.ts";
 import { DEFAULT_OPTIONS, type ConversionOptions } from "./conversion-options.ts";
+import { TOOL_VERSION } from "../version.ts";
 import {
   emptyReport,
-  TOOL_VERSION,
   type ConversionActivityReport,
   type ConversionReport,
   type UnsupportedItemReport

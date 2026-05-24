@@ -50,6 +50,7 @@ jobs:
           npm version "$VERSION" --no-git-tag-version --prefix packages/web
           npm pkg set "dependencies.@ateeducacion/h5p2elpx-core=$VERSION" --prefix packages/cli
           npm pkg set "dependencies.@ateeducacion/h5p2elpx-core=$VERSION" --prefix packages/web
+          perl -0pi -e "s/export const TOOL_VERSION = \"[^\"]+\";/export const TOOL_VERSION = \"$VERSION\";/" packages/core/src/version.ts
       - name: Publish core
         working-directory: packages/core
         run: npm publish --access public
