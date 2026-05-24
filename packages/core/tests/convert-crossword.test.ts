@@ -56,4 +56,33 @@ describe("convert H5P.Crossword", () => {
     expect(decoded.wordsGame[0].x).toBe(0);
     expect(decoded.wordsGame[0].percentageShow).toBeNull();
   });
+
+  it("sanitizes answers that eXe would reject (whitespace, > 14 chars)", async () => {
+    const bytes = await makeH5pZip({
+      title: "Cities",
+      mainLibrary: "H5P.Crossword",
+      content: {
+        words: [
+          { answer: "New York", clue: "Statue of liberty is located in?" },
+          { answer: "Antidisestablishmentarianism", clue: "Long word" }
+        ]
+      }
+    });
+    const result = await convert([{ kind: "h5p-bytes", data: bytes, filename: "crossword.h5p" }]);
+    const zip = await JSZip.loadAsync(result.elpx);
+    const xml = await zip.file("content.xml")!.async("string");
+    const match = xml.match(/crucigrama-DataGame[^>]*>([^<]+)</);
+    const decoded = JSON.parse(decryptGameData(match![1]!));
+    // Whitespace stripped, original preserved in the clue.
+    expect(decoded.wordsGame[0].word).toBe("NewYork");
+    expect(decoded.wordsGame[0].definition).toContain("New York");
+    // Truncated to 14 chars, original preserved in the clue.
+    expect(decoded.wordsGame[1].word).toBe("Antidisestabli");
+    expect(decoded.wordsGame[1].definition).toContain("Antidisestablishmentarianism");
+    // Every word must satisfy the eXe validator: ≤ 14 chars and no whitespace.
+    for (const w of decoded.wordsGame) {
+      expect(w.word.length).toBeLessThanOrEqual(14);
+      expect(w.word).toMatch(/^\S+$/);
+    }
+  });
 });

@@ -106,8 +106,8 @@ Deployed automatically to GitHub Pages on every push to `main` via
 | 3 | `H5P.DragText` | form iDevice |
 | 3 | `H5P.MarkTheWords` | text fallback |
 | 3 | `H5P.DragQuestion` | structured fallback (drag list + drop zones) |
-| 3 | `H5P.ImageHotspots` | image + ordered hotspot list |
-| 3 | `H5P.MultipleHotspotQuestion` | image + ordered hotspot list (geometry preserved as text) |
+| 3 | `H5P.ImageHotspots` | `map` iDevice (info markers with rich popups on the background image) |
+| 3 | `H5P.MultipleHotspotQuestion` | `map` iDevice (rectangle hotspots, quiz mode) |
 | 3 | `H5P.Crossword` | `crossword` iDevice (native eXe `$eXeCrucigrama`) |
 | 3 | `H5P.ImageJuxtaposition` | `beforeafter` iDevice |
 | 3 | `H5P.IFrameEmbed` | `external-website` iDevice |
@@ -119,7 +119,7 @@ Deployed automatically to GitHub Pages on every push to `main` via
 | 3 | `H5P.Dictation` | form iDevice (`activityType: "fill"`, drops audio) |
 | 3 | `H5P.SortParagraphs`, `H5P.ImageSequencing` | ordered text iDevice (author re-scrambles in eXe) |
 | 3 | `H5P.ImageSlider`, `H5P.Collage` | text iDevice with sequential figures |
-| 3 | `H5P.ImageHotspotQuestion` | image + ordered hotspot list |
+| 3 | `H5P.ImageHotspotQuestion` | `map` iDevice (rectangle hotspots, quiz mode) |
 | anything else | visible warning iDevice (unless `--unsupported drop`) |
 
 ## Roadmap — H5P types still on the text fallback
@@ -199,8 +199,11 @@ CI: `.github/workflows/test.yml` runs typecheck + tests on every push and PR.
   slides. Other interaction types (drag, hotspots, summaries, …) are dropped
   with a warning in the report.
 * H5P.DragQuestion loses geometric positions (becomes a descriptive list).
-* `H5P.ImageHotspots` and `H5P.MultipleHotspotQuestion` become an ordered
-  list under the image, not an interactive overlay.
+* `H5P.ImageHotspots`, `H5P.MultipleHotspotQuestion` and
+  `H5P.ImageHotspotQuestion` are pinned on the native eXe `map`
+  iDevice, but informational content (links, embedded media) inside
+  H5P.ImageHotspots panels is rendered into the popup body as static
+  HTML.
 
 ## License
 

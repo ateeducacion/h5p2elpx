@@ -1,4 +1,4 @@
-import type { NormalizedNode } from "../nodes.ts";
+import type { NormalizedHotspotMapPoint, NormalizedNode } from "../nodes.ts";
 import { uniqueId } from "../../utils/slug.ts";
 
 export const machineName = "H5P.MultipleHotspotQuestion";
@@ -9,61 +9,59 @@ type RawHotspot = {
   userSettings?: { correct?: boolean; feedbackText?: string };
 };
 
+/**
+ * H5P.MultipleHotspotQuestion — quiz where the learner identifies
+ * one or more correct zones on an image. Each hotspot becomes a
+ * rectangle on the `map` iDevice (`x1/y1` are set, triggering the
+ * rectangle iconType in eXe). `correct` is propagated so the eXe
+ * `selectsGame` quiz mode can grade clicks.
+ */
 export function adapt(content: any): NormalizedNode {
+  // Some authoring tools nest the data under `multipleHotspotQuestion`.
+  const root = content?.multipleHotspotQuestion ?? content;
   const imgPath =
-    typeof content?.backgroundImageSettings?.path === "string"
-      ? content.backgroundImageSettings.path
-      : typeof content?.image?.path === "string"
-        ? content.image.path
+    typeof root?.backgroundImageSettings?.path === "string"
+      ? root.backgroundImageSettings.path
+      : typeof root?.image?.path === "string"
+        ? root.image.path
         : "";
   const taskDescription =
-    typeof content?.hotspotSettings?.taskDescription === "string"
-      ? content.hotspotSettings.taskDescription
-      : typeof content?.taskDescription === "string"
-        ? content.taskDescription
+    typeof root?.hotspotSettings?.taskDescription === "string"
+      ? root.hotspotSettings.taskDescription
+      : typeof root?.taskDescription === "string"
+        ? root.taskDescription
         : "";
-  const hotspots: RawHotspot[] = Array.isArray(content?.hotspotSettings?.hotspot)
-    ? content.hotspotSettings.hotspot
-    : Array.isArray(content?.hotspot)
-      ? content.hotspot
+  const hotspots: RawHotspot[] = Array.isArray(root?.hotspotSettings?.hotspot)
+    ? root.hotspotSettings.hotspot
+    : Array.isArray(root?.hotspot)
+      ? root.hotspot
       : [];
 
-  const list = hotspots
-    .map((h, idx) => {
-      const cs = h?.computedSettings ?? {};
-      const us = h?.userSettings ?? {};
-      const x = round1(cs.x);
-      const y = round1(cs.y);
-      const w = round1(cs.width);
-      const ht = round1(cs.height);
-      const shape = h?.shape ?? "rectangle";
-      const correct = us?.correct ? "correct" : "incorrect";
-      const feedback = typeof us?.feedbackText === "string" ? us.feedbackText : "";
-      return (
-        `<li>` +
-        `<strong>Hotspot ${idx + 1}</strong> ` +
-        `(${shape}, x:${x}% y:${y}% w:${w}% h:${ht}%, ${correct})` +
-        (feedback ? `<div>${feedback}</div>` : "") +
-        `</li>`
-      );
-    })
-    .join("\n");
-
-  const html =
-    (imgPath ? `<figure><img src="${imgPath}" alt="" /></figure>` : "") +
-    (taskDescription ? `<p>${taskDescription}</p>` : "") +
-    `<ol class="h5p2elpx-hotspots">${list}</ol>`;
+  const points: NormalizedHotspotMapPoint[] = hotspots.map((h, idx) => {
+    const cs = h?.computedSettings ?? {};
+    const us = h?.userSettings ?? {};
+    const x = Number(cs.x ?? 0);
+    const y = Number(cs.y ?? 0);
+    const w = Number(cs.width ?? 0);
+    const ht = Number(cs.height ?? 0);
+    return {
+      x,
+      y,
+      x1: x + w,
+      y1: y + ht,
+      title: `Hotspot ${idx + 1}`,
+      correct: !!us?.correct,
+      eText: typeof us?.feedbackText === "string" ? us.feedbackText : ""
+    };
+  });
 
   return {
     id: uniqueId("mhs"),
     sourceType: machineName,
-    kind: "text",
-    html
+    kind: "hotspot-map",
+    imageUrl: imgPath,
+    instructions: taskDescription,
+    isQuiz: true,
+    points
   };
-}
-
-function round1(n: unknown): string {
-  const v = Number(n);
-  if (!Number.isFinite(v)) return "?";
-  return (Math.round(v * 10) / 10).toString();
 }

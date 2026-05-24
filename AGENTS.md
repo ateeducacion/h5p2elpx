@@ -132,7 +132,7 @@ dispatch.
 | `H5P.Dictation` | `form` (fill); drops audio prompts | |
 | `H5P.SortParagraphs`, `H5P.ImageSequencing` | ordered `text` (author re-scrambles in eXe) | |
 | `H5P.ImageSlider`, `H5P.Collage` | `text` with sequential figures | |
-| `H5P.ImageHotspotQuestion` | image + ordered hotspot list | |
+| `H5P.ImageHotspots`, `H5P.MultipleHotspotQuestion`, `H5P.ImageHotspotQuestion` | `map` iDevice — markers pinned on the background image; quiz variants set `selectsGame: true` with `correct` flags. Data inside `mapa-DataGame` is **plain JSON** (no encryption, no URI-encoding) — see `exe/idevices/map.ts` | |
 | anything else | `text` fallback with "Unsupported H5P content" banner (unless `--unsupported drop`) | |
 
 ## H5P types still on the text fallback

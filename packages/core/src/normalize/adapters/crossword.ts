@@ -10,18 +10,35 @@ type RawWord = {
   extraClue?: string;
 };
 
+const MAX_WORD_LEN = 14;
+
+/**
+ * eXeLearning's crossword editor rejects any answer that contains
+ * whitespace or is longer than 14 characters (see `msgMaximeSize` in
+ * `crossword.js`). Strip whitespace and truncate so the grid loads;
+ * preserve the original wording in the clue so learners still see
+ * what they should type.
+ */
+function sanitizeAnswer(rawAnswer: string, clue: string): { word: string; definition: string } {
+  const stripped = rawAnswer.replace(/\s+/g, "");
+  const word = stripped.length > MAX_WORD_LEN ? stripped.slice(0, MAX_WORD_LEN) : stripped;
+  const changed = word !== rawAnswer;
+  const definition = changed ? `${clue} (answer: ${rawAnswer})` : clue;
+  return { word, definition };
+}
+
 export function adapt(content: any): NormalizedNode {
   const words: RawWord[] = Array.isArray(content?.words) ? content.words : [];
   const entries = words
     .map((w) => {
-      const word = typeof w?.answer === "string" ? w.answer.trim() : "";
-      const definition =
+      const rawAnswer = typeof w?.answer === "string" ? w.answer.trim() : "";
+      const clue =
         typeof w?.clue === "string"
           ? w.clue.trim()
           : typeof w?.extraClue === "string"
             ? w.extraClue.trim()
             : "";
-      return { word, definition };
+      return sanitizeAnswer(rawAnswer, clue);
     })
     .filter((e) => e.word.length > 0);
   return {

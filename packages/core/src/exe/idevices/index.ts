@@ -8,6 +8,8 @@ export { buildInteractiveVideoIdevice } from "./interactive-video.ts";
 export { buildBeforeAfterIdevice } from "./beforeafter.ts";
 export { buildExternalWebsiteIdevice } from "./external-website.ts";
 export { buildWordSearchIdevice } from "./word-search.ts";
+export { buildMapIdevice } from "./map.ts";
+export type { MapInput, MapPoint } from "./map.ts";
 export type { CrosswordEntry, CrosswordInput } from "./crossword.ts";
 export type {
   IvSlide,
