@@ -123,6 +123,11 @@ dispatch.
 
 ## Invariants (don't break these)
 
+0. **Everything that lands in the repo or on GitHub is in English.**
+   Code, identifiers, comments, log strings, docs, commit messages,
+   branch names, PR titles and PR bodies — all English, always, even when
+   the conversation with the user is in Spanish. Spanish stays in chat
+   replies only.
 1. **`packages/core` imports nothing from `node:*`.** It must run in the
    browser. CLI is the only place that touches `fs`.
 2. **IDs are always `YYYYMMDDHHmmss + 6 uppercase alphanumeric`.**
@@ -155,6 +160,23 @@ make up             # Vite dev server
 make template       # rebuild fixtures/elpx/template.elpx from exelearning release
 make ci             # the gate CI runs (lint + typecheck + tests)
 ```
+
+## Before pushing or opening a PR (mandatory)
+
+CI runs `make ci` which is **lint + typecheck + tests**. Biome's lint step
+fails on formatting drift, and tsc runs in strict mode. Always run this
+sequence locally before `git push` / `gh pr create`:
+
+```bash
+make fix && make ci
+```
+
+- `make fix` auto-fixes Biome formatting/lint so the lint step in CI is clean.
+- `make ci` catches strict-TS issues that `tsc` in isolation would also miss
+  (e.g. `Object is possibly 'undefined'` on `array[0]` accesses in tests —
+  use the `!` non-null assertion in tests where appropriate).
+- If anything fails, fix and re-run before pushing. Do not push expecting CI
+  to tell you what to fix.
 
 ## When you change a writer or adapter
 

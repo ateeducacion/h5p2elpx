@@ -21,6 +21,8 @@ import * as imageHotspots from "./image-hotspots.ts";
 import * as interactiveVideo from "./interactive-video.ts";
 import * as summary from "./summary.ts";
 import * as table from "./table.ts";
+import * as crossword from "./crossword.ts";
+import * as multipleHotspotQuestion from "./multiple-hotspot-question.ts";
 import { adaptUnsupported } from "./unsupported.ts";
 
 type AdapterModule = {
@@ -51,7 +53,9 @@ const REGISTRY: Record<string, AdapterModule> = Object.fromEntries(
       imageHotspots,
       interactiveVideo,
       summary,
-      table
+      table,
+      crossword,
+      multipleHotspotQuestion
     ] as AdapterModule[]
   ).map((m) => [m.machineName, m])
 );
