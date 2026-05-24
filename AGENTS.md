@@ -132,7 +132,7 @@ dispatch.
 | `H5P.Dictation` | `form` (fill); drops audio prompts | |
 | `H5P.SortParagraphs`, `H5P.ImageSequencing` | ordered `text` (author re-scrambles in eXe) | |
 | `H5P.ImageSlider`, `H5P.Collage` | `text` with sequential figures | |
-| `H5P.ImageHotspots`, `H5P.MultipleHotspotQuestion`, `H5P.ImageHotspotQuestion` | `map` iDevice — markers pinned on the background image; quiz variants set `selectsGame: true` with `correct` flags. Data inside `mapa-DataGame` is **plain JSON** (no encryption, no URI-encoding) — see `exe/idevices/map.ts` | |
+| `H5P.ImageHotspots`, `H5P.MultipleHotspotQuestion`, `H5P.ImageHotspotQuestion` | `map` iDevice — markers pinned on the background image; text hotspots use `type: 2`, popup HTML is stored in sibling `mapa-LinkTextsPoints` divs, coordinates are normalized to 0..1, and `selectsGame` must still be an array with eXe's default question shape even for non-quiz maps. Data inside `mapa-DataGame` is **plain JSON** (no encryption, no URI-encoding). Runtime-sensitive scalar types matter: `order` must be `""`, not `0`, because `map/export/map.js` calls `.trim()` before rendering `mapaMainContainer-*`. See `exe/idevices/map.ts` | |
 | `H5P.GuessTheAnswer`, `H5P.AdventCalendar`, `H5P.InformationWall` | `flipcards` — image+question (or panel/door content) on the front, solution/extra info on the back | |
 | `H5P.MultiMediaChoice` | `form` (`activityType: "selection"`) — image options rendered as `<img>` inside the answer label; selectionType picked the same way as `H5P.MultiChoice` | |
 | `H5P.ArithmeticQuiz` | container expanded into N `form` (selection) iDevices — H5P generates problems at runtime, so we synthesise a deterministic set (default 10) so the author can edit them in eXe | |
@@ -182,6 +182,13 @@ Real H5P samples for every implemented mapping are checked into
    parents. The validator (`packages/core/src/exe/validate.ts`) enforces it.
 7. **Unsupported content is never silently dropped** unless
    `--unsupported drop` is explicit. `--strict` aborts.
+8. **Writer output must satisfy both eXe editor import and exported/runtime
+   rendering.** Some iDevices accept malformed-ish data in edition mode but
+   fail before rendering the visible HTML. Validate against the matching
+   `public/files/perm/idevices/base/<type>/export/*.js` as well as the
+   edition handler. Preserve upstream scalar types exactly: empty strings,
+   arrays, booleans, and numbers are not interchangeable when runtime code
+   does direct calls like `.trim()`, `.length`, or `Object.values()`.
 
 ## Development workflow
 
@@ -227,7 +234,11 @@ make fix && make ci
    `bun run packages/cli/src/index.ts convert <path> -o /tmp/out.elpx`
    and unzip the result to inspect `content.xml`.
 4. **Manual eXeLearning import** is the only test that proves real-world
-   correctness. Do this once per non-trivial change to a writer.
+   correctness. Do this once per non-trivial change to a writer. Check both
+   the initial rendered view and the edit-save path. If the view is blank
+   until edit/save, inspect the browser console and the iDevice export
+   runtime; the editor may be reserializing fields into the types that the
+   runtime expected all along.
 
 ## Files you'll usually touch
 
