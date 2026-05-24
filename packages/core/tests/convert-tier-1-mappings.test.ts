@@ -19,8 +19,9 @@ async function convertAndFlatten(input: {
 }
 
 function decodeFlipcards(idevice: AnyIdevice): any {
-  const encoded = idevice.jsonProperties.dataGame as string;
-  return JSON.parse(decodeURIComponent(encoded));
+  const match = idevice.htmlView.match(/<div class="flipcards-DataGame js-hidden">([^<]+)<\/div>/);
+  expect(match).not.toBeNull();
+  return JSON.parse(match![1]!);
 }
 
 describe("convert H5P.GuessTheAnswer", () => {
@@ -36,10 +37,12 @@ describe("convert H5P.GuessTheAnswer", () => {
     expect(report.activities[0]!.mappedTo).toContain("flipcards");
     const fc = idevices.find((i) => i.typeName === "flipcards")!;
     const data = decodeFlipcards(fc);
-    expect(data.cards).toHaveLength(1);
-    expect(data.cards[0].front.text).toContain("animal.png");
-    expect(data.cards[0].front.text).toContain("What animal is this?");
-    expect(data.cards[0].back.text).toBe("An axolotl");
+    expect(data.typeGame).toBe("FlipCards");
+    expect(data.cardsGame).toHaveLength(1);
+    expect(data.cardsGame[0].url).toContain("animal.png");
+    expect(data.cardsGame[0].alt).toBe("mystery animal");
+    expect(data.cardsGame[0].eText).toContain("What animal is this?");
+    expect(data.cardsGame[0].eTextBk).toBe("An axolotl");
   });
 });
 
@@ -56,9 +59,9 @@ describe("convert H5P.AdventCalendar", () => {
     });
     const fc = idevices.find((i) => i.typeName === "flipcards")!;
     const data = decodeFlipcards(fc);
-    expect(data.cards).toHaveLength(2);
-    expect(data.cards[0].front.text).toBe("Day 1");
-    expect(data.cards[0].back.text).toContain("Day one");
+    expect(data.cardsGame).toHaveLength(2);
+    expect(data.cardsGame[0].eText).toBe("Day 1");
+    expect(data.cardsGame[0].eTextBk).toContain("Day one");
   });
 });
 
@@ -79,11 +82,11 @@ describe("convert H5P.InformationWall", () => {
     });
     const fc = idevices.find((i) => i.typeName === "flipcards")!;
     const data = decodeFlipcards(fc);
-    expect(data.cards).toHaveLength(2);
-    expect(data.cards[0].front.text).toContain("Volcanoes");
-    expect(data.cards[0].front.text).toContain("They erupt");
-    expect(data.cards[0].back.text).toBe("Magma rises through fissures");
-    expect(data.cards[1].back.text).toBe("Tectonic plates move");
+    expect(data.cardsGame).toHaveLength(2);
+    expect(data.cardsGame[0].eText).toContain("Volcanoes");
+    expect(data.cardsGame[0].eText).toContain("They erupt");
+    expect(data.cardsGame[0].eTextBk).toBe("Magma rises through fissures");
+    expect(data.cardsGame[1].eTextBk).toBe("Tectonic plates move");
   });
 });
 
@@ -194,8 +197,13 @@ describe("convert H5P.Agamotto", () => {
     });
     expect(report.activities[0]!.mappedTo).toContain("beforeafter");
     const ba = idevices.find((i) => i.typeName === "beforeafter")!;
-    expect(ba.htmlView).toContain("before.jpg");
-    expect(ba.htmlView).toContain("after.jpg");
+    const match = ba.htmlView.match(/<div class="beforeafter-DataGame js-hidden">([^<]+)<\/div>/);
+    expect(match).not.toBeNull();
+    const data = JSON.parse(match![1]!);
+    expect(data.cardsGame[0].urlBk).toContain("before.jpg");
+    expect(data.cardsGame[0].url).toContain("after.jpg");
+    expect(data.cardsGame[0].eTextBk).toBe("before");
+    expect(data.cardsGame[0].eText).toBe("after");
   });
 
   it("falls back to a text iDevice with sequential figures for >2 frames", async () => {

@@ -4,6 +4,7 @@ import {
   buildTrueOrFalseIdevice,
   buildFormIdevice,
   buildFlipcardsIdevice,
+  buildBeforeAfterIdevice,
   blanksToFill,
   newOdeId
 } from "../src/index.ts";
@@ -49,6 +50,8 @@ describe("trueorfalse iDevice shape", () => {
     expect(j.typeGame).toBe("TrueOrFalse");
     expect(j.questionsGame).toHaveLength(1);
     expect(j.questionsGame[0].solution).toBe(1);
+    expect(j.questionsGame[0].feedback).toBe("");
+    expect(j.questionsGame[0].suggestion).toBe("");
     const msgKeys = Object.keys(j.msgs);
     expect(msgKeys.length).toBeGreaterThanOrEqual(30);
     for (const k of ["msgTrue", "msgFalse", "msgCheck", "msgReboot", "msgTypeGame"]) {
@@ -93,8 +96,8 @@ describe("form iDevice (selection + fill)", () => {
   });
 });
 
-describe("flipcards iDevice (Pattern 2: URI-encoded JSON in hidden div)", () => {
-  it("emits a flipcards-DataGame js-hidden div with URI-encoded JSON", () => {
+describe("flipcards iDevice", () => {
+  it("emits the eXe runtime DataGame shape", () => {
     const idev = buildFlipcardsIdevice({
       pageId: "p",
       blockId: "b",
@@ -102,12 +105,53 @@ describe("flipcards iDevice (Pattern 2: URI-encoded JSON in hidden div)", () => 
       cards: [{ front: { text: "Q" }, back: { text: "A" } }]
     });
     expect(idev.typeName).toBe("flipcards");
+    expect(idev.htmlView).toContain('class="flipcards-IDevice"');
     expect(idev.htmlView).toContain('class="flipcards-DataGame js-hidden"');
     const dataDiv = idev.htmlView.match(
       /<div class="flipcards-DataGame js-hidden"[^>]*>([^<]+)<\/div>/
     )![1]!;
-    const decoded = JSON.parse(decodeURIComponent(dataDiv));
-    expect(decoded.typeGame).toBe("Flipcards");
-    expect(decoded.cards).toHaveLength(1);
+    const decoded = JSON.parse(dataDiv);
+    expect(decoded.typeGame).toBe("FlipCards");
+    expect(decoded.cardsGame).toHaveLength(1);
+    expect(decoded.cardsGame[0]).toMatchObject({
+      type: 2,
+      url: "",
+      eText: "Q",
+      urlBk: "",
+      eTextBk: "A",
+      audio: "",
+      audioBk: ""
+    });
+  });
+});
+
+describe("beforeafter iDevice", () => {
+  it("emits the eXe runtime DataGame shape", () => {
+    const idev = buildBeforeAfterIdevice({
+      pageId: "p",
+      blockId: "b",
+      order: 0,
+      beforeSrc: "before.jpg",
+      beforeLabel: "Before",
+      afterSrc: "after.jpg",
+      afterLabel: "After"
+    });
+    expect(idev.typeName).toBe("beforeafter");
+    expect(idev.htmlView).toContain('class="beforeafter-IDevice"');
+    expect(idev.htmlView).toContain('class="beforeafter-DataGame js-hidden"');
+    const dataDiv = idev.htmlView.match(
+      /<div class="beforeafter-DataGame js-hidden">([^<]+)<\/div>/
+    )![1]!;
+    const decoded = JSON.parse(dataDiv);
+    expect(decoded.typeGame).toBe("BeforeAfter");
+    expect(decoded.cardsGame).toHaveLength(1);
+    expect(decoded.cardsGame[0]).toMatchObject({
+      position: 50,
+      vertical: false,
+      url: "after.jpg",
+      urlBk: "before.jpg",
+      eText: "After",
+      eTextBk: "Before"
+    });
   });
 });

@@ -31,6 +31,12 @@ export type TrueOrFalseInput = {
  */
 export function buildTrueOrFalseIdevice(input: TrueOrFalseInput): ElpxIdevice {
   const id = newIdeviceId();
+  const questionsGame = input.questions.map((question) => ({
+    question: question.question ?? "",
+    feedback: question.feedback ?? "",
+    suggestion: question.suggestion ?? "",
+    solution: question.solution
+  }));
   const jsonProperties = {
     id,
     typeGame: "TrueOrFalse",
@@ -41,7 +47,7 @@ export function buildTrueOrFalseIdevice(input: TrueOrFalseInput): ElpxIdevice {
     percentageQuestions: 100,
     isTest: false,
     time: 0,
-    questionsGame: input.questions,
+    questionsGame,
     isScorm: 0,
     textButtonScorm: "Save score",
     repeatActivity: true,
