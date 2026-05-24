@@ -12,7 +12,7 @@ export type MapPoint = {
   y1?: number;
   /** Polygon vertices (only when iconType === 2). */
   vertices?: { x: number; y: number }[];
-  /** 0 = text popup (default), 1 = image, 2 = text-question, 3 = audio. */
+  /** eXe point content type: 0 = image, 1 = video, 2 = text, 3 = audio. */
   type?: 0 | 1 | 2 | 3;
   /** 0 = point, 1 = rectangle, 2 = polygon. */
   iconType?: 0 | 1 | 2;
@@ -45,20 +45,27 @@ function nextPointId(): string {
   return `p${Date.now().toString(36)}${pointSeq.toString(36)}`;
 }
 
+function normalizeCoordinate(value: number | undefined): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 0;
+  const normalized = value > 1 ? value / 100 : value;
+  return Math.min(1, Math.max(0, normalized));
+}
+
 function buildPoint(p: MapPoint): Record<string, unknown> {
   const id = nextPointId();
   const iconType = p.iconType ?? 0;
   const type = p.type ?? 0;
+  const title = p.title ?? "";
   return {
     id,
-    title: p.title ?? "",
+    title,
     type,
     url: "",
     video: "",
-    x: p.x,
-    y: p.y,
-    x1: p.x1 ?? 0,
-    y1: p.y1 ?? 0,
+    x: normalizeCoordinate(p.x),
+    y: normalizeCoordinate(p.y),
+    x1: normalizeCoordinate(p.x1),
+    y1: normalizeCoordinate(p.y1),
     points: iconType === 2 && p.vertices ? p.vertices : [],
     pointsd: [],
     footer: "",
@@ -76,10 +83,53 @@ function buildPoint(p: MapPoint): Record<string, unknown> {
     fontSize: "14",
     correct: p.correct ? 1 : 0,
     map: { id: `a${id}`, url: "", alt: "", author: "", pts: [] },
-    slides: [{ id: `s${id}`, title: "", url: "", author: "", alt: "", footer: "" }],
+    slides: [{ id: `s${id}`, title, url: "", author: "", alt: "", footer: "" }],
     tests: [],
     activeSlide: 0,
     activeTest: 0
+  };
+}
+
+function stringifyForDataGame(data: unknown): string {
+  return JSON.stringify(data)
+    .replace(/&/g, "\\u0026")
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e");
+}
+
+function buildMediaLinks(points: Record<string, unknown>[]): string[] {
+  return points.flatMap((point) => {
+    if (point.type !== 2 || typeof point.eText !== "string" || point.eText.length === 0) {
+      return [];
+    }
+    return [
+      `<div class="js-hidden mapa-LinkTextsPoints" data-id="${escapeHtml(String(point.id))}">${point.eText}</div>`
+    ];
+  });
+}
+
+function stripInlineMedia(points: Record<string, unknown>[]): Record<string, unknown>[] {
+  return points.map((point) =>
+    point.type === 2 && typeof point.eText === "string" && point.eText.length > 0
+      ? { ...point, eText: "" }
+      : point
+  );
+}
+
+function buildDefaultQuestion(): Record<string, unknown> {
+  return {
+    typeSelect: 0,
+    numberOptions: 4,
+    quextion: "",
+    options: ["", "", "", ""],
+    solution: "",
+    solutionWord: "",
+    percentageShow: 35,
+    msgError: "",
+    msgHit: "",
+    tests: [],
+    respuesta: "",
+    numbertests: 0
   };
 }
 
@@ -93,14 +143,15 @@ function buildPoint(p: MapPoint): Record<string, unknown> {
  * `public/files/perm/idevices/base/map/edition/map.js:2576-2611` and
  * `getDefaultPoint()` at line 1373. Unlike crossword/word-search, the
  * data inside `<div class="mapa-DataGame js-hidden">` is **plain JSON**
- * — no XOR encryption and no URI-encoding (verified against
- * `exelearning/test/fixtures/todos-los-idevices_dos_informes.elpx`).
+ * — no XOR encryption and no URI-encoding. The JSON is escaped with
+ * `\u003c`-style sequences so rich text fields cannot be parsed as HTML.
  *
  * Uses the same `textTextarea` jsonProperties wrapper as crossword.
  */
 export function buildMapIdevice(input: MapInput): ElpxIdevice {
   const id = newIdeviceId();
   const points = input.points.map(buildPoint);
+  const mediaLinks = buildMediaLinks(points);
   const gameData = {
     typeGame: "Mapa",
     instructions: input.instructions ?? "",
@@ -118,14 +169,14 @@ export function buildMapIdevice(input: MapInput): ElpxIdevice {
       codeAccess: "",
       messageCodeAccess: ""
     },
-    points,
+    points: stripInlineMedia(points),
     isScorm: 0,
     textButtonScorm: "",
     repeatActivity: true,
     weighted: 100,
     textAfter: "",
     evaluationG: input.isQuiz ? 1 : 0,
-    selectsGame: !!input.isQuiz,
+    selectsGame: [buildDefaultQuestion()],
     isNavigable: true,
     showSolution: true,
     timeShowSolution: 5,
@@ -139,7 +190,7 @@ export function buildMapIdevice(input: MapInput): ElpxIdevice {
     evaluation: false,
     evaluationID: "",
     id,
-    order: 0,
+    order: "",
     hideScoreBar: false,
     hideAreas: false,
     msgs: MAP_DEFAULT_MSGS
@@ -148,6 +199,7 @@ export function buildMapIdevice(input: MapInput): ElpxIdevice {
   const instructionsDiv = input.instructions
     ? `<div class="mapa-instructions gameQP-instructions">${input.instructions}</div>`
     : "";
+  const dataGameJson = stringifyForDataGame(gameData);
 
   const htmlView = [
     `<div class="mapa-IDevice">`,
@@ -155,8 +207,9 @@ export function buildMapIdevice(input: MapInput): ElpxIdevice {
     `  <div class="mapa-version js-hidden">3</div>`,
     `  <div class="mapa-feedback-game"></div>`,
     instructionsDiv ? `  ${instructionsDiv}` : "",
-    `  <div class="mapa-DataGame js-hidden">${JSON.stringify(gameData)}</div>`,
+    `  <div class="mapa-DataGame js-hidden">${dataGameJson}</div>`,
     `  <img src="${escapeHtml(input.imageUrl)}" class="js-hidden mapa-ImageMap" data-id="0" alt="${escapeHtml(input.imageAlt ?? "")}" />`,
+    ...mediaLinks.map((link) => `  ${link}`),
     `</div>`
   ]
     .filter(Boolean)

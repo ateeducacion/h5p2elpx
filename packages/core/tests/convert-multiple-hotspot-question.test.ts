@@ -43,15 +43,17 @@ describe("convert H5P.MultipleHotspotQuestion", () => {
     const game = JSON.parse(match![1]!);
     expect(game.typeGame).toBe("Mapa");
     expect(game.version).toBe(3);
-    expect(game.selectsGame).toBe(true);
+    expect(game.selectsGame).toMatchObject([
+      { typeSelect: 0, numberOptions: 4, options: ["", "", "", ""] }
+    ]);
     // forHtml rewriter is a passthrough here because the fixture has no
     // actual image bytes registered in the asset collector.
     expect(game.url).toContain("cats.jpg");
     expect(game.instructions).toBe("Click every cat");
     expect(game.points).toHaveLength(2);
-    // Correct hotspot: rectangle (x1/y1 derived from width/height) + correct=1.
-    expect(game.points[0].x).toBeCloseTo(10.2);
-    expect(game.points[0].x1).toBeCloseTo(25.2);
+    // Correct hotspot: rectangle coordinates normalized to eXe's 0..1 map space + correct=1.
+    expect(game.points[0].x).toBeCloseTo(0.102);
+    expect(game.points[0].x1).toBeCloseTo(0.252);
     expect(game.points[0].correct).toBe(1);
     expect(game.points[0].eText).toBe("Yes, that's a cat!");
     expect(game.points[1].correct).toBe(0);

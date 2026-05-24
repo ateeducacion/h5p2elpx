@@ -14,8 +14,9 @@ export const machineName = "H5P.ImageHotspots";
 function renderContentBody(items: any[]): string {
   return items
     .map((c) => {
-      const params = c?.action?.params ?? {};
-      const lib = String(c?.action?.library ?? "");
+      const action = c?.action ?? c;
+      const params = action?.params ?? {};
+      const lib = String(action?.library ?? "");
       if (lib.startsWith("H5P.AdvancedText") || lib.startsWith("H5P.Text")) {
         return typeof params?.text === "string" ? params.text : "";
       }
@@ -39,16 +40,32 @@ function renderContentBody(items: any[]): string {
     .join("\n");
 }
 
+function textTitleFromHtml(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function percentToRatio(value: unknown, fallback: number): number {
+  const numberValue = Number(value ?? fallback);
+  if (!Number.isFinite(numberValue)) return fallback / 100;
+  return Math.min(1, Math.max(0, numberValue / 100));
+}
+
 export function adapt(content: any): NormalizedNode {
   const imgPath = typeof content?.image?.path === "string" ? content.image.path : "";
   const hotspots: any[] = Array.isArray(content?.hotspots) ? content.hotspots : [];
-  const points: NormalizedHotspotMapPoint[] = hotspots.map((h) => {
+  const points: NormalizedHotspotMapPoint[] = hotspots.map((h, idx) => {
     const items = Array.isArray(h?.content) ? h.content : [];
+    const eText = renderContentBody(items);
+    const header = typeof h?.header === "string" ? h.header.trim() : "";
     return {
-      x: Number(h?.position?.x ?? 50),
-      y: Number(h?.position?.y ?? 50),
-      title: typeof h?.header === "string" ? h.header : "",
-      eText: renderContentBody(items)
+      x: percentToRatio(h?.position?.x, 50),
+      y: percentToRatio(h?.position?.y, 50),
+      type: 2,
+      title: header || textTitleFromHtml(eText) || `Hotspot ${idx + 1}`,
+      eText
     };
   });
   return {

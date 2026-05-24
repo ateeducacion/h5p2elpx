@@ -217,6 +217,45 @@ describe("convert H5P.Agamotto", () => {
   });
 });
 
+describe("convert H5P.ImageHotspots", () => {
+  it("keeps popup text from direct content entries", async () => {
+    const { idevices, report } = await convertAndFlatten({
+      mainLibrary: "H5P.ImageHotspots",
+      content: {
+        image: { path: "images/house.jpg" },
+        hotspots: [
+          {
+            position: { x: 42.8, y: 41.45 },
+            content: [
+              {
+                params: { text: "<p>Solar panel</p>" },
+                library: "H5P.Text 1.1"
+              }
+            ]
+          }
+        ]
+      }
+    });
+    expect(report.activities[0]!.mappedTo).toContain("map");
+    const map = idevices.find((i) => i.typeName === "map")!;
+    const match = map.htmlView.match(/mapa-DataGame[^>]*>([^<]+)</);
+    expect(match).not.toBeNull();
+    const game = JSON.parse(match![1]!);
+    expect(game.points[0].title).toBe("Solar panel");
+    expect(game.points[0].type).toBe(2);
+    expect(game.points[0].x).toBeCloseTo(0.428);
+    expect(game.points[0].y).toBeCloseTo(0.4145);
+    expect(game.points[0].slides[0].title).toBe("Solar panel");
+    expect(game.points[0].eText).toBe("");
+    expect(game.selectsGame).toMatchObject([
+      { typeSelect: 0, numberOptions: 4, options: ["", "", "", ""] }
+    ]);
+    expect(game.order).toBe("");
+    expect(map.htmlView).toContain('class="js-hidden mapa-LinkTextsPoints"');
+    expect(map.htmlView).toContain("<p>Solar panel</p>");
+  });
+});
+
 describe("convert H5P.GameMap", () => {
   it("maps stages to map markers parsed from the H5P telemetry string", async () => {
     const { idevices, report } = await convertAndFlatten({
