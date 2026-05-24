@@ -822,8 +822,14 @@ code,
 .foot .heart {
   color: #d44;
 }
-.foot .foot-links {
-  margin-top: 6px;
+.foot .foot-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  vertical-align: middle;
+}
+.foot .foot-source svg {
+  vertical-align: middle;
 }
 .foot a {
   color: var(--exe-orange);

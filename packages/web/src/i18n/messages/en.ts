@@ -94,9 +94,8 @@ export const en = {
   footer: {
     madeWithBefore: "Made with ",
     madeWithMiddle: " by ",
-    licenseBefore: "Licensed under ",
     licenseLink: "AGPL-3.0",
-    sourceOnGithub: "Source on GitHub"
+    sourceCode: "Source Code"
   },
   errors: {
     templateNotFound: "Could not load eXe template: {msg}"

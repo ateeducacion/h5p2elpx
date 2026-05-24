@@ -7,7 +7,7 @@ export const es: Messages = {
     titleBefore: "Convierte ",
     titleMiddle: " a ",
     titleAfter: " editable",
-    ledeBefore: "Suelta un paquete ",
+    ledeBefore: "Arrastra un paquete ",
     ledeMiddle: " y descarga un proyecto ",
     ledeAfter: " que podrás abrir y editar en eXeLearning. Nada sale de tu navegador."
   },
@@ -96,9 +96,8 @@ export const es: Messages = {
   footer: {
     madeWithBefore: "Hecho con ",
     madeWithMiddle: " por ",
-    licenseBefore: "Distribuido bajo ",
     licenseLink: "AGPL-3.0",
-    sourceOnGithub: "Código en GitHub"
+    sourceCode: "Código"
   },
   errors: {
     templateNotFound: "No se pudo cargar la plantilla de eXe: {msg}"
