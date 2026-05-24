@@ -120,51 +120,37 @@ dispatch.
 | `H5P.Summary` | multiple `form` iDevices (first option = correct) | |
 | `H5P.Blanks` | `form` with `activityType: "fill"` | `*answer*` → `<u>answer</u>` via `blanksToFill()` helper |
 | `H5P.DragText` | `form` with `activityType: "fill"` | same transform |
-| `H5P.Dialogcards`, `H5P.MemoryGame` | `flipcards` (Pattern 2: URI-encoded JSON in hidden div) | |
+| `H5P.Dialogcards`, `H5P.MemoryGame`, `H5P.Flashcards`, `H5P.ImagePair` | `flipcards` (Pattern 2: URI-encoded JSON in hidden div) | |
 | `H5P.Table` | `text` (HTML table) | |
+| `H5P.Crossword` | `crossword` iDevice (encrypted DataGame: XOR(146) + escape() — `exe/encrypt.ts`); `typeGame: "Crucigrama"`, `version: 2`, full `msgs` bag from `crossword-i18n.ts` | |
+| `H5P.ImageJuxtaposition` | `beforeafter` (htmlView-only) | |
+| `H5P.IFrameEmbed` | `external-website` (htmlView-only) | |
+| `H5P.FindTheWords` | `word-search` (encrypted DataGame, `typeGame: "Sopa"`) | |
+| `H5P.Accordion` | `text` with `<details><summary>` panels | |
+| `H5P.Essay` | `text` with `<textarea>` placeholder | |
+| `H5P.QuestionSet`, `H5P.Questionnaire` | flatten children into iDevices (Column-style) | |
+| `H5P.Dictation` | `form` (fill); drops audio prompts | |
+| `H5P.SortParagraphs`, `H5P.ImageSequencing` | ordered `text` (author re-scrambles in eXe) | |
+| `H5P.ImageSlider`, `H5P.Collage` | `text` with sequential figures | |
+| `H5P.ImageHotspotQuestion` | image + ordered hotspot list | |
 | anything else | `text` fallback with "Unsupported H5P content" banner (unless `--unsupported drop`) | |
 
-## H5P types not yet mapped — candidates
+## H5P types still on the text fallback
 
-Triage of the unsupported entries on
-https://h5p.org/content-types-and-applications against the eXe iDevice
-catalog in
-`/Users/ernesto/Downloads/git/exelearning/doc/elpx-format/idevices/catalog.md`.
-Use this as a prioritized backlog — top rows are clean 1:1 fits, bottom
-row stays on the `text` fallback because eXe has no native equivalent.
+Every row from the previous triage table has been mapped (see the
+"Current H5P → eXe mapping" table above). The remaining content types
+from https://h5p.org/content-types-and-applications stay on the
+generic `text` fallback because eXeLearning has no native equivalent:
 
-| H5P content type | machineName (likely) | Target eXe iDevice | Fit | Notes |
-| --- | --- | --- | --- | --- |
-| Image Juxtaposition | `H5P.ImageJuxtaposition` | `beforeafter` | excellent | Two images + slider — direct 1:1 |
-| Iframe Embedder | `H5P.IFrameEmbed` | `external-website` | excellent | URL + width/height fields line up |
-| Find the Words | `H5P.FindTheWords` | `word-search` | excellent | Grid + word list |
-| Flashcards | `H5P.Flashcards` | `flipcards` | excellent | Reuse existing writer (Pattern 2) |
-| Image Pairing | `H5P.ImagePair` | `flipcards` or `relate` | good | Reuse `flipcards` writer with image pairs |
-| Image Sequencing | `H5P.ImageSequencing` | `sort` / `scrambled-list` | good | New writer needed |
-| Sort the Paragraphs | `H5P.SortParagraphs` | `scrambled-list` | good | New writer needed |
-| Image Slider | `H5P.ImageSlider` | `image-gallery` | good | New `image-gallery` writer (already on TODO) |
-| Collage | `H5P.Collage` | `image-gallery` | good | Same writer as above |
-| Quiz (Question Set) | `H5P.QuestionSet` | expand inline | good | Adapter only — emit one iDevice per child (mirror `InteractiveBook` strategy) |
-| Accordion | `H5P.Accordion` | `text` (HTML `<details>`) | acceptable | Adapter only; no new writer |
-| Questionnaire | `H5P.Questionnaire` | `form` (one per item) | acceptable | Adapter mirrors `Summary` pattern |
-| Dictation | `H5P.Dictation` | `form` (`activityType: "fill"`) | acceptable | Lossy: drops audio prompts |
-| Essay | `H5P.Essay` | `text` | acceptable | No free-text grading in eXe |
-| Find the Hotspot | `H5P.ImageHotspotQuestion` | extend `multiple-hotspot-question` | acceptable | Small variant of the existing adapter |
-| Chart, Timeline, Personality Quiz, Documentation Tool, KewAr Code, AR Scavenger, Audio Recorder, Speak the Words(+Set), Virtual Tour (360), Branching Scenario, Cornell Notes, Information Wall, Structure Strip, Advent Calendar, Impressive Presentation, Multimedia Choice, Complex Fill the Blanks, Arithmetic Quiz, Game Map, Guess the Answer | various | `text` fallback only | low | No reasonable native eXe equivalent; current fallback is correct |
+Chart, Timeline, Personality Quiz, Documentation Tool, KewAr Code,
+AR Scavenger, Audio Recorder, Speak the Words(+Set), Virtual Tour
+(360), Branching Scenario, Cornell Notes, Information Wall, Structure
+Strip, Advent Calendar, Impressive Presentation, Multimedia Choice,
+Complex Fill the Blanks, Arithmetic Quiz, Game Map, Guess the Answer.
 
-Top 4 worth picking up first (best ROI — each maps 1:1 to an existing
-eXe iDevice with little or no new writer code):
-
-1. `H5P.ImageJuxtaposition` → `beforeafter`
-2. `H5P.IFrameEmbedder` → `external-website`
-3. `H5P.FindTheWords` → `word-search`
-4. `H5P.Flashcards` → `flipcards` (reuses the writer used by
-   `Dialogcards` / `MemoryGame`)
-
-Sample `.h5p` files for these four are checked in at
-`fixtures/h5p/image-juxtaposition.h5p`, `fixtures/h5p/iframe-embedder.h5p`,
-`fixtures/h5p/find-the-words.h5p`, `fixtures/h5p/flashcards.h5p`
-(downloaded from the official examples on h5p.org).
+Real H5P samples for every implemented mapping are checked into
+`fixtures/h5p/` and exercised end-to-end by
+`packages/core/tests/fixtures.test.ts`.
 
 ## Invariants (don't break these)
 

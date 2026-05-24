@@ -5,6 +5,9 @@ export { buildFormIdevice, blanksToFill } from "./form.ts";
 export { buildFlipcardsIdevice } from "./flipcards.ts";
 export { buildCrosswordIdevice } from "./crossword.ts";
 export { buildInteractiveVideoIdevice } from "./interactive-video.ts";
+export { buildBeforeAfterIdevice } from "./beforeafter.ts";
+export { buildExternalWebsiteIdevice } from "./external-website.ts";
+export { buildWordSearchIdevice } from "./word-search.ts";
 export type { CrosswordEntry, CrosswordInput } from "./crossword.ts";
 export type {
   IvSlide,

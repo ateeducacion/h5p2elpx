@@ -11,7 +11,18 @@ const realSamples = [
   { file: "true-false-question.h5p", expectMainLibrary: "H5P.TrueFalse" },
   { file: "course-presentation.h5p", expectMainLibrary: "H5P.CoursePresentation" },
   { file: "interactive-book.h5p", expectMainLibrary: "H5P.InteractiveBook" },
-  { file: "LumiH5PIDMultiChoiceTest.h5p", expectMainLibrary: "H5P.MultiChoice" }
+  { file: "LumiH5PIDMultiChoiceTest.h5p", expectMainLibrary: "H5P.MultiChoice" },
+  { file: "crossword.h5p", expectMainLibrary: "H5P.Crossword" },
+  { file: "image-juxtaposition.h5p", expectMainLibrary: "H5P.ImageJuxtaposition" },
+  { file: "iframe-embedder.h5p", expectMainLibrary: "H5P.IFrameEmbed" },
+  { file: "find-the-words.h5p", expectMainLibrary: "H5P.FindTheWords" },
+  { file: "flashcards.h5p", expectMainLibrary: "H5P.Flashcards" },
+  { file: "accordion.h5p", expectMainLibrary: "H5P.Accordion" },
+  { file: "collage.h5p", expectMainLibrary: "H5P.Collage" },
+  { file: "dictation.h5p", expectMainLibrary: "H5P.Dictation" },
+  { file: "image-hotspot-question.h5p", expectMainLibrary: "H5P.ImageHotspotQuestion" },
+  { file: "image-slider.h5p", expectMainLibrary: "H5P.ImageSlider" },
+  { file: "questionnaire.h5p", expectMainLibrary: "H5P.Questionnaire" }
 ];
 
 describe("real H5P sample fixtures (end-to-end)", () => {

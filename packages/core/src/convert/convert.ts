@@ -14,6 +14,9 @@ import {
   buildFlipcardsIdevice,
   buildCrosswordIdevice,
   buildInteractiveVideoIdevice,
+  buildBeforeAfterIdevice,
+  buildExternalWebsiteIdevice,
+  buildWordSearchIdevice,
   blanksToFill,
   type FormQuestion,
   type SelectionQuestion
@@ -426,6 +429,62 @@ function emitNode(
         })
       );
       ctx.activityReport.mappedTo!.push("flipcards");
+      return;
+    }
+    case "beforeafter": {
+      const block = newBlock(hostPage);
+      addIdevice(
+        block,
+        buildBeforeAfterIdevice({
+          pageId: hostPage.id,
+          blockId: block.id,
+          order: 0,
+          title: node.title,
+          beforeSrc: ctx.forHtml(node.before.src),
+          beforeLabel: node.before.label,
+          beforeAlt: node.before.alt,
+          afterSrc: ctx.forHtml(node.after.src),
+          afterLabel: node.after.label,
+          afterAlt: node.after.alt
+        })
+      );
+      ctx.activityReport.mappedTo!.push("beforeafter");
+      return;
+    }
+    case "iframe": {
+      const block = newBlock(hostPage);
+      // Local-file sources are rewritten into asset URLs; remote URLs pass
+      // through forHtml unchanged.
+      const src = /^https?:\/\//i.test(node.src) ? node.src : ctx.forHtml(node.src);
+      addIdevice(
+        block,
+        buildExternalWebsiteIdevice({
+          pageId: hostPage.id,
+          blockId: block.id,
+          order: 0,
+          title: node.title,
+          src,
+          width: node.width,
+          height: node.height
+        })
+      );
+      ctx.activityReport.mappedTo!.push("external-website");
+      return;
+    }
+    case "word-search": {
+      const block = newBlock(hostPage);
+      addIdevice(
+        block,
+        buildWordSearchIdevice({
+          pageId: hostPage.id,
+          blockId: block.id,
+          order: 0,
+          title: node.title,
+          words: node.words,
+          instructions: node.taskDescription
+        })
+      );
+      ctx.activityReport.mappedTo!.push("word-search");
       return;
     }
     case "unsupported": {
