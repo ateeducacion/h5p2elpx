@@ -109,5 +109,15 @@ export const es: Messages = {
     warning:
       "Aviso: esta funcionalidad está en fase experimental. Los archivos generados pueden contener errores, por lo que se recomienda revisarlos antes de utilizarlos.",
     dismiss: "Descartar aviso"
+  },
+  cli: {
+    title: "Uso desde la terminal (CLI)",
+    installInfo:
+      "Para usar el comando, necesitas tener instalado Node.js o Bun. No necesitas instalar la herramienta previamente; npx la ejecutará automáticamente.",
+    commandLabel: "Ejecuta el siguiente comando para realizar una conversión local:",
+    copy: "Copiar",
+    copied: "¡Copiado!",
+    issuesLabel: "¿Tienes problemas?",
+    issuesLink: "Reporta un error en GitHub"
   }
 };

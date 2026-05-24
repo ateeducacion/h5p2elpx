@@ -107,6 +107,16 @@ export const en = {
     warning:
       "Notice: this feature is in experimental phase. Generated files may contain errors, so reviewing them before use is recommended.",
     dismiss: "Dismiss warning"
+  },
+  cli: {
+    title: "Use from terminal (CLI)",
+    installInfo:
+      "To run the command, you need Node.js or Bun installed. There is no need to install the tool beforehand; npx will execute it automatically.",
+    commandLabel: "Run the following command to perform a local conversion:",
+    copy: "Copy",
+    copied: "Copied!",
+    issuesLabel: "Having issues?",
+    issuesLink: "Report a bug on GitHub"
   }
 };
 

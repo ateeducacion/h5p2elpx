@@ -12,6 +12,7 @@ import { ConversionOptionsForm, type UiOptions } from "./components/ConversionOp
 import { ConvertBar } from "./components/ConvertBar.tsx";
 import { DownloadPanel } from "./components/DownloadPanel.tsx";
 import { Dropzone } from "./components/Dropzone.tsx";
+import { CliSection } from "./components/CliSection.tsx";
 import { ExperimentalBanner } from "./components/ExperimentalBanner.tsx";
 import { Footer } from "./components/Footer.tsx";
 import { GithubCorner } from "./components/GithubCorner.tsx";
@@ -151,6 +152,7 @@ export function App() {
 
         <Box icon="share" title={t("boxes.upload")} meta={filesMeta}>
           <Dropzone onFiles={onFilesDropped} files={files} onRemove={onRemoveFile} />
+          <CliSection githubUrl={REPO_URL} />
         </Box>
 
         {hasFiles && (
