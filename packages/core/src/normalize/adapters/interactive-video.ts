@@ -57,8 +57,7 @@ export function adapt(content: any): NormalizedNode {
       if (first && Array.isArray(first.answers)) {
         const question = typeof first.question === "string" ? first.question : "";
         const answers: Array<[string, 0 | 1]> = first.answers.map(
-          (label: any, idx: number) =>
-            [String(label ?? ""), idx === 0 ? 1 : 0] as [string, 0 | 1]
+          (label: any, idx: number) => [String(label ?? ""), idx === 0 ? 1 : 0] as [string, 0 | 1]
         );
         slides.push({ type: "singleChoice", question, answers, startTime });
         continue;

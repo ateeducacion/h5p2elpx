@@ -16,12 +16,10 @@ describe("convert H5P.Crossword", () => {
         ]
       }
     });
-    const result = await convert([
-      { kind: "h5p-bytes", data: bytes, filename: "crossword.h5p" }
-    ]);
+    const result = await convert([{ kind: "h5p-bytes", data: bytes, filename: "crossword.h5p" }]);
     expect(result.report.summary.converted).toBe(1);
     expect(result.report.summary.unsupported).toBe(0);
-    expect(result.report.activities[0].mappedTo).toContain("crossword");
+    expect(result.report.activities[0]!.mappedTo).toContain("crossword");
 
     const validation = await validateElpx(result.elpx);
     expect(validation.ok).toBe(true);

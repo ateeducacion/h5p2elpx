@@ -51,9 +51,7 @@ export function buildCrosswordIdevice(input: CrosswordInput): ElpxIdevice {
 
   const htmlView = [
     `<div class="crucigrama-IDevice" id="${id}-container">`,
-    input.instructions
-      ? `  <div class="crucigrama-Instructions">${input.instructions}</div>`
-      : "",
+    input.instructions ? `  <div class="crucigrama-Instructions">${input.instructions}</div>` : "",
     `  <div class="crucigrama-DataGame js-hidden" data-id="${id}">${dataEncoded}</div>`,
     `  <div class="crucigrama-Game" id="${id}-game"></div>`,
     `</div>`

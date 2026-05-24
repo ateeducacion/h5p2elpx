@@ -156,6 +156,23 @@ make template       # rebuild fixtures/elpx/template.elpx from exelearning relea
 make ci             # the gate CI runs (lint + typecheck + tests)
 ```
 
+## Before pushing or opening a PR (mandatory)
+
+CI runs `make ci` which is **lint + typecheck + tests**. Biome's lint step
+fails on formatting drift, and tsc runs in strict mode. Always run this
+sequence locally before `git push` / `gh pr create`:
+
+```bash
+make fix && make ci
+```
+
+- `make fix` auto-fixes Biome formatting/lint so the lint step in CI is clean.
+- `make ci` catches strict-TS issues that `tsc` in isolation would also miss
+  (e.g. `Object is possibly 'undefined'` on `array[0]` accesses in tests —
+  use the `!` non-null assertion in tests where appropriate).
+- If anything fails, fix and re-run before pushing. Do not push expecting CI
+  to tell you what to fix.
+
 ## When you change a writer or adapter
 
 1. **Read the corresponding upstream file first.** For writers, that's

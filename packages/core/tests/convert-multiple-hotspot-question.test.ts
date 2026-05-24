@@ -28,9 +28,7 @@ describe("convert H5P.MultipleHotspotQuestion", () => {
       }
     });
 
-    const result = await convert([
-      { kind: "h5p-bytes", data: bytes, filename: "mhs.h5p" }
-    ]);
+    const result = await convert([{ kind: "h5p-bytes", data: bytes, filename: "mhs.h5p" }]);
     expect(result.report.summary.converted).toBe(1);
 
     const zip = await JSZip.loadAsync(result.elpx);

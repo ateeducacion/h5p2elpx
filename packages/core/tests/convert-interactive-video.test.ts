@@ -12,9 +12,7 @@ describe("convert H5P.InteractiveVideo", () => {
       content: {
         interactiveVideo: {
           video: {
-            files: [
-              { path: "https://www.youtube.com/watch?v=abc123", mime: "video/YouTube" }
-            ]
+            files: [{ path: "https://www.youtube.com/watch?v=abc123", mime: "video/YouTube" }]
           },
           assets: {
             interactions: [
@@ -44,11 +42,9 @@ describe("convert H5P.InteractiveVideo", () => {
       }
     });
 
-    const result = await convert([
-      { kind: "h5p-bytes", data: bytes, filename: "iv.h5p" }
-    ]);
+    const result = await convert([{ kind: "h5p-bytes", data: bytes, filename: "iv.h5p" }]);
     expect(result.report.summary.converted).toBe(1);
-    expect(result.report.activities[0].mappedTo).toContain("interactive-video");
+    expect(result.report.activities[0]!.mappedTo).toContain("interactive-video");
 
     const validation = await validateElpx(result.elpx);
     expect(validation.ok).toBe(true);
