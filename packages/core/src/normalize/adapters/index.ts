@@ -38,6 +38,14 @@ import * as questionSet from "./question-set.ts";
 import * as questionnaire from "./questionnaire.ts";
 import * as dictation from "./dictation.ts";
 import * as imageHotspotQuestion from "./image-hotspot-question.ts";
+import * as guessTheAnswer from "./guess-the-answer.ts";
+import * as adventCalendar from "./advent-calendar.ts";
+import * as informationWall from "./information-wall.ts";
+import * as multiMediaChoice from "./multi-media-choice.ts";
+import * as arithmeticQuiz from "./arithmetic-quiz.ts";
+import * as complexFillTheBlanks from "./complex-fill-the-blanks.ts";
+import * as agamotto from "./agamotto.ts";
+import * as gameMap from "./game-map.ts";
 import { adaptUnsupported } from "./unsupported.ts";
 
 type AdapterModule = {
@@ -85,7 +93,15 @@ const REGISTRY: Record<string, AdapterModule> = Object.fromEntries(
       questionSet,
       questionnaire,
       dictation,
-      imageHotspotQuestion
+      imageHotspotQuestion,
+      guessTheAnswer,
+      adventCalendar,
+      informationWall,
+      multiMediaChoice,
+      arithmeticQuiz,
+      complexFillTheBlanks,
+      agamotto,
+      gameMap
     ] as AdapterModule[]
   ).map((m) => [m.machineName, m])
 );

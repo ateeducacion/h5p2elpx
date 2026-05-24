@@ -120,20 +120,26 @@ Deployed automatically to GitHub Pages on every push to `main` via
 | 3 | `H5P.SortParagraphs`, `H5P.ImageSequencing` | ordered text iDevice (author re-scrambles in eXe) |
 | 3 | `H5P.ImageSlider`, `H5P.Collage` | text iDevice with sequential figures |
 | 3 | `H5P.ImageHotspotQuestion` | `map` iDevice (rectangle hotspots, quiz mode) |
+| 4 | `H5P.GuessTheAnswer` | `flipcards` iDevice (image+question front, solution back) |
+| 4 | `H5P.AdventCalendar` | `flipcards` iDevice (one door per card) |
+| 4 | `H5P.InformationWall` | `flipcards` iDevice (one panel per card) |
+| 4 | `H5P.MultiMediaChoice` | form iDevice (`activityType: "selection"`, image options) |
+| 4 | `H5P.ArithmeticQuiz` | expanded into N form (selection) iDevices with deterministic problems |
+| 4 | `H5P.AdvancedBlanks` (Complex Fill the Blanks) | form iDevice (`activityType: "fill"`) |
+| 4 | `H5P.Agamotto` | `beforeafter` iDevice for two frames, sequential text iDevice otherwise |
+| 4 | `H5P.GameMap` | `map` iDevice (markers parsed from `telemetry`) |
 | anything else | visible warning iDevice (unless `--unsupported drop`) |
 
 ## Roadmap — H5P types still on the text fallback
 
-Everything from the previous "candidates" triage has now been
-implemented. Remaining content types from
+Remaining content types from
 <https://h5p.org/content-types-and-applications> stay on the generic
 `text` fallback because eXeLearning has no native equivalent:
 
 Chart, Timeline, Personality Quiz, Documentation Tool, KewAr Code,
 AR Scavenger, Audio Recorder, Speak the Words(+Set), Virtual Tour
-(360), Branching Scenario, Cornell Notes, Information Wall, Structure
-Strip, Advent Calendar, Impressive Presentation, Multimedia Choice,
-Complex Fill the Blanks, Arithmetic Quiz, Game Map, Guess the Answer.
+(360), Branching Scenario, Cornell Notes, Structure Strip, Impressive
+Presentation.
 
 Sample `.h5p` files for every implemented mapping live under
 `fixtures/h5p/` and are exercised by `packages/core/tests/fixtures.test.ts`.

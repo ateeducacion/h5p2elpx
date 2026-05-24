@@ -133,20 +133,24 @@ dispatch.
 | `H5P.SortParagraphs`, `H5P.ImageSequencing` | ordered `text` (author re-scrambles in eXe) | |
 | `H5P.ImageSlider`, `H5P.Collage` | `text` with sequential figures | |
 | `H5P.ImageHotspots`, `H5P.MultipleHotspotQuestion`, `H5P.ImageHotspotQuestion` | `map` iDevice — markers pinned on the background image; quiz variants set `selectsGame: true` with `correct` flags. Data inside `mapa-DataGame` is **plain JSON** (no encryption, no URI-encoding) — see `exe/idevices/map.ts` | |
+| `H5P.GuessTheAnswer`, `H5P.AdventCalendar`, `H5P.InformationWall` | `flipcards` — image+question (or panel/door content) on the front, solution/extra info on the back | |
+| `H5P.MultiMediaChoice` | `form` (`activityType: "selection"`) — image options rendered as `<img>` inside the answer label; selectionType picked the same way as `H5P.MultiChoice` | |
+| `H5P.ArithmeticQuiz` | container expanded into N `form` (selection) iDevices — H5P generates problems at runtime, so we synthesise a deterministic set (default 10) so the author can edit them in eXe | |
+| `H5P.AdvancedBlanks` (Complex Fill the Blanks) | `form` (`activityType: "fill"`) — `[answer\|alt]` bracket syntax is rewritten into the `*answer*` markers consumed by `blanksToFill()` | |
+| `H5P.Agamotto` | `beforeafter` when there are exactly two frames; sequential `<figure>` `text` iDevice otherwise — H5P's continuous slider has no eXe analogue | |
+| `H5P.GameMap` | `map` iDevice — background image + markers parsed from each stage's `telemetry` string (`"x,y,w,h"` in percent); embedded text/image sub-content goes in the popup `eText` | |
 | anything else | `text` fallback with "Unsupported H5P content" banner (unless `--unsupported drop`) | |
 
 ## H5P types still on the text fallback
 
-Every row from the previous triage table has been mapped (see the
-"Current H5P → eXe mapping" table above). The remaining content types
-from https://h5p.org/content-types-and-applications stay on the
-generic `text` fallback because eXeLearning has no native equivalent:
+The remaining content types from
+https://h5p.org/content-types-and-applications stay on the generic
+`text` fallback because eXeLearning has no native equivalent:
 
 Chart, Timeline, Personality Quiz, Documentation Tool, KewAr Code,
 AR Scavenger, Audio Recorder, Speak the Words(+Set), Virtual Tour
-(360), Branching Scenario, Cornell Notes, Information Wall, Structure
-Strip, Advent Calendar, Impressive Presentation, Multimedia Choice,
-Complex Fill the Blanks, Arithmetic Quiz, Game Map, Guess the Answer.
+(360), Branching Scenario, Cornell Notes, Structure Strip, Impressive
+Presentation.
 
 Real H5P samples for every implemented mapping are checked into
 `fixtures/h5p/` and exercised end-to-end by
