@@ -1,0 +1,247 @@
+import { describe, it, expect } from "vitest";
+import { convert } from "../src/convert/convert.ts";
+import { makeH5pZip } from "./_helpers.ts";
+
+type AnyIdevice = { typeName: string; jsonProperties: any; htmlView: string };
+
+async function convertAndFlatten(input: {
+  mainLibrary: string;
+  content: unknown;
+}): Promise<{ idevices: AnyIdevice[]; report: any }> {
+  const bytes = await makeH5pZip({ mainLibrary: input.mainLibrary, content: input.content });
+  const result = await convert([
+    { kind: "h5p-bytes", data: bytes, filename: `${input.mainLibrary}.h5p` }
+  ]);
+  const idevices = result.project.pages.flatMap((p) =>
+    p.blocks.flatMap((b) => b.iDevices as AnyIdevice[])
+  );
+  return { idevices, report: result.report };
+}
+
+function decodeFlipcards(idevice: AnyIdevice): any {
+  const encoded = idevice.jsonProperties.dataGame as string;
+  return JSON.parse(decodeURIComponent(encoded));
+}
+
+describe("convert H5P.GuessTheAnswer", () => {
+  it("emits a single-card flipcards iDevice with image + question on the front", async () => {
+    const { idevices, report } = await convertAndFlatten({
+      mainLibrary: "H5P.GuessTheAnswer",
+      content: {
+        image: { path: "images/animal.png", alt: "mystery animal" },
+        taskDescription: "What animal is this?",
+        solutionText: "An axolotl"
+      }
+    });
+    expect(report.activities[0]!.mappedTo).toContain("flipcards");
+    const fc = idevices.find((i) => i.typeName === "flipcards")!;
+    const data = decodeFlipcards(fc);
+    expect(data.cards).toHaveLength(1);
+    expect(data.cards[0].front.text).toContain("animal.png");
+    expect(data.cards[0].front.text).toContain("What animal is this?");
+    expect(data.cards[0].back.text).toBe("An axolotl");
+  });
+});
+
+describe("convert H5P.AdventCalendar", () => {
+  it("emits one flipcard per door with the day on the front", async () => {
+    const { idevices } = await convertAndFlatten({
+      mainLibrary: "H5P.AdventCalendar",
+      content: {
+        doors: [
+          { day: 1, content: { contentType: { params: { text: "<p>Day one</p>" } } } },
+          { day: 2, content: { contentType: { params: { text: "<p>Day two</p>" } } } }
+        ]
+      }
+    });
+    const fc = idevices.find((i) => i.typeName === "flipcards")!;
+    const data = decodeFlipcards(fc);
+    expect(data.cards).toHaveLength(2);
+    expect(data.cards[0].front.text).toBe("Day 1");
+    expect(data.cards[0].back.text).toContain("Day one");
+  });
+});
+
+describe("convert H5P.InformationWall", () => {
+  it("emits one flipcard per panel with title/info on front", async () => {
+    const { idevices } = await convertAndFlatten({
+      mainLibrary: "H5P.InformationWall",
+      content: {
+        panels: [
+          {
+            panelTitle: "Volcanoes",
+            panelInformation: "They erupt",
+            panelAddInformation: "Magma rises through fissures"
+          },
+          { panelTitle: "Earthquakes", panelInformation: "Tectonic plates move" }
+        ]
+      }
+    });
+    const fc = idevices.find((i) => i.typeName === "flipcards")!;
+    const data = decodeFlipcards(fc);
+    expect(data.cards).toHaveLength(2);
+    expect(data.cards[0].front.text).toContain("Volcanoes");
+    expect(data.cards[0].front.text).toContain("They erupt");
+    expect(data.cards[0].back.text).toBe("Magma rises through fissures");
+    expect(data.cards[1].back.text).toBe("Tectonic plates move");
+  });
+});
+
+describe("convert H5P.MultiMediaChoice", () => {
+  it("maps to a form selection with single selectionType when one option is correct", async () => {
+    const { idevices, report } = await convertAndFlatten({
+      mainLibrary: "H5P.MultiMediaChoice",
+      content: {
+        question: "Pick the cat",
+        options: [
+          { media: { params: { file: { path: "images/cat.png" }, alt: "cat" } }, correct: true },
+          { media: { params: { file: { path: "images/dog.png" }, alt: "dog" } }, correct: false }
+        ]
+      }
+    });
+    expect(report.activities[0]!.mappedTo).toContain("form(selection)");
+    const form = idevices.find((i) => i.typeName === "form")!;
+    const q = form.jsonProperties.questionsData[0];
+    expect(q.activityType).toBe("selection");
+    expect(q.selectionType).toBe("single");
+    expect(q.baseText).toBe("Pick the cat");
+    expect(q.answers[0]).toEqual([true, '<img src="images/cat.png" alt="cat" />']);
+  });
+
+  it("switches to multiple when more than one option is correct", async () => {
+    const { idevices } = await convertAndFlatten({
+      mainLibrary: "H5P.MultiMediaChoice",
+      content: {
+        question: "Pick every mammal",
+        options: [
+          { media: { params: { file: { path: "a.png" } } }, correct: true },
+          { media: { params: { file: { path: "b.png" } } }, correct: true },
+          { media: { params: { file: { path: "c.png" } } }, correct: false }
+        ]
+      }
+    });
+    const form = idevices.find((i) => i.typeName === "form")!;
+    expect(form.jsonProperties.questionsData[0].selectionType).toBe("multiple");
+  });
+});
+
+describe("convert H5P.ArithmeticQuiz", () => {
+  it("expands the spec into a fixed set of multichoice questions", async () => {
+    const { idevices } = await convertAndFlatten({
+      mainLibrary: "H5P.ArithmeticQuiz",
+      content: { arithmeticType: "addition", maxQuestions: 5 }
+    });
+    const forms = idevices.filter((i) => i.typeName === "form");
+    expect(forms).toHaveLength(5);
+    const first = forms[0]!.jsonProperties.questionsData[0];
+    expect(first.activityType).toBe("selection");
+    expect(first.baseText).toMatch(/^\d+ \+ \d+ = \?$/);
+    const correctCount = first.answers.filter((a: [boolean, string]) => a[0]).length;
+    expect(correctCount).toBe(1);
+  });
+
+  it("supports division by avoiding fractional answers", async () => {
+    const { idevices } = await convertAndFlatten({
+      mainLibrary: "H5P.ArithmeticQuiz",
+      content: { arithmeticType: "division", maxQuestions: 3 }
+    });
+    const forms = idevices.filter((i) => i.typeName === "form");
+    expect(forms).toHaveLength(3);
+    for (const f of forms) {
+      const prompt = f.jsonProperties.questionsData[0].baseText as string;
+      expect(prompt).toMatch(/^\d+ ÷ \d+ = \?$/);
+      const [a, , b] = prompt.replace(" = ?", "").split(" ");
+      expect(Number(a) % Number(b)).toBe(0);
+    }
+  });
+});
+
+describe("convert H5P.AdvancedBlanks (Complex Fill the Blanks)", () => {
+  it("rewrites [answer|alt] markers into the form (fill) iDevice", async () => {
+    const { idevices, report } = await convertAndFlatten({
+      mainLibrary: "H5P.AdvancedBlanks",
+      content: {
+        text: "<p>Read carefully.</p>",
+        blanksList: [
+          { clozeText: "The capital of France is [Paris|paris]." },
+          { clozeText: "Water boils at [100|one hundred] degrees Celsius." }
+        ]
+      }
+    });
+    expect(report.activities[0]!.mappedTo).toContain("form(fill)");
+    const form = idevices.find((i) => i.typeName === "form")!;
+    const props = form.jsonProperties;
+    expect(props.questionsData).toHaveLength(2);
+    expect(props.questionsData[0].activityType).toBe("fill");
+    expect(props.questionsData[0].baseText).toContain("Paris");
+    expect(props.questionsData[0].baseText).not.toContain("[Paris");
+  });
+});
+
+describe("convert H5P.Agamotto", () => {
+  it("emits a beforeafter iDevice when there are exactly two frames", async () => {
+    const { idevices, report } = await convertAndFlatten({
+      mainLibrary: "H5P.Agamotto",
+      content: {
+        items: [
+          {
+            image: { params: { file: { path: "before.jpg" }, alt: "before" } },
+            description: "before"
+          },
+          { image: { params: { file: { path: "after.jpg" }, alt: "after" } }, description: "after" }
+        ]
+      }
+    });
+    expect(report.activities[0]!.mappedTo).toContain("beforeafter");
+    const ba = idevices.find((i) => i.typeName === "beforeafter")!;
+    expect(ba.htmlView).toContain("before.jpg");
+    expect(ba.htmlView).toContain("after.jpg");
+  });
+
+  it("falls back to a text iDevice with sequential figures for >2 frames", async () => {
+    const { idevices } = await convertAndFlatten({
+      mainLibrary: "H5P.Agamotto",
+      content: {
+        items: [
+          { image: { params: { file: { path: "1.jpg" } } }, description: "one" },
+          { image: { params: { file: { path: "2.jpg" } } }, description: "two" },
+          { image: { params: { file: { path: "3.jpg" } } }, description: "three" }
+        ]
+      }
+    });
+    const text = idevices.find((i) => i.typeName === "text")!;
+    const html = text.jsonProperties.textTextarea as string;
+    expect(html).toContain("1.jpg");
+    expect(html).toContain("2.jpg");
+    expect(html).toContain("3.jpg");
+  });
+});
+
+describe("convert H5P.GameMap", () => {
+  it("maps stages to map markers parsed from the H5P telemetry string", async () => {
+    const { idevices, report } = await convertAndFlatten({
+      mainLibrary: "H5P.GameMap",
+      content: {
+        gamemapSteps: {
+          backgroundImageSettings: { backgroundImage: { path: "images/world.jpg" } },
+          gamemap: {
+            elements: [
+              { id: "1", label: "Volcano", telemetry: "20,30,5,5" },
+              { id: "2", label: "Castle", telemetry: "70,80,4,4" }
+            ]
+          }
+        }
+      }
+    });
+    expect(report.activities[0]!.mappedTo).toContain("map");
+    const map = idevices.find((i) => i.typeName === "map")!;
+    const match = map.htmlView.match(/mapa-DataGame[^>]*>([^<]+)</);
+    expect(match).not.toBeNull();
+    const game = JSON.parse(match![1]!);
+    expect(game.typeGame).toBe("Mapa");
+    expect(game.url).toContain("world.jpg");
+    expect(game.points).toHaveLength(2);
+    const firstLabel = game.points[0].title || game.points[0].name || game.points[0].label || "";
+    expect(firstLabel).toContain("Volcano");
+  });
+});
