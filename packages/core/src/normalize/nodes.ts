@@ -74,6 +74,34 @@ export type NormalizedFlipcardsNode = BaseNode & {
   cards: Array<{ front: string; back: string }>;
 };
 
+export type NormalizedCrosswordEntry = {
+  word: string;
+  definition: string;
+};
+
+export type NormalizedCrosswordNode = BaseNode & {
+  kind: "crossword";
+  entries: NormalizedCrosswordEntry[];
+};
+
+export type NormalizedInteractiveVideoSlide =
+  | { type: "text"; text: string; startTime: number }
+  | {
+      type: "singleChoice";
+      question: string;
+      answers: Array<[string, 0 | 1]>;
+      startTime: number;
+    };
+
+export type NormalizedInteractiveVideoNode = BaseNode & {
+  kind: "interactive-video";
+  src: string;
+  description?: string;
+  slides: NormalizedInteractiveVideoSlide[];
+  /** Machine names of interactions we could not represent as slides. */
+  skippedInteractions?: string[];
+};
+
 export type NormalizedNode =
   | NormalizedTextNode
   | NormalizedImageNode
@@ -85,4 +113,6 @@ export type NormalizedNode =
   | NormalizedPageNode
   | NormalizedContainerNode
   | NormalizedFlipcardsNode
+  | NormalizedCrosswordNode
+  | NormalizedInteractiveVideoNode
   | NormalizedUnsupportedNode;

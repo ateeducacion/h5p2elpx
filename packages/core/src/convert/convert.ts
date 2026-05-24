@@ -12,6 +12,8 @@ import {
   buildTrueOrFalseIdevice,
   buildFormIdevice,
   buildFlipcardsIdevice,
+  buildCrosswordIdevice,
+  buildInteractiveVideoIdevice,
   blanksToFill,
   type FormQuestion,
   type SelectionQuestion
@@ -364,6 +366,49 @@ function emitNode(
         return;
       }
       for (const c of node.children) emitNode(c, project, hostPage, ctx);
+      return;
+    }
+    case "crossword": {
+      const block = newBlock(hostPage);
+      addIdevice(
+        block,
+        buildCrosswordIdevice({
+          pageId: hostPage.id,
+          blockId: block.id,
+          order: 0,
+          title: node.title,
+          words: node.entries.map((e) => ({ word: e.word, definition: e.definition }))
+        })
+      );
+      ctx.activityReport.mappedTo!.push("crossword");
+      return;
+    }
+    case "interactive-video": {
+      const block = newBlock(hostPage);
+      const src = ctx.forHtml(node.src);
+      const slides = node.slides.map((s) =>
+        s.type === "text"
+          ? { ...s, text: rewriteUrls(sanitizeHtml(s.text), ctx.forHtml) }
+          : { ...s, question: rewriteUrls(sanitizeHtml(s.question), ctx.forHtml) }
+      );
+      addIdevice(
+        block,
+        buildInteractiveVideoIdevice({
+          pageId: hostPage.id,
+          blockId: block.id,
+          order: 0,
+          src,
+          title: node.title,
+          description: node.description,
+          slides
+        })
+      );
+      ctx.activityReport.mappedTo!.push("interactive-video");
+      if (node.skippedInteractions && node.skippedInteractions.length > 0) {
+        ctx.activityReport.warnings.push(
+          `H5P.InteractiveVideo: dropped ${node.skippedInteractions.length} interaction(s) not mappable to eXe slides (${node.skippedInteractions.join(", ")})`
+        );
+      }
       return;
     }
     case "flipcards": {

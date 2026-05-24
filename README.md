@@ -91,7 +91,8 @@ Deployed automatically to GitHub Pages on every push to `main` via
 | 1 | `H5P.Text`, `H5P.AdvancedText` | text iDevice |
 | 1 | `H5P.Image` | text iDevice with `<img>` |
 | 1 | `H5P.Audio` | text iDevice with `<audio>` |
-| 1 | `H5P.Video`, `H5P.InteractiveVideo` | text iDevice with `<video>` |
+| 1 | `H5P.Video` | text iDevice with `<video>` |
+| 1 | `H5P.InteractiveVideo` | `interactive-video` iDevice (text + single-choice slides preserved) |
 | 1 | `H5P.Column` | flattens children into iDevices |
 | 1 | `H5P.CoursePresentation` | one eXe page per slide (preserve mode) |
 | 1 | `H5P.InteractiveBook` | one eXe page per chapter |
@@ -106,6 +107,8 @@ Deployed automatically to GitHub Pages on every push to `main` via
 | 3 | `H5P.MarkTheWords` | text fallback |
 | 3 | `H5P.DragQuestion` | structured fallback (drag list + drop zones) |
 | 3 | `H5P.ImageHotspots` | image + ordered hotspot list |
+| 3 | `H5P.MultipleHotspotQuestion` | image + ordered hotspot list (geometry preserved as text) |
+| 3 | `H5P.Crossword` | `crossword` iDevice (native eXe `$eXeCrucigrama`) |
 | anything else | visible warning iDevice (unless `--unsupported drop`) |
 
 ## Architecture
@@ -164,11 +167,13 @@ CI: `.github/workflows/test.yml` runs typecheck + tests on every push and PR.
   `h5p2elpx` rewrites `content.xml`/`content.dtd` on every conversion while
   preserving the runtime assets from the bundled template (or a custom one
   passed via `--template`).
-* H5P.InteractiveVideo loses its interactions (only the underlying video src
-  survives).
+* H5P.InteractiveVideo preserves `H5P.Text` / `H5P.AdvancedText` overlays and
+  `H5P.MultiChoice` / `H5P.SingleChoiceSet` questions as eXe interactive-video
+  slides. Other interaction types (drag, hotspots, summaries, …) are dropped
+  with a warning in the report.
 * H5P.DragQuestion loses geometric positions (becomes a descriptive list).
-* `H5P.ImageHotspots` becomes an ordered list under the image, not an
-  interactive overlay.
+* `H5P.ImageHotspots` and `H5P.MultipleHotspotQuestion` become an ordered
+  list under the image, not an interactive overlay.
 
 ## License
 
