@@ -4,6 +4,17 @@ import { convert } from "../src/convert/convert.ts";
 import { validateElpx } from "../src/exe/validate.ts";
 import { makeH5pZip } from "./_helpers.ts";
 
+/**
+ * Inverse of `packages/core/src/exe/encrypt.ts::encryptGameData`.
+ * Used only in this test to read back the encrypted DataGame blob.
+ */
+function decryptGameData(encoded: string): string {
+  const unescaped = unescape(encoded);
+  return Array.from(unescaped)
+    .map((c) => String.fromCharCode(c.charCodeAt(0) ^ 146))
+    .join("");
+}
+
 describe("convert H5P.Crossword", () => {
   it("produces a crossword iDevice with the H5P words encoded in the data blob", async () => {
     const bytes = await makeH5pZip({
@@ -29,10 +40,11 @@ describe("convert H5P.Crossword", () => {
     expect(xml).toContain("<odeIdeviceTypeName>crossword</odeIdeviceTypeName>");
     expect(xml).toContain("crucigrama-DataGame");
 
-    // The data blob is URI-encoded JSON; decode and inspect.
+    // The DataGame blob is XOR-encrypted (key 146) and wrapped with the
+    // legacy JS `escape()` — see `src/exe/encrypt.ts`. Decrypt and inspect.
     const match = xml.match(/crucigrama-DataGame[^>]*>([^<]+)</);
     expect(match).not.toBeNull();
-    const decoded = JSON.parse(decodeURIComponent(match![1]!));
+    const decoded = JSON.parse(decryptGameData(match![1]!));
     expect(decoded.typeGame).toBe("Crossword");
     expect(decoded.wordsGame).toHaveLength(2);
     expect(decoded.wordsGame[0].word).toBe("GATO");
