@@ -4,10 +4,10 @@ const PORT = Number(process.env.E2E_PORT ?? 4173);
 const BASE_URL = `http://localhost:${PORT}`;
 
 export default defineConfig({
-  testDir: "./packages/web/e2e",
+  testDir: "./packages/web/e2e/specs",
   testMatch: /.*\.spec\.ts$/,
-  timeout: 120_000,
-  expect: { timeout: 15_000 },
+  timeout: 45_000,
+  expect: { timeout: 7_000 },
   fullyParallel: false,
   workers: 1,
   retries: 0,

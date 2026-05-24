@@ -48,6 +48,10 @@ test-e2e: check-bun
 test-e2e-ui: check-bun
 	bun run test:e2e:ui
 
+# Run only the OPEN_FILE smoke spec — fast sanity check
+test-e2e-smoke: check-bun
+	bun run test:e2e -- _smoke
+
 # Build the eXeLearning template (download official static bundle)
 template: check-bun
 	bun run build-template
@@ -78,10 +82,11 @@ help:
 	@echo "  make test-watch  Run vitest in watch mode"
 	@echo "  make fetch-editor   Download pinned eXeLearning static editor for e2e"
 	@echo "  make test-e2e       Run Playwright editor-compat e2e (skips without editor)"
+	@echo "  make test-e2e-smoke Run only the fast OPEN_FILE smoke spec"
 	@echo "  make test-e2e-ui    Run Playwright e2e with the UI runner"
 	@echo "  make template    Rebuild fixtures/elpx/template.elpx from upstream"
 	@echo "  make up          Start the web dev server"
 	@echo "  make web-build   Build the production web bundle"
 	@echo "  make ci          Run the same gate CI runs"
 
-.PHONY: check-bun install lint fix typecheck test test-watch fetch-editor test-e2e test-e2e-ui template up web-build ci help
+.PHONY: check-bun install lint fix typecheck test test-watch fetch-editor test-e2e test-e2e-smoke test-e2e-ui template up web-build ci help
