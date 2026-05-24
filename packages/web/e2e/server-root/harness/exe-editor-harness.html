@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>eXeLearning E2E Harness</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #111;
+        color: #ddd;
+        font-family: system-ui, sans-serif;
+      }
+      #exe-editor {
+        width: 100vw;
+        height: 100vh;
+        border: 0;
+      }
+      #status {
+        position: fixed;
+        bottom: 4px;
+        left: 8px;
+        font-size: 11px;
+        opacity: 0.6;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <iframe id="exe-editor" title="eXeLearning editor under test"></iframe>
+    <div id="status">harness ready</div>
+    <script>
+      (() => {
+        const params = new URLSearchParams(window.location.search);
+        const editorUrl = params.get("editorUrl");
+        if (!editorUrl) {
+          document.getElementById("status").textContent =
+            "missing ?editorUrl=...";
+          throw new Error("Missing editorUrl query parameter");
+        }
+
+        const iframe = document.getElementById("exe-editor");
+
+        window.__exeMessages = [];
+        const listeners = new Set();
+
+        function recordMessage(message) {
+          if (!message || typeof message !== "object") return;
+          if (typeof message.type !== "string") return;
+          window.__exeMessages.push(message);
+          for (const fn of [...listeners]) fn(message);
+        }
+
+        window.addEventListener("message", (event) => {
+          if (event.source !== iframe.contentWindow) return;
+          recordMessage(event.data);
+        });
+
+        function waitForExeMessage(type, requestId, timeoutMs = 60000) {
+          return new Promise((resolve, reject) => {
+            const existing = window.__exeMessages.find(
+              (m) =>
+                m.type === type && (!requestId || m.requestId === requestId)
+            );
+            if (existing) {
+              resolve(existing);
+              return;
+            }
+            const timer = window.setTimeout(() => {
+              listeners.delete(fn);
+              reject(
+                new Error(
+                  "Timed out waiting for " +
+                    type +
+                    (requestId ? " (" + requestId + ")" : "")
+                )
+              );
+            }, timeoutMs);
+            function fn(message) {
+              if (
+                message.type === type &&
+                (!requestId || message.requestId === requestId)
+              ) {
+                window.clearTimeout(timer);
+                listeners.delete(fn);
+                resolve(message);
+              }
+            }
+            listeners.add(fn);
+          });
+        }
+
+        function sendExeMessage(message) {
+          if (!iframe.contentWindow) {
+            throw new Error("Editor iframe has no contentWindow yet");
+          }
+          iframe.contentWindow.postMessage(message, "*");
+        }
+
+        async function openElpx(bytes, filename) {
+          await waitForExeMessage("EXELEARNING_READY");
+          const requestId = "open-" + Date.now();
+          const buffer =
+            bytes instanceof ArrayBuffer
+              ? bytes
+              : new Uint8Array(bytes).buffer;
+          sendExeMessage({
+            type: "OPEN_FILE",
+            requestId,
+            data: {
+              bytes: buffer,
+              filename: filename || "project.elpx"
+            }
+          });
+          const open = await Promise.race([
+            waitForExeMessage("OPEN_FILE_SUCCESS", requestId),
+            waitForExeMessage("OPEN_FILE_ERROR", requestId)
+          ]);
+          if (open.type === "OPEN_FILE_ERROR") {
+            return { open, document: null };
+          }
+          const docLoaded = await waitForExeMessage("DOCUMENT_LOADED");
+          return { open, document: docLoaded };
+        }
+
+        async function requestRoundtrip(type, payload = {}, responseType) {
+          const requestId = type.toLowerCase() + "-" + Date.now();
+          sendExeMessage({ type, requestId, data: payload });
+          return await waitForExeMessage(responseType, requestId);
+        }
+
+        window.waitForExeMessage = waitForExeMessage;
+        window.sendExeMessage = sendExeMessage;
+        window.openElpx = openElpx;
+        window.getProjectInfo = () =>
+          requestRoundtrip("GET_PROJECT_INFO", {}, "PROJECT_INFO");
+        window.getState = () => requestRoundtrip("GET_STATE", {}, "STATE");
+        window.requestExport = (format) =>
+          requestRoundtrip("REQUEST_EXPORT", { format }, "EXPORT_FILE");
+        window.requestSave = () =>
+          requestRoundtrip("REQUEST_SAVE", {}, "SAVE_FILE");
+
+        iframe.src = editorUrl;
+      })();
+    </script>
+  </body>
+</html>

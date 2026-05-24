@@ -21,3 +21,26 @@ jobs:
         run: bunx tsc --noEmit
       - name: Tests
         run: bunx vitest run
+
+  e2e-exelearning-compat:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - name: Fetch pinned eXeLearning static editor
+        run: bun run e2e:fetch-editor
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+      - name: E2E (compat)
+        run: bun run test:e2e
+      - name: Upload Playwright report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 14
