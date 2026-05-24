@@ -3,6 +3,8 @@
  * github-corners SVG (https://tholman.com/github-corners/, MIT) so it
  * works inline in React without a network fetch.
  */
+import { useI18n } from "../i18n/index.tsx";
+
 export function GithubCorner({
   href,
   bg = "#078e8e",
@@ -12,12 +14,13 @@ export function GithubCorner({
   bg?: string;
   fg?: string;
 }) {
+  const { t } = useI18n();
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="View source on GitHub"
+      aria-label={t("github.cornerAria")}
       className="github-corner"
       style={{ position: "fixed", top: 0, right: 0, zIndex: 1000 }}
     >

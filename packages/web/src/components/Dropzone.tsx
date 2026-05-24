@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { useI18n } from "../i18n/index.tsx";
 
 type Props = {
   onFiles: (files: File[]) => void;
@@ -15,6 +16,7 @@ function formatBytes(n: number): string {
 export function Dropzone({ onFiles, files, onRemove }: Props) {
   const [hover, setHover] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { t } = useI18n();
 
   const open = useCallback(() => inputRef.current?.click(), []);
 
@@ -64,10 +66,12 @@ export function Dropzone({ onFiles, files, onRemove }: Props) {
           </svg>
         </div>
         <p className="dz-title">
-          Drag &amp; drop your <span className="h5p">.h5p</span> files here
+          {t("dropzone.dropBefore")}
+          <span className="h5p">.h5p</span>
+          {t("dropzone.dropAfter")}
         </p>
         <p className="dz-sub">
-          or{" "}
+          {t("dropzone.or")}{" "}
           <button
             type="button"
             onClick={(e) => {
@@ -75,9 +79,9 @@ export function Dropzone({ onFiles, files, onRemove }: Props) {
               open();
             }}
           >
-            browse from your computer
+            {t("dropzone.browse")}
           </button>{" "}
-          · Multiple files supported · Processed locally
+          · {t("dropzone.hint")}
         </p>
         <input
           ref={inputRef}
@@ -103,7 +107,7 @@ export function Dropzone({ onFiles, files, onRemove }: Props) {
                 type="button"
                 className="x"
                 onClick={() => onRemove(i)}
-                aria-label={`Remove ${f.name}`}
+                aria-label={t("dropzone.remove", { name: f.name })}
               >
                 ×
               </button>

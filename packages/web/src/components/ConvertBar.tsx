@@ -1,3 +1,5 @@
+import { useI18n } from "../i18n/index.tsx";
+
 type Props = {
   fileCount: number;
   layout: string;
@@ -29,12 +31,17 @@ function Spinner() {
 }
 
 export function ConvertBar({ fileCount, layout, includeOriginal, busy, onConvert }: Props) {
+  const { t } = useI18n();
+  const middle = fileCount === 1 ? t("convertBar.readyMiddleOne") : t("convertBar.readyMiddleMany");
   return (
     <div className="convert-bar">
       <div className="convert-summary">
-        Ready to convert <strong>{fileCount}</strong> file{fileCount > 1 ? "s" : ""} as{" "}
+        {t("convertBar.readyBefore")}
+        <strong>{fileCount}</strong>
+        {middle}
         <strong>{layout}</strong>
-        {includeOriginal ? ", with original .h5p embedded" : ""}.
+        {includeOriginal ? t("convertBar.readyEmbedded") : ""}
+        {t("convertBar.readyEnd")}
       </div>
       <button
         type="button"
@@ -44,7 +51,7 @@ export function ConvertBar({ fileCount, layout, includeOriginal, busy, onConvert
       >
         {busy ? (
           <>
-            <Spinner /> Converting…
+            <Spinner /> {t("convertBar.converting")}
           </>
         ) : (
           <>
@@ -59,7 +66,7 @@ export function ConvertBar({ fileCount, layout, includeOriginal, busy, onConvert
               <title>Convert</title>
               <path d="M5 12h14M13 5l7 7-7 7" />
             </svg>
-            Convert to .elpx
+            {t("convertBar.convert")}
           </>
         )}
       </button>
