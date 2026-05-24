@@ -51,6 +51,8 @@ describe("convert H5P.Crossword", () => {
     expect(decoded.msgs).toBeDefined();
     expect(decoded.msgs.msgReply).toBe("Reply");
     expect(decoded.wordsGame).toHaveLength(2);
+    // Words are uppercased so eXe's case-sensitive layout solver can
+    // intersect them — see canPlaceWord in upstream crossword.js.
     expect(decoded.wordsGame[0].word).toBe("GATO");
     expect(decoded.wordsGame[0].definition).toBe("Felino doméstico");
     expect(decoded.wordsGame[0].x).toBe(0);
@@ -73,16 +75,17 @@ describe("convert H5P.Crossword", () => {
     const xml = await zip.file("content.xml")!.async("string");
     const match = xml.match(/crucigrama-DataGame[^>]*>([^<]+)</);
     const decoded = JSON.parse(decryptGameData(match![1]!));
-    // Whitespace stripped, original preserved in the clue.
-    expect(decoded.wordsGame[0].word).toBe("NewYork");
+    // Whitespace stripped + uppercased, original preserved in the clue.
+    expect(decoded.wordsGame[0].word).toBe("NEWYORK");
     expect(decoded.wordsGame[0].definition).toContain("New York");
-    // Truncated to 14 chars, original preserved in the clue.
-    expect(decoded.wordsGame[1].word).toBe("Antidisestabli");
+    // Truncated to 14 chars + uppercased, original preserved in the clue.
+    expect(decoded.wordsGame[1].word).toBe("ANTIDISESTABLI");
     expect(decoded.wordsGame[1].definition).toContain("Antidisestablishmentarianism");
-    // Every word must satisfy the eXe validator: ≤ 14 chars and no whitespace.
+    // Every word must satisfy eXe's editor (≤ 14 chars, no whitespace)
+    // AND the layout solver (uniform case so intersections match).
     for (const w of decoded.wordsGame) {
       expect(w.word.length).toBeLessThanOrEqual(14);
-      expect(w.word).toMatch(/^\S+$/);
+      expect(w.word).toMatch(/^[A-Z0-9]+$/);
     }
   });
 });
