@@ -40,6 +40,8 @@ export type NormalizedQuestionNode = BaseNode & {
   prompt: string;
   answers?: NormalizedAnswer[];
   feedback?: string;
+  /** Optional media (typically an image) authored alongside the question. */
+  media?: { src: string; alt?: string };
 };
 
 export type NormalizedSlideNode = BaseNode & {

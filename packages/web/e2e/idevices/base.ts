@@ -53,10 +53,23 @@ export async function runIdeviceFlow(
     ).toBe(true);
   }
   if (descriptor.previewMustIncludeText) {
-    const text = await editor.preview.text();
+    // The runtime injects iDevice content asynchronously into the preview
+    // (e.g. trueorfalse hydrates its question card after a tick), so poll
+    // briefly instead of asserting on the first frame.
+    const needle = descriptor.previewMustIncludeText;
+    let lastText = "";
+    let found = false;
+    for (let i = 0; i < 12; i++) {
+      lastText = await editor.preview.text();
+      if (lastText.includes(needle)) {
+        found = true;
+        break;
+      }
+      await new Promise((r) => setTimeout(r, 500));
+    }
     expect(
-      text.includes(descriptor.previewMustIncludeText),
-      `${descriptor.fixture} preview must include "${descriptor.previewMustIncludeText}"`
+      found,
+      `${descriptor.fixture} preview must include "${needle}" (last text: ${lastText.slice(0, 200)})`
     ).toBe(true);
   }
 }
