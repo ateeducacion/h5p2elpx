@@ -1,4 +1,5 @@
 import { summarizeReport, type ConversionReport } from "@h5p2elpx/core";
+import { useI18n } from "../i18n/index.tsx";
 
 type Props = {
   elpx: Uint8Array;
@@ -21,11 +22,12 @@ function download(name: string, mime: string, data: BlobPart | Uint8Array) {
 }
 
 export function DownloadPanel({ elpx, report, filename }: Props) {
+  const { t } = useI18n();
   const { converted, partiallyConverted, unsupported, warnings, errors } = report.summary;
   const summaryLine = [
-    `${converted} converted`,
-    partiallyConverted > 0 ? `${partiallyConverted} partial` : null,
-    unsupported > 0 ? `${unsupported} unsupported` : null
+    t("download.converted", { n: converted }),
+    partiallyConverted > 0 ? t("download.partial", { n: partiallyConverted }) : null,
+    unsupported > 0 ? t("download.unsupported", { n: unsupported }) : null
   ]
     .filter(Boolean)
     .join(", ");
@@ -37,8 +39,11 @@ export function DownloadPanel({ elpx, report, filename }: Props) {
           ✓
         </div>
         <div className="result-text">
-          <h3>Conversion complete</h3>
-          <p>{summaryLine} — your .elpx is ready.</p>
+          <h3>{t("download.complete")}</h3>
+          <p>
+            {summaryLine}
+            {t("download.summaryAfter")}
+          </p>
         </div>
         <div className="result-actions">
           <button
@@ -59,7 +64,7 @@ export function DownloadPanel({ elpx, report, filename }: Props) {
               <path d="M7 11l5 5 5-5" />
               <path d="M5 20h14" />
             </svg>
-            Download {filename}
+            {t("download.downloadBtn", { filename })}
           </button>
           <button
             type="button"
@@ -72,7 +77,7 @@ export function DownloadPanel({ elpx, report, filename }: Props) {
               )
             }
           >
-            report.json
+            {t("download.reportBtn")}
           </button>
         </div>
       </div>
@@ -80,23 +85,23 @@ export function DownloadPanel({ elpx, report, filename }: Props) {
       <div className="report-stats">
         <div className="report-stat ok">
           <span className="num">{converted}</span>
-          <span className="lbl">Converted</span>
+          <span className="lbl">{t("download.statConverted")}</span>
         </div>
         <div className="report-stat warn">
           <span className="num">{partiallyConverted}</span>
-          <span className="lbl">Partial</span>
+          <span className="lbl">{t("download.statPartial")}</span>
         </div>
         <div className="report-stat">
           <span className="num">{unsupported}</span>
-          <span className="lbl">Unsupported</span>
+          <span className="lbl">{t("download.statUnsupported")}</span>
         </div>
         <div className="report-stat warn">
           <span className="num">{warnings}</span>
-          <span className="lbl">Warnings</span>
+          <span className="lbl">{t("download.statWarnings")}</span>
         </div>
         <div className="report-stat err">
           <span className="num">{errors}</span>
-          <span className="lbl">Errors</span>
+          <span className="lbl">{t("download.statErrors")}</span>
         </div>
       </div>
 

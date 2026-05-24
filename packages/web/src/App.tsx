@@ -16,6 +16,7 @@ import { Footer } from "./components/Footer.tsx";
 import { GithubCorner } from "./components/GithubCorner.tsx";
 import { Stepper } from "./components/Stepper.tsx";
 import { Topbar } from "./components/Topbar.tsx";
+import { useI18n } from "./i18n/index.tsx";
 
 const REPO_URL = "https://github.com/ateeducacion/h5p2elpx";
 
@@ -26,6 +27,7 @@ type Conv = {
 };
 
 export function App() {
+  const { t } = useI18n();
   const [files, setFiles] = useState<File[]>([]);
   const [preview, setPreview] = useState<CompatibilityEntry[]>([]);
   const [options, setOptions] = useState<UiOptions>({
@@ -47,8 +49,8 @@ export function App() {
     fetch(`${import.meta.env.BASE_URL}template.elpx`)
       .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error("template.elpx not found"))))
       .then((buf) => setTemplateBytes(new Uint8Array(buf)))
-      .catch((err) => setError(`Could not load eXe template: ${err.message}`));
-  }, []);
+      .catch((err) => setError(t("errors.templateNotFound", { msg: err.message })));
+  }, [t]);
 
   async function onFilesDropped(dropped: File[]) {
     const merged = [...files, ...dropped];
@@ -111,21 +113,33 @@ export function App() {
   const hasReport = conv !== null;
   const allOk = useMemo(() => preview.length > 0 && preview.every((p) => p.supported), [preview]);
 
+  const filesMeta = hasFiles
+    ? files.length === 1
+      ? t("meta.filesReadyOne", { count: files.length })
+      : t("meta.filesReadyMany", { count: files.length })
+    : undefined;
+
   return (
     <>
       <GithubCorner href={REPO_URL} />
       <div className="shell">
-        <Topbar githubUrl={REPO_URL} />
+        <Topbar />
 
         <header className="hero">
-          <p className="package-title">Browser tool · 100% client-side</p>
+          <p className="package-title">{t("hero.badge")}</p>
           <h1>
-            Convert <span className="accent">H5P</span> to editable{" "}
+            {t("hero.titleBefore")}
+            <span className="accent">H5P</span>
+            {t("hero.titleMiddle")}
             <span className="accent">eXeLearning</span>
+            {t("hero.titleAfter")}
           </h1>
           <p className="lede">
-            Drop a <code>.h5p</code> package and download an <code>.elpx</code> project you can open
-            and edit in eXeLearning. Nothing leaves your browser.
+            {t("hero.ledeBefore")}
+            <code>.h5p</code>
+            {t("hero.ledeMiddle")}
+            <code>.elpx</code>
+            {t("hero.ledeAfter")}
           </p>
         </header>
 
@@ -133,26 +147,22 @@ export function App() {
 
         {error && <div className="error-banner">{error}</div>}
 
-        <Box
-          icon="share"
-          title="1 · Upload H5P packages"
-          meta={hasFiles ? `${files.length} file${files.length > 1 ? "s" : ""} ready` : undefined}
-        >
+        <Box icon="share" title={t("boxes.upload")} meta={filesMeta}>
           <Dropzone onFiles={onFilesDropped} files={files} onRemove={onRemoveFile} />
         </Box>
 
         {hasFiles && (
           <Box
             icon="competencies"
-            title="2 · Compatibility preview"
-            meta={allOk ? "All files supported" : "Some content needs attention"}
+            title={t("boxes.preview")}
+            meta={allOk ? t("meta.allOk") : t("meta.someAttention")}
           >
             <CompatibilityReport entries={preview} />
           </Box>
         )}
 
         {hasFiles && (
-          <Box icon="agreement" title="3 · Conversion options">
+          <Box icon="agreement" title={t("boxes.options")}>
             <ConversionOptionsForm value={options} onChange={setOptions} />
           </Box>
         )}
@@ -169,7 +179,7 @@ export function App() {
 
         {conv && <DownloadPanel elpx={conv.elpx} report={conv.report} filename={conv.outputName} />}
 
-        <Footer />
+        <Footer githubUrl={REPO_URL} />
       </div>
     </>
   );
