@@ -62,6 +62,13 @@ export class PreviewFrame {
     }, selector);
   }
 
+  /**
+   * Full text content of the preview body, including content hidden inside
+   * collapsed `<details>` and other non-visible nodes — we use `textContent`
+   * (not `innerText`) on purpose so the assertion catches conversion
+   * regressions even when the iDevice's renderer keeps the text collapsed
+   * until the learner interacts with it.
+   */
   async text(): Promise<string> {
     return await this.page.evaluate(() => {
       const ed = document.querySelector("#exe-editor") as HTMLIFrameElement | null;
@@ -70,7 +77,7 @@ export class PreviewFrame {
       const iframe =
         (doc.querySelector("#preview-iframe") as HTMLIFrameElement | null) ??
         (doc.querySelector("#preview-pinned-iframe") as HTMLIFrameElement | null);
-      return iframe?.contentDocument?.body?.innerText ?? "";
+      return iframe?.contentDocument?.body?.textContent ?? "";
     });
   }
 }

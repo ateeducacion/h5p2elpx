@@ -275,6 +275,12 @@ function emitNode(
       const block = newBlock(hostPage);
       if (node.questionType === "truefalse" && node.answers) {
         const trueCorrect = !!node.answers.find((a) => a.text?.toLowerCase() === "true")?.correct;
+        let questionHtml = node.prompt;
+        if (node.media?.src) {
+          const src = ctx.forHtml(node.media.src);
+          const alt = escapeHtml(node.media.alt ?? "");
+          questionHtml = `<figure><img src="${escapeHtml(src)}" alt="${alt}" /></figure>${questionHtml}`;
+        }
         addIdevice(
           block,
           buildTrueOrFalseIdevice({
@@ -283,7 +289,7 @@ function emitNode(
             order: 0,
             questions: [
               {
-                question: node.prompt,
+                question: questionHtml,
                 feedback: node.feedback ?? "",
                 suggestion: "",
                 solution: trueCorrect ? 1 : 0
