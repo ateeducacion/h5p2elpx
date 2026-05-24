@@ -52,6 +52,15 @@ export function adapt(content: any): NormalizedNode {
       return sanitizeAnswer(rawAnswer, clue);
     })
     .filter((e) => e.word.length > 0);
+
+  // eXe's runtime splits wordsGame at `half = ceil(N/2)`: the first
+  // half become VERTICAL anchors, the rest are horizontals that must
+  // cross them (`crossword.js` export, generateCrossword at line 130).
+  // Feeding the longest words first maximises anchor-letter coverage
+  // and lets the solver find more intersections. Stable sort keeps the
+  // order deterministic for ties.
+  entries.sort((a, b) => b.word.length - a.word.length);
+
   return {
     id: uniqueId("cw"),
     sourceType: machineName,
