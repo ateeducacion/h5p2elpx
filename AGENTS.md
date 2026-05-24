@@ -136,7 +136,7 @@ row stays on the `text` fallback because eXe has no native equivalent.
 | H5P content type | machineName (likely) | Target eXe iDevice | Fit | Notes |
 | --- | --- | --- | --- | --- |
 | Image Juxtaposition | `H5P.ImageJuxtaposition` | `beforeafter` | excellent | Two images + slider — direct 1:1 |
-| Iframe Embedder | `H5P.IFrameEmbedder` | `external-website` | excellent | URL + width/height fields line up |
+| Iframe Embedder | `H5P.IFrameEmbed` | `external-website` | excellent | URL + width/height fields line up |
 | Find the Words | `H5P.FindTheWords` | `word-search` | excellent | Grid + word list |
 | Flashcards | `H5P.Flashcards` | `flipcards` | excellent | Reuse existing writer (Pattern 2) |
 | Image Pairing | `H5P.ImagePair` | `flipcards` or `relate` | good | Reuse `flipcards` writer with image pairs |
@@ -160,6 +160,11 @@ eXe iDevice with little or no new writer code):
 3. `H5P.FindTheWords` → `word-search`
 4. `H5P.Flashcards` → `flipcards` (reuses the writer used by
    `Dialogcards` / `MemoryGame`)
+
+Sample `.h5p` files for these four are checked in at
+`fixtures/h5p/image-juxtaposition.h5p`, `fixtures/h5p/iframe-embedder.h5p`,
+`fixtures/h5p/find-the-words.h5p`, `fixtures/h5p/flashcards.h5p`
+(downloaded from the official examples on h5p.org).
 
 ## Invariants (don't break these)
 
