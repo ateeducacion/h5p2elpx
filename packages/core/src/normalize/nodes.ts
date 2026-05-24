@@ -102,6 +102,25 @@ export type NormalizedInteractiveVideoNode = BaseNode & {
   skippedInteractions?: string[];
 };
 
+export type NormalizedBeforeAfterNode = BaseNode & {
+  kind: "beforeafter";
+  before: { src: string; label?: string; alt?: string };
+  after: { src: string; label?: string; alt?: string };
+};
+
+export type NormalizedIframeNode = BaseNode & {
+  kind: "iframe";
+  src: string;
+  width?: number;
+  height?: number;
+};
+
+export type NormalizedWordSearchNode = BaseNode & {
+  kind: "word-search";
+  words: string[];
+  taskDescription?: string;
+};
+
 export type NormalizedNode =
   | NormalizedTextNode
   | NormalizedImageNode
@@ -115,4 +134,7 @@ export type NormalizedNode =
   | NormalizedFlipcardsNode
   | NormalizedCrosswordNode
   | NormalizedInteractiveVideoNode
+  | NormalizedBeforeAfterNode
+  | NormalizedIframeNode
+  | NormalizedWordSearchNode
   | NormalizedUnsupportedNode;

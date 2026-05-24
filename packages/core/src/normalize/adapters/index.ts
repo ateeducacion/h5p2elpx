@@ -23,6 +23,21 @@ import * as summary from "./summary.ts";
 import * as table from "./table.ts";
 import * as crossword from "./crossword.ts";
 import * as multipleHotspotQuestion from "./multiple-hotspot-question.ts";
+import * as imageJuxtaposition from "./image-juxtaposition.ts";
+import * as iframeEmbed from "./iframe-embed.ts";
+import * as findTheWords from "./find-the-words.ts";
+import * as flashcards from "./flashcards.ts";
+import * as imagePair from "./image-pair.ts";
+import * as accordion from "./accordion.ts";
+import * as essay from "./essay.ts";
+import * as sortParagraphs from "./sort-paragraphs.ts";
+import * as imageSequencing from "./image-sequencing.ts";
+import * as imageSlider from "./image-slider.ts";
+import * as collage from "./collage.ts";
+import * as questionSet from "./question-set.ts";
+import * as questionnaire from "./questionnaire.ts";
+import * as dictation from "./dictation.ts";
+import * as imageHotspotQuestion from "./image-hotspot-question.ts";
 import { adaptUnsupported } from "./unsupported.ts";
 
 type AdapterModule = {
@@ -55,7 +70,22 @@ const REGISTRY: Record<string, AdapterModule> = Object.fromEntries(
       summary,
       table,
       crossword,
-      multipleHotspotQuestion
+      multipleHotspotQuestion,
+      imageJuxtaposition,
+      iframeEmbed,
+      findTheWords,
+      flashcards,
+      imagePair,
+      accordion,
+      essay,
+      sortParagraphs,
+      imageSequencing,
+      imageSlider,
+      collage,
+      questionSet,
+      questionnaire,
+      dictation,
+      imageHotspotQuestion
     ] as AdapterModule[]
   ).map((m) => [m.machineName, m])
 );

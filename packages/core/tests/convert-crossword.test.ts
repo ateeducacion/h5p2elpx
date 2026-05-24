@@ -45,9 +45,15 @@ describe("convert H5P.Crossword", () => {
     const match = xml.match(/crucigrama-DataGame[^>]*>([^<]+)</);
     expect(match).not.toBeNull();
     const decoded = JSON.parse(decryptGameData(match![1]!));
-    expect(decoded.typeGame).toBe("Crossword");
+    expect(decoded.typeGame).toBe("Crucigrama");
+    expect(decoded.version).toBe(2);
+    expect(decoded.itinerary).toBeDefined();
+    expect(decoded.msgs).toBeDefined();
+    expect(decoded.msgs.msgReply).toBe("Reply");
     expect(decoded.wordsGame).toHaveLength(2);
     expect(decoded.wordsGame[0].word).toBe("GATO");
     expect(decoded.wordsGame[0].definition).toBe("Felino doméstico");
+    expect(decoded.wordsGame[0].x).toBe(0);
+    expect(decoded.wordsGame[0].percentageShow).toBeNull();
   });
 });
