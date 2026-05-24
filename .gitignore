@@ -10,3 +10,4 @@ node_modules/.cache/
 playwright-report/
 test-results/
 packages/web/e2e/server-root/exe/
+.antigravitycli/
