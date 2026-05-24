@@ -822,6 +822,48 @@ code,
 .foot .heart {
   color: #d44;
 }
+.experimental-banner {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(720px, calc(100% - 24px));
+  padding: 10px 14px;
+  border-radius: var(--exe-radius-md);
+  background: #fff8d6;
+  color: #6b5200;
+  border: 1px solid #f0d878;
+  box-shadow: 0 4px 14px rgba(120, 90, 0, 0.18);
+  font-size: var(--exe-fs-small);
+  line-height: 1.35;
+}
+.experimental-banner-icon {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  color: #c08a00;
+}
+.experimental-banner-text {
+  flex: 1;
+}
+.experimental-banner-close {
+  background: transparent;
+  border: 0;
+  color: #6b5200;
+  font-size: 20px;
+  line-height: 1;
+  padding: 0 4px;
+  cursor: pointer;
+  border-radius: var(--exe-radius-sm);
+}
+.experimental-banner-close:hover {
+  background: rgba(192, 138, 0, 0.18);
+}
+
 .foot .foot-source {
   display: inline-flex;
   align-items: center;

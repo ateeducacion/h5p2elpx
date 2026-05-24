@@ -12,6 +12,7 @@ import { ConversionOptionsForm, type UiOptions } from "./components/ConversionOp
 import { ConvertBar } from "./components/ConvertBar.tsx";
 import { DownloadPanel } from "./components/DownloadPanel.tsx";
 import { Dropzone } from "./components/Dropzone.tsx";
+import { ExperimentalBanner } from "./components/ExperimentalBanner.tsx";
 import { Footer } from "./components/Footer.tsx";
 import { GithubCorner } from "./components/GithubCorner.tsx";
 import { Stepper } from "./components/Stepper.tsx";
@@ -122,6 +123,7 @@ export function App() {
   return (
     <>
       <GithubCorner href={REPO_URL} />
+      <ExperimentalBanner />
       <div className="shell">
         <Topbar />
 

@@ -102,6 +102,11 @@ export const en = {
   },
   github: {
     cornerAria: "View source on GitHub"
+  },
+  experimental: {
+    warning:
+      "Notice: this feature is in experimental phase. Generated files may contain errors, so reviewing them before use is recommended.",
+    dismiss: "Dismiss warning"
   }
 };
 

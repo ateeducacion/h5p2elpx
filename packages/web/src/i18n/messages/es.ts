@@ -104,5 +104,10 @@ export const es: Messages = {
   },
   github: {
     cornerAria: "Ver código en GitHub"
+  },
+  experimental: {
+    warning:
+      "Aviso: esta funcionalidad está en fase experimental. Los archivos generados pueden contener errores, por lo que se recomienda revisarlos antes de utilizarlos.",
+    dismiss: "Descartar aviso"
   }
 };
