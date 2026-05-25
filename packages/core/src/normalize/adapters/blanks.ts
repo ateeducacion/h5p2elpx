@@ -1,5 +1,6 @@
 import type { NormalizedNode } from "../nodes.ts";
 import { uniqueId } from "../../utils/slug.ts";
+import { extractIntroMedia } from "../utils/intro-media.ts";
 
 export const machineName = "H5P.Blanks";
 
@@ -12,6 +13,7 @@ export function adapt(content: any): NormalizedNode {
     kind: "question",
     questionType: "blanks",
     prompt,
-    answers: questions.map((q) => ({ text: q }))
+    answers: questions.map((q) => ({ text: q })),
+    media: extractIntroMedia(content)
   };
 }

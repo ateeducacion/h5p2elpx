@@ -22,7 +22,8 @@ const realSamples = [
   { file: "dictation.h5p", expectMainLibrary: "H5P.Dictation" },
   { file: "image-hotspot-question.h5p", expectMainLibrary: "H5P.ImageHotspotQuestion" },
   { file: "image-slider.h5p", expectMainLibrary: "H5P.ImageSlider" },
-  { file: "questionnaire.h5p", expectMainLibrary: "H5P.Questionnaire" }
+  { file: "questionnaire.h5p", expectMainLibrary: "H5P.Questionnaire" },
+  { file: "blanks-with-image.h5p", expectMainLibrary: "H5P.Blanks" }
 ];
 
 describe("real H5P sample fixtures (end-to-end)", () => {
