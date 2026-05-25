@@ -46,6 +46,8 @@ import * as arithmeticQuiz from "./arithmetic-quiz.ts";
 import * as complexFillTheBlanks from "./complex-fill-the-blanks.ts";
 import * as agamotto from "./agamotto.ts";
 import * as gameMap from "./game-map.ts";
+import * as link from "./link.ts";
+import * as documentationTool from "./documentation-tool.ts";
 import { adaptUnsupported } from "./unsupported.ts";
 
 type AdapterModule = {
@@ -101,7 +103,9 @@ const REGISTRY: Record<string, AdapterModule> = Object.fromEntries(
       arithmeticQuiz,
       complexFillTheBlanks,
       agamotto,
-      gameMap
+      gameMap,
+      link,
+      documentationTool
     ] as AdapterModule[]
   ).map((m) => [m.machineName, m])
 );
