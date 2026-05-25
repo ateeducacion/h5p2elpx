@@ -1,0 +1,44 @@
+name: Dependabot bun.lock sync
+
+# Dependabot only knows the npm ecosystem here, so it updates package.json
+# files but never touches bun.lock. This workflow runs on every Dependabot PR,
+# regenerates bun.lock against the updated package.json files, and commits the
+# result back to the PR branch so `bun install --frozen-lockfile` in CI passes.
+
+on:
+  pull_request:
+    paths:
+      - "package.json"
+      - "packages/*/package.json"
+
+permissions:
+  contents: write
+
+jobs:
+  sync-lock:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Regenerate bun.lock
+        run: bun install
+
+      - name: Commit lockfile if changed
+        run: |
+          if git diff --quiet bun.lock; then
+            echo "bun.lock already in sync"
+            exit 0
+          fi
+          git config user.name "dependabot[bot]"
+          git config user.email "49699333+dependabot[bot]@users.noreply.github.com"
+          git add bun.lock
+          git commit -m "chore: update bun.lock"
+          git push
