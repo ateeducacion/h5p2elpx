@@ -31,17 +31,21 @@ export type InteractiveVideoInput = {
 };
 
 /**
- * Mirrors the eXeLearning `interactive-video` iDevice — exact wire format
- * captured in `fixtures/elpx/sample-with-content.elpx` (`content.xml`
- * line ~1194):
+ * Mirrors the eXeLearning `interactive-video` iDevice. Modern eXe
+ * (idevices/base/interactive-video/edition/interactive-video.js, line ~818)
+ * writes the slides payload inside a `<script type="application/json">`.
+ * Inside such a script the HTML parser does not interpret tags, so JSON
+ * values containing literal `<p>...</p>` (every H5P question) survive
+ * intact when the runtime reads `contentElement.textContent`. The older
+ * `<div>` form only worked when slide text was pure plain text.
  *
  *   <div class="exe-interactive-video">
  *     <p id="exe-interactive-video-file" class="js-hidden">
  *       <a href="${src}">${src}</a>
  *     </p>
- *     <div id="exe-interactive-video-contents" style="display: none">
+ *     <script id="exe-interactive-video-contents" type="application/json">
  *       { slides, title, description, i18n }
- *     </div>
+ *     </script>
  *   </div>
  */
 export function buildInteractiveVideoIdevice(input: InteractiveVideoInput): ElpxIdevice {
@@ -52,7 +56,7 @@ export function buildInteractiveVideoIdevice(input: InteractiveVideoInput): Elpx
     description: input.description ?? "",
     i18n: { ...INTERACTIVE_VIDEO_I18N_EN }
   };
-  const contentsJson = JSON.stringify(contents);
+  const contentsJson = JSON.stringify(contents).replace(/<\/script/gi, "<\\/script");
   const safeHref = escapeAttr(input.src);
   const safeLabel = escapeHtml(input.src);
   const htmlView =
@@ -60,7 +64,7 @@ export function buildInteractiveVideoIdevice(input: InteractiveVideoInput): Elpx
     `<p id="exe-interactive-video-file" class="js-hidden">` +
     `<a href="${safeHref}">${safeLabel}</a>` +
     `</p>` +
-    `<div id="exe-interactive-video-contents" style="display: none">${contentsJson}</div>` +
+    `<script id="exe-interactive-video-contents" type="application/json">${contentsJson}</script>` +
     `</div>`;
 
   return {

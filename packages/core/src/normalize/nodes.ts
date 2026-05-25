@@ -148,6 +148,38 @@ export type NormalizedHotspotMapNode = BaseNode & {
   points: NormalizedHotspotMapPoint[];
 };
 
+/**
+ * One element on a Course Presentation slide, with H5P's percent-based
+ * positioning preserved verbatim. `payload` is the discriminated body.
+ * URL rewriting is deferred to convert-time so the adapter stays pure.
+ */
+export type CpSlideElement = {
+  /** Percent of slide width (0..100). */
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** True when H5P rendered the element as a transparent overlay. */
+  invisible?: boolean;
+  /** Z-order in the source. Lower draws first. */
+  order: number;
+  payload:
+    | { kind: "image"; src: string; alt?: string }
+    | { kind: "html"; html: string }
+    | { kind: "goto"; goToSlide: number }
+    | { kind: "unsupported"; library: string };
+};
+
+export type CpSlide = {
+  title?: string;
+  elements: CpSlideElement[];
+};
+
+export type NormalizedCoursePresentationNode = BaseNode & {
+  kind: "course-presentation";
+  slides: CpSlide[];
+};
+
 export type NormalizedNode =
   | NormalizedTextNode
   | NormalizedImageNode
@@ -165,4 +197,5 @@ export type NormalizedNode =
   | NormalizedIframeNode
   | NormalizedWordSearchNode
   | NormalizedHotspotMapNode
+  | NormalizedCoursePresentationNode
   | NormalizedUnsupportedNode;

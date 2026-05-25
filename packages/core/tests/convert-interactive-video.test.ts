@@ -54,7 +54,7 @@ describe("convert H5P.InteractiveVideo", () => {
     expect(xml).toContain("<odeIdeviceTypeName>interactive-video</odeIdeviceTypeName>");
     expect(xml).toContain('id="exe-interactive-video-file"');
 
-    const m = xml.match(/exe-interactive-video-contents[^>]*>(\{[\s\S]*?\})<\/div>/);
+    const m = xml.match(/exe-interactive-video-contents[^>]*>(\{[\s\S]*?\})<\/script>/);
     expect(m).not.toBeNull();
     const contents = JSON.parse(m![1]!);
     expect(contents.slides).toHaveLength(2);

@@ -5,6 +5,7 @@ import type { NormalizedNode, NormalizedSlideDeckNode } from "../normalize/nodes
 import { AssetCollector, buildUrlRewriters } from "../h5p/asset-extractor.ts";
 import { rewriteUrls, sanitizeHtml, escapeHtml } from "../utils/html.ts";
 import { buildVideoEmbed } from "../utils/embed.ts";
+import { buildCpSlideHtml } from "./cp-slide-html.ts";
 import { libraryRefString } from "../h5p/library-ref.ts";
 import {
   buildTextIdevice,
@@ -369,6 +370,39 @@ function emitNode(
     }
     case "slide-deck": {
       emitSlideDeck(node, project, hostPage, ctx);
+      return;
+    }
+    case "course-presentation": {
+      const preserve = ctx.options.layout === "preserve";
+      node.slides.forEach((slide, idx) => {
+        const slideTitle = slide.title ?? `Slide ${idx + 1}`;
+        const targetPage = preserve
+          ? (() => {
+              const p: ElpxPage = {
+                id: newPageId(),
+                parentId: hostPage.id,
+                title: slideTitle,
+                order: project.pages.length,
+                blocks: []
+              };
+              project.pages.push(p);
+              return p;
+            })()
+          : hostPage;
+        const block = newBlock(targetPage);
+        const html = buildCpSlideHtml(slide, ctx.forHtml);
+        addIdevice(
+          block,
+          buildTextIdevice({
+            pageId: targetPage.id,
+            blockId: block.id,
+            order: 0,
+            title: slideTitle,
+            html
+          })
+        );
+      });
+      ctx.activityReport.mappedTo!.push("course-presentation");
       return;
     }
     case "slide": {
