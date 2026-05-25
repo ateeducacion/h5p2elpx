@@ -1,5 +1,6 @@
 import type { NormalizedNode } from "../nodes.ts";
 import { uniqueId } from "../../utils/slug.ts";
+import { extractIntroMedia } from "../utils/intro-media.ts";
 
 export const machineName = "H5P.Dictation";
 
@@ -27,6 +28,7 @@ export function adapt(content: any): NormalizedNode {
       typeof content?.taskDescription === "string"
         ? content.taskDescription
         : "Type the dictated text:",
-    answers: [{ text: html }]
+    answers: [{ text: html }],
+    media: extractIntroMedia(content)
   };
 }

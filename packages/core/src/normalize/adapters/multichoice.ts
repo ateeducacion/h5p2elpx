@@ -1,5 +1,6 @@
 import type { NormalizedNode, NormalizedAnswer } from "../nodes.ts";
 import { uniqueId } from "../../utils/slug.ts";
+import { extractIntroMedia } from "../utils/intro-media.ts";
 
 export const machineName = "H5P.MultiChoice";
 
@@ -20,6 +21,7 @@ export function adapt(content: any): NormalizedNode {
     kind: "question",
     questionType: "multichoice",
     prompt: typeof content?.question === "string" ? content.question : "",
-    answers
+    answers,
+    media: extractIntroMedia(content)
   };
 }

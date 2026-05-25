@@ -303,10 +303,16 @@ function emitNode(
       if (node.questionType === "multichoice" && node.answers) {
         const correctCount = node.answers.filter((a) => a.correct).length;
         const selectionType: "single" | "multiple" = correctCount > 1 ? "multiple" : "single";
+        let baseText = node.prompt;
+        if (node.media?.src) {
+          const src = ctx.forHtml(node.media.src);
+          const alt = escapeHtml(node.media.alt ?? "");
+          baseText = `<figure><img src="${escapeHtml(src)}" alt="${alt}" /></figure>${baseText}`;
+        }
         const q: SelectionQuestion = {
           activityType: "selection",
           selectionType,
-          baseText: node.prompt,
+          baseText,
           answers: node.answers.map((a) =>
             a.feedback ? [!!a.correct, a.text, a.feedback] : [!!a.correct, a.text]
           )
@@ -331,6 +337,12 @@ function emitNode(
           // sometimes the prompt itself contains *answer* markers (DragText, etc.)
           questions.push(blanksToFill(node.prompt));
         }
+        let instructions = node.prompt;
+        if (node.media?.src) {
+          const src = ctx.forHtml(node.media.src);
+          const alt = escapeHtml(node.media.alt ?? "");
+          instructions = `<figure><img src="${escapeHtml(src)}" alt="${alt}" /></figure>${instructions}`;
+        }
         addIdevice(
           block,
           buildFormIdevice({
@@ -338,7 +350,7 @@ function emitNode(
             blockId: block.id,
             order: 0,
             questions,
-            instructions: node.prompt
+            instructions
           })
         );
         ctx.activityReport.mappedTo!.push("form(fill)");
