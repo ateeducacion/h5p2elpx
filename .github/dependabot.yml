@@ -12,6 +12,11 @@ updates:
     labels:
       - "dependencies"
       - "github-actions"
+    groups:
+      actions-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
 
   # npm / Bun workspace package.json files (root + each package).
   # Dependabot has no native Bun ecosystem yet; the npm ecosystem parses
