@@ -52,6 +52,20 @@ export function adapt(content: any): NormalizedNode {
         continue;
       }
     }
+    if (lib === "H5P.TrueFalse") {
+      const question = typeof params?.question === "string" ? params.question : "";
+      const isTrue = String(params?.correct ?? "true").toLowerCase() === "true";
+      slides.push({
+        type: "singleChoice",
+        question,
+        answers: [
+          ["True", isTrue ? 1 : 0],
+          ["False", isTrue ? 0 : 1]
+        ],
+        startTime
+      });
+      continue;
+    }
     if (lib === "H5P.SingleChoiceSet") {
       const first = Array.isArray(params?.choices) ? params.choices[0] : null;
       if (first && Array.isArray(first.answers)) {

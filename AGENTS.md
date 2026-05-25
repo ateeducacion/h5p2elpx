@@ -139,6 +139,8 @@ dispatch.
 | `H5P.AdvancedBlanks` (Complex Fill the Blanks) | `form` (`activityType: "fill"`) — `[answer\|alt]` bracket syntax is rewritten into the `*answer*` markers consumed by `blanksToFill()` | |
 | `H5P.Agamotto` | `beforeafter` when there are exactly two frames; sequential `<figure>` `text` iDevice otherwise — H5P's continuous slider has no eXe analogue | |
 | `H5P.GameMap` | `map` iDevice — background image + markers parsed from each stage's `telemetry` string (`"x,y,w,h"` in percent); embedded text/image sub-content goes in the popup `eText` | |
+| `H5P.Link` | `text` (`<a href>` paragraph) — used by CoursePresentation slide annotations | |
+| `H5P.DocumentationTool` | one eXe page per `H5P.StandardPage` (mirrors `H5P.InteractiveBook`); `elementList` children dispatched through the regular adapter registry | |
 | anything else | `text` fallback with "Unsupported H5P content" banner (unless `--unsupported drop`) | |
 
 ## H5P types still on the text fallback
@@ -147,10 +149,9 @@ The remaining content types from
 https://h5p.org/content-types-and-applications stay on the generic
 `text` fallback because eXeLearning has no native equivalent:
 
-Chart, Timeline, Personality Quiz, Documentation Tool, KewAr Code,
-AR Scavenger, Audio Recorder, Speak the Words(+Set), Virtual Tour
-(360), Branching Scenario, Cornell Notes, Structure Strip, Impressive
-Presentation.
+Chart, Timeline, Personality Quiz, KewAr Code, AR Scavenger, Audio
+Recorder, Speak the Words(+Set), Virtual Tour (360), Branching
+Scenario, Cornell Notes, Structure Strip, Impressive Presentation.
 
 Real H5P samples for every implemented mapping are checked into
 `fixtures/h5p/` and exercised end-to-end by

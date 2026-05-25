@@ -3,9 +3,14 @@ import { uniqueId } from "../../utils/slug.ts";
 
 export const machineName = "H5P.ImageSequencing";
 
-/** H5P.ImageSequencing content.json: { taskDescription, imageTasks: [ { image:{path}, imageDescription } ] } */
+/** H5P.ImageSequencing content.json: { taskDescription, sequenceImages: [ { image:{path}, imageDescription } ] }
+ *  (older library builds used `imageTasks` instead; both are accepted). */
 export function adapt(content: any): NormalizedNode {
-  const tasks: any[] = Array.isArray(content?.imageTasks) ? content.imageTasks : [];
+  const tasks: any[] = Array.isArray(content?.sequenceImages)
+    ? content.sequenceImages
+    : Array.isArray(content?.imageTasks)
+      ? content.imageTasks
+      : [];
   const task = typeof content?.taskDescription === "string" ? content.taskDescription : "";
   const list = tasks
     .map((t, i) => {

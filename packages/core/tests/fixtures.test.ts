@@ -23,7 +23,11 @@ const realSamples = [
   { file: "image-hotspot-question.h5p", expectMainLibrary: "H5P.ImageHotspotQuestion" },
   { file: "image-slider.h5p", expectMainLibrary: "H5P.ImageSlider" },
   { file: "questionnaire.h5p", expectMainLibrary: "H5P.Questionnaire" },
-  { file: "blanks-with-image.h5p", expectMainLibrary: "H5P.Blanks" }
+  { file: "blanks-with-image.h5p", expectMainLibrary: "H5P.Blanks" },
+  { file: "image-sequencing.h5p", expectMainLibrary: "H5P.ImageSequencing" },
+  { file: "course-presentation-with-links.h5p", expectMainLibrary: "H5P.CoursePresentation" },
+  { file: "documentation-tool.h5p", expectMainLibrary: "H5P.DocumentationTool" },
+  { file: "interactive-video-truefalse.h5p", expectMainLibrary: "H5P.InteractiveVideo" }
 ];
 
 describe("real H5P sample fixtures (end-to-end)", () => {

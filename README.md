@@ -153,6 +153,8 @@ or shared download URL.
 | 4 | `H5P.AdvancedBlanks` (Complex Fill the Blanks) | form iDevice (`activityType: "fill"`) |
 | 4 | `H5P.Agamotto` | `beforeafter` iDevice for two frames, sequential text iDevice otherwise |
 | 4 | `H5P.GameMap` | `map` iDevice (markers parsed from `telemetry`) |
+| 4 | `H5P.Link` | text iDevice with `<a href>` |
+| 4 | `H5P.DocumentationTool` | one eXe page per `H5P.StandardPage` |
 | anything else | visible warning iDevice (unless `--unsupported drop`) |
 
 ## Roadmap — H5P types still on the text fallback
@@ -161,10 +163,9 @@ Remaining content types from
 <https://h5p.org/content-types-and-applications> stay on the generic
 `text` fallback because eXeLearning has no native equivalent:
 
-Chart, Timeline, Personality Quiz, Documentation Tool, KewAr Code,
-AR Scavenger, Audio Recorder, Speak the Words(+Set), Virtual Tour
-(360), Branching Scenario, Cornell Notes, Structure Strip, Impressive
-Presentation.
+Chart, Timeline, Personality Quiz, KewAr Code, AR Scavenger, Audio
+Recorder, Speak the Words(+Set), Virtual Tour (360), Branching
+Scenario, Cornell Notes, Structure Strip, Impressive Presentation.
 
 Sample `.h5p` files for every implemented mapping live under
 `fixtures/h5p/` and are exercised by `packages/core/tests/fixtures.test.ts`.
