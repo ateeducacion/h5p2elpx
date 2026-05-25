@@ -147,7 +147,7 @@ describe("H5P.InteractiveVideo handles TrueFalse interactions", () => {
     const flat = result.project.pages.flatMap((p) => p.blocks.flatMap((b) => b.iDevices));
     const iv = flat.find((i) => i.typeName === "interactive-video")!;
     const json = iv.htmlView.match(
-      /<div id="exe-interactive-video-contents"[^>]*>([\s\S]*?)<\/div>/
+      /<script id="exe-interactive-video-contents"[^>]*>([\s\S]*?)<\/script>/
     )![1]!;
     const data = JSON.parse(json);
     expect(data.slides).toHaveLength(2);
