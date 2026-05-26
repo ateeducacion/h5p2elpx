@@ -316,7 +316,13 @@ function emitNode(
           selectionType,
           baseText,
           answers: node.answers.map((a) =>
-            a.feedback ? [!!a.correct, a.text, a.feedback] : [!!a.correct, a.text]
+            a.feedback
+              ? [
+                  !!a.correct,
+                  rewriteUrls(sanitizeHtml(a.text), ctx.forHtml),
+                  rewriteUrls(sanitizeHtml(a.feedback), ctx.forHtml)
+                ]
+              : [!!a.correct, rewriteUrls(sanitizeHtml(a.text), ctx.forHtml)]
           )
         };
         addIdevice(
@@ -476,9 +482,10 @@ function emitNode(
           pageId: hostPage.id,
           blockId: block.id,
           order: 0,
+          mode: node.sourceType === "H5P.MemoryGame" ? 3 : 0,
           cards: node.cards.map((c) => ({
-            front: { text: c.front },
-            back: { text: c.back }
+            front: { text: rewriteUrls(sanitizeHtml(c.front), ctx.forHtml) },
+            back: { text: rewriteUrls(sanitizeHtml(c.back), ctx.forHtml) }
           }))
         })
       );

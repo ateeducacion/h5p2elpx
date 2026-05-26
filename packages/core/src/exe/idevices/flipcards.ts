@@ -22,6 +22,8 @@ export type FlipcardsInput = {
   title?: string;
   /** Optional intro text shown above the game */
   instructions?: string;
+  /** eXe runtime mode. 0 = standard flipcards, 3 = memory cards. */
+  mode?: 0 | 3;
 };
 
 const FLIPCARDS_DEFAULT_MSGS = {
@@ -185,7 +187,7 @@ export function buildFlipcardsIdevice(input: FlipcardsInput): ElpxIdevice {
     textAfter: "",
     percentajeCards: 100,
     version: 1.3,
-    type: 0,
+    type: input.mode ?? 0,
     showSolution: true,
     timeShowSolution: 3,
     time: 0,

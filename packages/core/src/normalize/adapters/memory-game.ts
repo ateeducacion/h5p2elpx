@@ -11,8 +11,10 @@ export function adapt(content: any): NormalizedNode {
     kind: "flipcards",
     cards: cards.map((c) => ({
       front:
-        typeof c?.image?.path === "string" ? `[image: ${c.image.path}]` : (c?.description ?? ""),
-      back: typeof c?.match?.path === "string" ? `[image: ${c.match.path}]` : (c?.description ?? "")
+        typeof c?.image?.path === "string"
+          ? `<img src="${c.image.path}" alt="${c?.description ?? ""}" />`
+          : (c?.description ?? ""),
+      back: ""
     }))
   };
 }

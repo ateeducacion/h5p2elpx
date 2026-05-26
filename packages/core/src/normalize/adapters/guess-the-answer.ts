@@ -14,13 +14,17 @@ export function adapt(content: any): NormalizedNode {
       ? content.image.path
       : typeof content?.image?.params?.file?.path === "string"
         ? content.image.params.file.path
-        : "";
+        : typeof content?.media?.params?.file?.path === "string"
+          ? content.media.params.file.path
+          : "";
   const alt =
     typeof content?.image?.alt === "string"
       ? content.image.alt
       : typeof content?.image?.params?.alt === "string"
         ? content.image.params.alt
-        : "";
+        : typeof content?.media?.params?.alt === "string"
+          ? content.media.params.alt
+          : "";
   const prompt =
     typeof content?.taskDescription === "string" && content.taskDescription
       ? content.taskDescription

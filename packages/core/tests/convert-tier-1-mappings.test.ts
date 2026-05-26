@@ -24,6 +24,14 @@ function decodeFlipcards(idevice: AnyIdevice): any {
   return JSON.parse(match![1]!);
 }
 
+const PNG_1PX = new Uint8Array([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+  0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4,
+  0x89, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00,
+  0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae,
+  0x42, 0x60, 0x82
+]);
+
 describe("convert H5P.GuessTheAnswer", () => {
   it("emits a single-card flipcards iDevice with image + question on the front", async () => {
     const { idevices, report } = await convertAndFlatten({
@@ -44,6 +52,26 @@ describe("convert H5P.GuessTheAnswer", () => {
     expect(data.cardsGame[0].eText).toContain("What animal is this?");
     expect(data.cardsGame[0].eTextBk).toBe("An axolotl");
   });
+
+  it("rewrites image assets referenced inside flipcards content", async () => {
+    const bytes = await makeH5pZip({
+      mainLibrary: "H5P.GuessTheAnswer",
+      content: {
+        image: { path: "images/animal.png", alt: "mystery animal" },
+        taskDescription: "What animal is this?",
+        solutionText: "An axolotl"
+      },
+      extras: { "content/images/animal.png": PNG_1PX }
+    });
+    const result = await convert([{ kind: "h5p-bytes", data: bytes, filename: "guess.h5p" }]);
+    const flat = result.project.pages.flatMap((p) => p.blocks.flatMap((b) => b.iDevices));
+    const fc = flat.find((i) => i.typeName === "flipcards")!;
+    const data = decodeFlipcards(fc);
+    expect(data.cardsGame[0].url).toBe("{{context_path}}/animal.png");
+    expect(
+      result.project.resources.find((r) => r.path === "content/resources/animal.png")
+    ).toBeDefined();
+  });
 });
 
 describe("convert H5P.AdventCalendar", () => {
@@ -56,6 +84,29 @@ describe("convert H5P.AdventCalendar", () => {
           { day: 2, content: { contentType: { params: { text: "<p>Day two</p>" } } } }
         ]
       }
+    });
+
+    describe("convert H5P.MemoryGame", () => {
+      it("uses the memory runtime mode and rewrites card images", async () => {
+        const bytes = await makeH5pZip({
+          mainLibrary: "H5P.MemoryGame",
+          content: {
+            cards: [
+              {
+                description: "Berry",
+                image: { path: "images/berry.jpg" }
+              }
+            ]
+          },
+          extras: { "content/images/berry.jpg": PNG_1PX }
+        });
+        const result = await convert([{ kind: "h5p-bytes", data: bytes, filename: "memory.h5p" }]);
+        const flat = result.project.pages.flatMap((p) => p.blocks.flatMap((b) => b.iDevices));
+        const fc = flat.find((i) => i.typeName === "flipcards")!;
+        const data = decodeFlipcards(fc);
+        expect(data.type).toBe(3);
+        expect(data.cardsGame[0].url).toBe("{{context_path}}/berry.jpg");
+      });
     });
     const fc = idevices.find((i) => i.typeName === "flipcards")!;
     const data = decodeFlipcards(fc);
@@ -125,6 +176,30 @@ describe("convert H5P.MultiMediaChoice", () => {
     });
     const form = idevices.find((i) => i.typeName === "form")!;
     expect(form.jsonProperties.questionsData[0].selectionType).toBe("multiple");
+  });
+
+  it("rewrites option images when the H5P package contains the referenced files", async () => {
+    const bytes = await makeH5pZip({
+      mainLibrary: "H5P.MultiMediaChoice",
+      content: {
+        question: "Pick the cat",
+        options: [
+          { media: { params: { file: { path: "images/cat.png" }, alt: "cat" } }, correct: true },
+          { media: { params: { file: { path: "images/dog.png" }, alt: "dog" } }, correct: false }
+        ]
+      },
+      extras: {
+        "content/images/cat.png": PNG_1PX,
+        "content/images/dog.png": PNG_1PX
+      }
+    });
+    const result = await convert([{ kind: "h5p-bytes", data: bytes, filename: "mmc.h5p" }]);
+    const form = result.project.pages
+      .flatMap((p) => p.blocks.flatMap((b) => b.iDevices as AnyIdevice[]))
+      .find((i) => i.typeName === "form")!;
+    const q = form.jsonProperties.questionsData[0];
+    expect(q.answers[0]).toEqual([true, '<img src="{{context_path}}/cat.png" alt="cat" />']);
+    expect(q.answers[1]).toEqual([false, '<img src="{{context_path}}/dog.png" alt="dog" />']);
   });
 });
 
