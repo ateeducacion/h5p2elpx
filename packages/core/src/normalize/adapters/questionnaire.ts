@@ -11,10 +11,15 @@ export function adapt(content: any): NormalizedNode {
     : [];
   const children: NormalizedNode[] = [];
   for (const it of items) {
-    const lib = it?.library;
-    const params = it?.params;
+    const lib =
+      typeof it?.library === "string"
+        ? it.library
+        : typeof it?.library?.library === "string"
+          ? it.library.library
+          : "";
+    const params = it?.params ?? it?.library?.params ?? {};
     if (!lib) continue;
-    children.push(adaptH5pSubContent(String(lib), params));
+    children.push(adaptH5pSubContent(lib, params));
   }
   return {
     id: uniqueId("qn"),

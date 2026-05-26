@@ -40,6 +40,7 @@ export type NormalizedQuestionNode = BaseNode & {
   prompt: string;
   answers?: NormalizedAnswer[];
   feedback?: string;
+  selectionType?: "single" | "multiple";
   /** Optional media (typically an image) authored alongside the question. */
   media?: { src: string; alt?: string };
 };
@@ -166,6 +167,7 @@ export type CpSlideElement = {
   payload:
     | { kind: "image"; src: string; alt?: string }
     | { kind: "html"; html: string }
+    | { kind: "node"; node: NormalizedNode }
     | { kind: "goto"; goToSlide: number }
     | { kind: "unsupported"; library: string };
 };

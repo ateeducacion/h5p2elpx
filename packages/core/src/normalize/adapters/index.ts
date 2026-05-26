@@ -36,11 +36,13 @@ import * as imageSlider from "./image-slider.ts";
 import * as collage from "./collage.ts";
 import * as questionSet from "./question-set.ts";
 import * as questionnaire from "./questionnaire.ts";
+import * as simpleMultiChoice from "./simple-multi-choice.ts";
 import * as dictation from "./dictation.ts";
 import * as imageHotspotQuestion from "./image-hotspot-question.ts";
 import * as guessTheAnswer from "./guess-the-answer.ts";
 import * as adventCalendar from "./advent-calendar.ts";
 import * as informationWall from "./information-wall.ts";
+import * as openEndedQuestion from "./open-ended-question.ts";
 import * as multiMediaChoice from "./multi-media-choice.ts";
 import * as arithmeticQuiz from "./arithmetic-quiz.ts";
 import * as complexFillTheBlanks from "./complex-fill-the-blanks.ts";
@@ -94,11 +96,13 @@ const REGISTRY: Record<string, AdapterModule> = Object.fromEntries(
       collage,
       questionSet,
       questionnaire,
+      simpleMultiChoice,
       dictation,
       imageHotspotQuestion,
       guessTheAnswer,
       adventCalendar,
       informationWall,
+      openEndedQuestion,
       multiMediaChoice,
       arithmeticQuiz,
       complexFillTheBlanks,
@@ -109,6 +113,9 @@ const REGISTRY: Record<string, AdapterModule> = Object.fromEntries(
     ] as AdapterModule[]
   ).map((m) => [m.machineName, m])
 );
+
+REGISTRY["H5P.InfoWall"] = informationWall;
+REGISTRY["H5P.ImageMultipleHotspotQuestion"] = multipleHotspotQuestion;
 
 export function adaptH5pSubContent(libraryName: string, params: unknown): NormalizedNode {
   const machine = machineNameOnly(libraryName);

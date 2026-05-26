@@ -1,6 +1,7 @@
 import type { CpSlide, CpSlideElement, NormalizedNode } from "../nodes.ts";
 import { uniqueId } from "../../utils/slug.ts";
 import { machineNameOnly } from "../../h5p/library-ref.ts";
+import { adaptH5pSubContent } from "./index.ts";
 
 export const machineName = "H5P.CoursePresentation";
 
@@ -93,6 +94,21 @@ export function adapt(content: any): NormalizedNode {
           payload: { kind: "html", html }
         });
         return;
+      }
+      if (lib) {
+        const embedded = adaptH5pSubContent(lib, params);
+        if (embedded.kind !== "unsupported") {
+          elements.push({
+            x,
+            y,
+            w,
+            h,
+            order,
+            invisible,
+            payload: { kind: "node", node: embedded }
+          });
+          return;
+        }
       }
       // Anything else (Video, MultiChoice, etc. inside a slide) — surface
       // a visible placeholder so the author knows something was here.

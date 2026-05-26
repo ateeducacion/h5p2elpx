@@ -303,7 +303,8 @@ function emitNode(
       }
       if (node.questionType === "multichoice" && node.answers) {
         const correctCount = node.answers.filter((a) => a.correct).length;
-        const selectionType: "single" | "multiple" = correctCount > 1 ? "multiple" : "single";
+        const selectionType: "single" | "multiple" =
+          node.selectionType ?? (correctCount > 1 ? "multiple" : "single");
         let baseText = node.prompt;
         if (node.media?.src) {
           const src = ctx.forHtml(node.media.src);
