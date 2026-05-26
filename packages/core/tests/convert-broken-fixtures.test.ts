@@ -111,6 +111,49 @@ describe("H5P.DocumentationTool adapter", () => {
     expect(pageTitles).toContain("INICIO");
     expect(pageTitles).toContain("FIN");
   });
+
+  it("keeps H5P.TextInputField prompts as editable text inputs instead of unsupported blocks", async () => {
+    const bytes = await makeH5pZip({
+      mainLibrary: "H5P.DocumentationTool",
+      content: {
+        taskDescription: "Project diary",
+        pagesList: [
+          {
+            library: "H5P.StandardPage 1.5",
+            metadata: { title: "INTRO" },
+            params: {
+              elementList: [
+                {
+                  library: "H5P.TextInputField 1.2",
+                  params: {
+                    inputFieldSize: "1",
+                    requiredField: false,
+                    taskDescription: "<p>Project title</p>",
+                    placeholderText: "Insert title"
+                  }
+                },
+                {
+                  library: "H5P.TextInputField 1.2",
+                  params: {
+                    inputFieldSize: "4",
+                    requiredField: false,
+                    taskDescription: "<p>Describe your work</p>",
+                    placeholderText: "Write here"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    });
+    const result = await convert([{ kind: "h5p-bytes", data: bytes, filename: "dt-inputs.h5p" }]);
+    expect(result.report.summary.unsupported).toBe(0);
+    const flat = result.project.pages.flatMap((p) => p.blocks.flatMap((b) => b.iDevices));
+    const textIdevices = flat.filter((i) => i.typeName === "text");
+    expect(textIdevices.some((i) => i.htmlView.includes('placeholder="Insert title"'))).toBe(true);
+    expect(textIdevices.some((i) => i.htmlView.includes("<textarea"))).toBe(true);
+  });
 });
 
 describe("H5P.InteractiveVideo handles TrueFalse interactions", () => {

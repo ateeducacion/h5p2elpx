@@ -2,6 +2,7 @@ import type { NormalizedNode } from "../nodes.ts";
 import { machineNameOnly } from "../../h5p/library-ref.ts";
 import * as text from "./text.ts";
 import * as advancedText from "./advanced-text.ts";
+import * as textInputField from "./text-input-field.ts";
 import * as image from "./image.ts";
 import * as audio from "./audio.ts";
 import * as video from "./video.ts";
@@ -62,6 +63,7 @@ const REGISTRY: Record<string, AdapterModule> = Object.fromEntries(
     [
       text,
       advancedText,
+      textInputField,
       image,
       audio,
       video,
