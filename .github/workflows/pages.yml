@@ -24,6 +24,8 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - name: Build eXeLearning template from official release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: bun run build-template
       - name: Copy template into web public/
         run: cp fixtures/elpx/template.elpx packages/web/public/template.elpx

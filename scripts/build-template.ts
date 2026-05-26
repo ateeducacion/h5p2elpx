@@ -29,19 +29,41 @@ const REPO = "exelearning/exelearning";
 const DEFAULT_TAG = process.argv[2] ?? "v4.0.0";
 const DEFAULT_THEME = process.argv[3] ?? "base";
 
+function githubHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    Accept: "application/vnd.github+json",
+    "User-Agent": "h5p2elpx-build-template"
+  };
+  const token = process.env.GITHUB_TOKEN;
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+}
+
+async function fetchGithubJson(path: string): Promise<any> {
+  const r = await fetch(`https://api.github.com${path}`, {
+    headers: githubHeaders()
+  });
+  if (!r.ok) {
+    const detail = await r.text();
+    throw new Error(`GitHub API ${path} failed (${r.status}): ${detail || r.statusText}`);
+  }
+  return r.json();
+}
+
+function buildStaticAssetUrl(tag: string): string {
+  return `https://github.com/${REPO}/releases/download/${tag}/exelearning-static-${tag}.zip`;
+}
+
 async function fetchRelease(tag: string): Promise<string> {
   if (tag === "latest") {
-    const r = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`);
-    const json: any = await r.json();
+    const json: any = await fetchGithubJson(`/repos/${REPO}/releases/latest`);
     return json.tag_name;
   }
   return tag;
 }
 
 async function findStaticAsset(tag: string): Promise<string> {
-  const r = await fetch(`https://api.github.com/repos/${REPO}/releases/tags/${tag}`);
-  if (!r.ok) throw new Error(`No release ${tag} on ${REPO}`);
-  const json: any = await r.json();
+  const json: any = await fetchGithubJson(`/repos/${REPO}/releases/tags/${tag}`);
   const asset = (json.assets ?? []).find((a: any) => /^exelearning-static-v.*\.zip$/.test(a.name));
   if (!asset) throw new Error(`No exelearning-static-*.zip asset on ${tag}`);
   return asset.browser_download_url;
@@ -135,7 +157,7 @@ const CONTENT_DTD = `<!ELEMENT ode (userPreferences?, odeResources?, odeProperti
 async function main() {
   const tag = await fetchRelease(DEFAULT_TAG);
   console.log(`eXeLearning release: ${tag}`);
-  const assetUrl = await findStaticAsset(tag);
+  const assetUrl = DEFAULT_TAG === "latest" ? await findStaticAsset(tag) : buildStaticAssetUrl(tag);
   console.log(`Downloading ${assetUrl} (cached)`);
   const staticZipBytes = await download(assetUrl);
   const staticZip = await JSZip.loadAsync(staticZipBytes);
