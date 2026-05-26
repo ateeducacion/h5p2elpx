@@ -5,6 +5,8 @@ import * as advancedText from "./advanced-text.ts";
 import * as textInputField from "./text-input-field.ts";
 import * as audioRecorder from "./audio-recorder.ts";
 import * as chart from "./chart.ts";
+import * as timeline from "./timeline.ts";
+import * as personalityQuiz from "./personality-quiz.ts";
 import * as image from "./image.ts";
 import * as audio from "./audio.ts";
 import * as video from "./video.ts";
@@ -68,6 +70,8 @@ const REGISTRY: Record<string, AdapterModule> = Object.fromEntries(
       textInputField,
       audioRecorder,
       chart,
+      timeline,
+      personalityQuiz,
       image,
       audio,
       video,
