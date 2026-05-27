@@ -232,9 +232,13 @@ function adaptCover(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
   const bg = bgRef?.url ?? bgRef?.relativePath ?? pickProp(comp, "backgroundImage");
 
   // The inner text child (if any) carries the author / sessions / etc.
+  // ADC authors typically set these on the dark portada overlay with
+  // `color:#fff*`; once we promote them to a light eXe page that becomes
+  // white-on-white. Strip light text colours and white CSS shadows so the
+  // text stays readable.
   const innerParts: string[] = [];
   for (const cid of comp.componentChildren) collectInlineHtml(cid, ctx, innerParts);
-  const inner = innerParts.join("\n");
+  const inner = stripLightTextColors(innerParts.join("\n"));
 
   const banner = bg
     ? `<div style="background-image:url('${escapeAttr(bg)}');background-size:cover;background-position:center;min-height:280px;display:flex;align-items:flex-end;padding:2em 1.5em;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4);border-radius:8px"><div>${
@@ -1132,4 +1136,34 @@ function stripHtml(s: string): string {
 
 function escapeAttr(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+}
+
+/**
+ * Remove inline `color: #fff…` / `color: white` declarations from arbitrary
+ * HTML. ADC sets these on cover bodies, footers, banners — wherever the
+ * source theme rendered text over a dark image overlay. When we promote
+ * that content into a plain eXe page it becomes invisible (white on
+ * white). Dropping the declaration lets the iDevice inherit eXe's default
+ * dark text colour.
+ */
+function stripLightTextColors(html: string): string {
+  const lightColor =
+    /color\s*:\s*(?:#fff(?:f(?:ff)?)?|white|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\)|rgba\(\s*255\s*,\s*255\s*,\s*255\s*,[^)]*\))\s*;?/gi;
+  return html
+    .replace(/style\s*=\s*"([^"]*)"/gi, (_m, css: string) => {
+      const cleaned = css
+        .replace(lightColor, "")
+        .replace(/;\s*;+/g, ";")
+        .trim();
+      if (!cleaned || cleaned === ";") return "";
+      return `style="${cleaned}"`;
+    })
+    .replace(/style\s*=\s*'([^']*)'/gi, (_m, css: string) => {
+      const cleaned = css
+        .replace(lightColor, "")
+        .replace(/;\s*;+/g, ";")
+        .trim();
+      if (!cleaned || cleaned === ";") return "";
+      return `style='${cleaned}'`;
+    });
 }
