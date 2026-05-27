@@ -194,9 +194,11 @@ function adaptPageContent(comp: AdcComponent, ctx: AdcCtx): NormalizedPageNode {
     pickProp(comp, "titleHtml") ??
     "Page";
   const title = stripHtml(raw);
-  const children = groupMediaClusters(
-    comp.componentChildren.map((cid) => visit(cid, ctx)),
-    ctx
+  const children = absorbHeadings(
+    groupMediaClusters(
+      comp.componentChildren.map((cid) => visit(cid, ctx)),
+      ctx
+    )
   );
   return {
     id: uniqueId("adc-page"),
@@ -388,7 +390,7 @@ function adaptContainer(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
     id: uniqueId("adc-container"),
     sourceType: `ADC.${comp.name}`,
     kind: "container",
-    children: groupMediaClusters(children, ctx)
+    children: absorbHeadings(groupMediaClusters(children, ctx))
   };
 }
 
@@ -426,6 +428,57 @@ function groupMediaClusters(nodes: NormalizedNode[], ctx: AdcCtx): NormalizedNod
     out.push(mergeMediaCluster(intro, node, caption, ctx));
   }
   return out;
+}
+
+/**
+ * Promote standalone heading-only text nodes (`<h1>…<h6>` with no other
+ * content) to the `title` of the next sibling node, and drop the standalone
+ * iDevice. The convert dispatcher uses the first iDevice's `title` as the
+ * eXe block name, so the heading ends up labelling the block (rendered in
+ * the editor next to the "Ocultar/Mostrar contenido" toggle) rather than
+ * floating as a tiny standalone text iDevice above it.
+ *
+ * Only triggers when the next sibling has no title yet — never overwrites
+ * an existing one. Headings at the end of the list (no follow-up sibling)
+ * stay as standalone text iDevices.
+ */
+function absorbHeadings(nodes: NormalizedNode[]): NormalizedNode[] {
+  const out: NormalizedNode[] = [];
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i]!;
+    if (node.kind !== "text") {
+      out.push(node);
+      continue;
+    }
+    const headingText = extractHeadingText(node.html);
+    if (!headingText) {
+      out.push(node);
+      continue;
+    }
+    const next = nodes[i + 1];
+    if (!next || next.title) {
+      out.push(node);
+      continue;
+    }
+    next.title = headingText;
+    // Skip pushing the standalone heading node — its text is now the
+    // block name of the next iDevice.
+  }
+  return out;
+}
+
+/** Returns the plain text of a heading-only HTML snippet, or null when the
+ *  html carries any non-heading content. Tolerates a wrapping `<p>` or
+ *  `<div>` and ignores leading/trailing whitespace. */
+function extractHeadingText(html: string): string | null {
+  let s = html.trim();
+  // Peel off a single wrapping <p>/<div> that contains only the heading.
+  const wrap = s.match(/^<(p|div)\b[^>]*>([\s\S]*)<\/\1>$/i);
+  if (wrap) s = wrap[2]!.trim();
+  const m = s.match(/^<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1>$/i);
+  if (!m) return null;
+  const text = decodeEntities(m[2]!.replace(/<[^>]+>/g, "")).trim();
+  return text.length > 0 ? text : null;
 }
 
 function isMediaLeaf(node: NormalizedNode): boolean {

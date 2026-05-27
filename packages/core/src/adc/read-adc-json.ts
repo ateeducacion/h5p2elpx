@@ -90,11 +90,27 @@ function normalizeComponent(id: string, raw: AdcComponent): AdcComponent {
     id,
     name: raw.name,
     parent: (raw as { parent?: string | null }).parent ?? null,
-    properties: (raw.properties ?? {}) as Record<string, unknown>,
+    properties: cleanProps((raw.properties ?? {}) as Record<string, unknown>),
     resourceProperties: (raw.resourceProperties ?? {}) as AdcComponent["resourceProperties"],
     htmlResourceProperties: raw.htmlResourceProperties,
     componentChildren: (raw.componentChildren ?? []) as string[]
   };
+}
+
+/**
+ * The ADC authoring tool double-escapes some rich-text strings before
+ * `JSON.stringify`, so we see literal `<\/h3>`, `<\/strong>` etc. with a
+ * backslash inside the parsed value. HTML doesn't escape `/`, so the
+ * backslashes are pure noise that breaks downstream HTML matching (e.g.
+ * the heading-detection regex) and renders as `<\/h3>` in some browsers.
+ * Strip every `\` that precedes a `/` from every string property.
+ */
+function cleanProps(props: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(props)) {
+    out[k] = typeof v === "string" ? v.replace(/\\\//g, "/") : v;
+  }
+  return out;
 }
 
 function findRootModule(components: Map<string, AdcComponent>): string {
