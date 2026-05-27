@@ -7,7 +7,7 @@ type Props = {
   filename: string;
 };
 
-const DEFAULT_EDITOR_URL = "https://static.exelearning.dev/";
+const DEFAULT_EDITOR_URL = "https://online.exelearning.dev/";
 
 type Status = "loading" | "ready" | "sending" | "opened" | "error";
 
