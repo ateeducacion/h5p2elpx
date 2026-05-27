@@ -4,6 +4,7 @@ import {
   type CompatibilityEntry,
   convert,
   type ConversionReport,
+  readAdc,
   readH5p
 } from "@ateeducacion/h5p2elpx-core";
 import { Box } from "./components/Box.tsx";
@@ -61,12 +62,25 @@ export function App() {
     setConv(null);
     setError(null);
     try {
-      const pkgs = await Promise.all(
-        merged.map(async (f) =>
-          readH5p(new Uint8Array(await f.arrayBuffer()), { sourceFilename: f.name })
-        )
-      );
-      setPreview(buildCompatibilityPreview(pkgs));
+      const h5pPkgs: Awaited<ReturnType<typeof readH5p>>[] = [];
+      const adcEntries: CompatibilityEntry[] = [];
+      for (const f of merged) {
+        const bytes = new Uint8Array(await f.arrayBuffer());
+        // Try ADC first — its sniffer rejects H5P bundles cleanly, so a
+        // negative answer falls through to readH5p.
+        const adc = await readAdc(bytes, { sourceFilename: f.name });
+        if (adc) {
+          adcEntries.push({
+            sourceFile: f.name,
+            title: adc.title,
+            mainLibrary: `ADC.${adc.flavor}`,
+            supported: true
+          });
+        } else {
+          h5pPkgs.push(await readH5p(bytes, { sourceFilename: f.name }));
+        }
+      }
+      setPreview([...buildCompatibilityPreview(h5pPkgs), ...adcEntries]);
     } catch (err) {
       setError((err as Error).message);
     }
@@ -86,7 +100,7 @@ export function App() {
     try {
       const inputs = await Promise.all(
         files.map(async (f) => ({
-          kind: "h5p-bytes" as const,
+          kind: "zip-bytes" as const,
           data: new Uint8Array(await f.arrayBuffer()),
           filename: f.name
         }))

@@ -18,6 +18,16 @@ export {
   listRegisteredMachines
 } from "./normalize/adapters/index.ts";
 
+export type { AdcPackage, AdcFlavor, AdcComponent, AdcAsset } from "./adc/types.ts";
+export { readAdc } from "./adc/read-adc.ts";
+export { readAdcAltia } from "./adc/read-adc-altia.ts";
+export { readAdcNative } from "./adc/read-adc-native.ts";
+export { sniffAdcZip, sniffLoadedZip } from "./adc/sniff.ts";
+export type { AdcSniffResult } from "./adc/sniff.ts";
+export { decompressNtxCaf, extractNtxCafBase64 } from "./adc/decompress-ntxcaf.ts";
+export { planAdcAssets } from "./adc/asset-plan.ts";
+export { normalizeAdcPackage } from "./normalize/normalize-adc.ts";
+
 export * from "./exe/model.ts";
 export { wrapCdata, escapeCdataInner } from "./exe/cdata.ts";
 export { buildContentXml, CONTENT_DTD } from "./exe/content-xml.ts";

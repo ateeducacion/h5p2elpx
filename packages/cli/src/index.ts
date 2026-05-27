@@ -20,7 +20,9 @@ program
 
 program
   .command("convert <input>")
-  .description("Convert an .h5p file (or a folder of .h5p files) into an .elpx project")
+  .description(
+    "Convert an .h5p or ADC .zip (Aula Digital Canaria native / altia / SCORM 1.2 / SCORM 2004 / xAPI / local) into an .elpx project"
+  )
   .option("-o, --output <file>", "Output .elpx path", "output.elpx")
   .option("--layout <mode>", "Layout: blocks|pages|preserve", "preserve")
   .option("--unsupported <mode>", "Unsupported handling: keep|text|drop", "keep")
