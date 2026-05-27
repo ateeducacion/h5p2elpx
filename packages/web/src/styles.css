@@ -324,6 +324,27 @@ code,
   padding: 20px;
 }
 
+/* Collapsible <details> variant of .box */
+.box-collapsible > .box-head-summary {
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.box-collapsible > .box-head-summary::-webkit-details-marker {
+  display: none;
+}
+.box-collapsible:not([open]) > .box-head-summary {
+  border-bottom: 0;
+}
+.box-chevron {
+  color: var(--exe-fg-faint);
+  transition: transform 160ms ease;
+  flex: 0 0 auto;
+}
+.box-collapsible[open] .box-chevron {
+  transform: rotate(180deg);
+}
+
 /* ==========================================================================
    Dropzone
    ========================================================================== */
@@ -752,6 +773,75 @@ code,
 .result .result-actions {
   display: flex;
   gap: 10px;
+}
+
+/* ==========================================================================
+   Preview / embedded editor
+   ========================================================================== */
+.shell-wide-break {
+  /* Break out of the 960px .shell to use most of the viewport width. */
+  width: min(1600px, calc(100vw - 32px));
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0 0 24px;
+}
+.preview-intro {
+  margin: 0 0 14px;
+  font-size: 0.92rem;
+  color: var(--exe-text-muted, #555);
+}
+.preview-host {
+  font-family: var(--exe-font-mono);
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+.preview-frame-wrap {
+  border: 1px solid var(--exe-border);
+  border-radius: var(--exe-radius-md);
+  overflow: hidden;
+  background: #f6f6f6;
+  margin: 0 0 14px;
+}
+.preview-frame {
+  display: block;
+  width: 100%;
+  height: 70vh;
+  min-height: 480px;
+  border: 0;
+}
+.preview-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.report-details {
+  margin: 0 0 16px;
+}
+.report-details > .report-summary {
+  cursor: pointer;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+  color: var(--exe-fg-faint);
+  padding: 4px 0;
+  user-select: none;
+}
+.report-details > .report-summary::-webkit-details-marker {
+  display: none;
+}
+.report-details > .report-summary svg {
+  transition: transform 160ms ease;
+}
+.report-details[open] > .report-summary svg {
+  transform: rotate(180deg);
+}
+.report-details .report-body {
+  margin-top: 8px;
 }
 
 .report {

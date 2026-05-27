@@ -91,7 +91,20 @@ export const es: Messages = {
     statPartial: "Parciales",
     statUnsupported: "No compatibles",
     statWarnings: "Avisos",
-    statErrors: "Errores"
+    statErrors: "Errores",
+    logToggle: "Mostrar registro de conversión"
+  },
+  preview: {
+    title: "Vista previa y edición",
+    intro: "Abre el .elpx convertido en el editor eXeLearning embebido.",
+    poweredBy: "Servido por {host}",
+    loading: "Cargando editor…",
+    ready: "Editor listo",
+    sending: "Enviando proyecto al editor…",
+    opened: "Proyecto abierto",
+    openFailed: "No se pudo abrir el proyecto en el editor: {msg}",
+    reload: "Recargar vista previa",
+    openInNewTab: "Descargar y abrir en el editor"
   },
   footer: {
     madeWithBefore: "Hecho con ",
