@@ -349,6 +349,60 @@ function adaptText(comp: AdcComponent): NormalizedNode {
   };
 }
 
+/**
+ * `qTrueFalseActivity` is a list of statements each marked `correct=
+ * "true"|"false"`. Maps to a real eXeLearning **trueorfalse iDevice**:
+ * emit a container with the wording text (when present) and one
+ * `kind:"question"` (`questionType:"truefalse"`) per `qTrueFalseOption`.
+ * The convert dispatcher's `case "question"` then turns each into a
+ * `buildTrueOrFalseIdevice` call — the learner gets a working quiz, not
+ * a wall of plain statements.
+ */
+function adaptTrueFalseActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
+  const wording = extractWording(comp, ctx);
+  const out: NormalizedNode[] = [];
+  if (wording) {
+    out.push({
+      id: uniqueId("adc-tf-intro"),
+      sourceType: "ADC.qTrueFalseActivity",
+      kind: "text",
+      html: wording
+    });
+  }
+  for (const cid of comp.componentChildren) {
+    const child = ctx.pkg.components.get(cid);
+    if (!child || child.name !== "qTrueFalseOption") continue;
+    const prompt = extractInlineText(child.id, ctx);
+    if (!prompt) continue;
+    const correct = /^(true|1)$/i.test(pickProp(child, "correct") ?? "");
+    out.push({
+      id: uniqueId("adc-tf-q"),
+      sourceType: "ADC.qTrueFalseOption",
+      kind: "question",
+      questionType: "truefalse",
+      prompt: `<p>${escapeHtml(prompt)}</p>`,
+      answers: [
+        { text: "true", correct },
+        { text: "false", correct: !correct }
+      ]
+    });
+  }
+  if (out.length === 0) {
+    return {
+      id: uniqueId("adc-tf-empty"),
+      sourceType: "ADC.qTrueFalseActivity",
+      kind: "text",
+      html: wording || "<p>True / false quiz (sin enunciados).</p>"
+    };
+  }
+  return {
+    id: uniqueId("adc-tf"),
+    sourceType: "ADC.qTrueFalseActivity",
+    kind: "container",
+    children: out
+  };
+}
+
 /** Authoring tool placeholders that survive when the author never renames
  *  the component. Treated as "no title" so they don't pollute eXe block
  *  names with generic strings like "Video Title", "Audio Title", etc. */
@@ -703,6 +757,9 @@ function adaptQuiz(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
         break;
       case "qSpeakingActivity":
         questions.push(adaptSpeakingActivity(child, ctx));
+        break;
+      case "qTrueFalseActivity":
+        questions.push(adaptTrueFalseActivity(child, ctx));
         break;
       default:
         questions.push(visit(cid, ctx));
