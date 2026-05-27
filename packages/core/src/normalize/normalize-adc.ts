@@ -266,8 +266,11 @@ function adaptCover(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
   };
 }
 
-/** Emit the `footerPageBlock` (credits, version, links) as a small "Créditos"
- *  page appended at the end of the project. */
+/** Emit the `footerPageBlock` (credits, version, links) as a "Créditos y
+ *  descargas" page appended at the end of the project. We always include
+ *  this page when the source ADC bundle has any footer content; we also
+ *  emit a short attribution iDevice noting the import provenance so the
+ *  reader can trace the original Aula Digital Canaria source. */
 function adaptFooterPage(comp: AdcComponent, ctx: AdcCtx): NormalizedNode | null {
   const t1 = pickProp(comp, "text1Html") ?? "";
   const t2 = pickProp(comp, "text2Html") ?? "";
@@ -275,17 +278,38 @@ function adaptFooterPage(comp: AdcComponent, ctx: AdcCtx): NormalizedNode | null
   for (const cid of comp.componentChildren) collectInlineHtml(cid, ctx, childParts);
   const html = [t1, t2, ...childParts].filter((s) => s.trim().length > 0).join("\n");
   if (!html) return null;
+
+  const sourceName = ctx.pkg.sourceFilename ?? "";
+  const projectTitle = escapeHtml(ctx.pkg.title);
+  const attributionHtml = `<aside style="margin-top:1.5em;padding:1em;border-left:4px solid #999;background:#fafafa">
+  <p><strong>Origen del contenido</strong></p>
+  <p>${escapeHtml(`Este material se importó desde un paquete de Aula Digital Canaria (ADC).`)}</p>
+  <p>${escapeHtml(`Proyecto original: ${ctx.pkg.title}`)}</p>${
+    sourceName ? `\n  <p>${escapeHtml(`Archivo de origen: ${sourceName}`)}</p>` : ""
+  }
+  <p>${escapeHtml(
+    "Conserva la licencia y autoría del proyecto original al redistribuir o adaptar este contenido."
+  )}</p>
+</aside>`;
+
   return {
     id: uniqueId("adc-footer"),
     sourceType: "ADC.footerPageBlock",
     kind: "page",
-    title: "Créditos",
+    title: "Créditos y descargas",
     children: [
       {
         id: uniqueId("adc-footer-text"),
         sourceType: "ADC.footerPageBlock",
         kind: "text",
         html
+      },
+      {
+        id: uniqueId("adc-footer-attribution"),
+        sourceType: "ADC.footerPageBlock.attribution",
+        kind: "text",
+        title: projectTitle,
+        html: attributionHtml
       }
     ]
   };

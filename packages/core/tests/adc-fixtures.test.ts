@@ -42,17 +42,17 @@ describe("ADC fixtures (end-to-end via zip-bytes sniff)", () => {
         expect(result.project.title.length).toBeGreaterThan(3);
         expect(result.project.title).not.toBe("Imported content");
 
-        // The first non-root ElpxPage (the cover) lives directly under the
-        // cover host page and carries the rich-HTML banner produced by
-        // adaptCover (figure-less <section> with inline styles or, when
-        // there is no backgroundImage, a header-only fallback).
+        // The cover IS the project root (promoted by promoteAdcCover): a
+        // single top-level page that carries the rich-HTML banner from
+        // adaptCover plus any content blocks the ADC `pageContent` had.
+        // Subsequent pages nest under it.
         const roots = result.project.pages.filter((p) => !p.parentId);
         expect(roots.length).toBe(1);
         const cover = roots[0]!;
-        const coverChildren = result.project.pages.filter((p) => p.parentId === cover.id);
-        expect(coverChildren.length).toBeGreaterThan(0);
-        const coverHtml = coverChildren[0]!.blocks[0]?.iDevices[0]?.htmlView ?? "";
-        expect(coverHtml).toMatch(/<section/);
+        const children = result.project.pages.filter((p) => p.parentId === cover.id);
+        expect(children.length).toBeGreaterThan(0);
+        const rootHtml = cover.blocks[0]?.iDevices[0]?.htmlView ?? "";
+        expect(rootHtml).toMatch(/<section/);
 
         if (sample.expectTeacher) {
           const hasTeacherBlock = result.project.pages.some((p) =>

@@ -22,8 +22,8 @@ export async function readAdcJson(zip: JSZip, options: ReadAdcJsonOptions): Prom
   const langKey = pickLanguage(projectRaw);
   const lang = projectRaw[langKey] as Record<string, unknown>;
 
-  const title = decodeEntities(
-    readProjectTitle(lang) ?? options.sourceFilename ?? "Imported ADC content"
+  const title = sanitizeProjectTitle(
+    decodeEntities(readProjectTitle(lang) ?? options.sourceFilename ?? "Imported ADC content")
   );
   const componentsRaw = (lang.components ?? {}) as Record<string, AdcComponent>;
   const components = new Map<string, AdcComponent>();
@@ -116,4 +116,11 @@ async function collectAssets(zip: JSZip): Promise<AdcAsset[]> {
     out.push({ path, filename: basename(path), data, mimeType: guessMime(path) });
   }
   return out;
+}
+
+/** ADC's authoring tool tacks `(copy)`, `(copia)`, `(copy 2)`, etc. onto
+ *  the package title when an author duplicates a project. Strip it so the
+ *  generated eXe project doesn't carry the workflow artefact. */
+export function sanitizeProjectTitle(raw: string): string {
+  return raw.replace(/\s*\((copy|copia)(\s*\d+)?\)\s*$/i, "").trim() || raw;
 }

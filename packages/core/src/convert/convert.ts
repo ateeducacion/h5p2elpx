@@ -156,6 +156,10 @@ export async function convert(
 
     emitNode(ast, project, hostPage, ctx);
 
+    if (resolved.kind === "adc" && opts.layout !== "blocks") {
+      promoteAdcCover(project, hostPage);
+    }
+
     const unsupportedCount = activityReport.unsupportedItems.length;
     if (unsupportedCount > 0) {
       activityReport.status = activityReport.mappedTo!.length > 0 ? "partial" : "unsupported";
@@ -765,6 +769,53 @@ function toResolvedAdc(pkg: AdcPackage): ResolvedAdc {
     language: pkg.language,
     mainLibrary: `ADC.${pkg.flavor}`
   };
+}
+
+/**
+ * ADC projects emit their cover (`adaptCover`) as the first `kind:"page"`
+ * child of the module container. With `layout=preserve` that page lands as
+ * a child of the auto-created `hostPage`, which then sits as an empty
+ * wrapper named after `project.titles.es` ("Pino_Ojeda (copy)", "SA - …").
+ *
+ * Promote the cover into the host page: copy its blocks + title onto the
+ * host, re-parent its grandchildren to the host, drop the cover page from
+ * the project. Net effect: the cover becomes the visible top-level page,
+ * the content pages stay nested under it, and the awkward empty wrapper
+ * disappears.
+ *
+ * Skips when the host page already has its own blocks (the cover was
+ * emitted into it directly), or when there is no obvious cover child.
+ */
+function promoteAdcCover(project: ElpxProject, hostPage: ElpxPage): void {
+  const children = project.pages
+    .filter((p) => p.parentId === hostPage.id)
+    .sort((a, b) => a.order - b.order);
+  if (children.length === 0) return;
+  // The cover is the first emitted page (lowest `order`), produced by
+  // adaptCover at the head of `adaptModule`'s children.
+  const cover = children[0]!;
+  // Prepend the cover's blocks to the host (keeping any existing host
+  // blocks — usually the popup container or other ambient content).
+  const coverBlocks = cover.blocks.map((b) => ({ ...b, pageId: hostPage.id }));
+  for (const b of coverBlocks) {
+    for (const idev of b.iDevices) idev.pageId = hostPage.id;
+  }
+  hostPage.title = cover.title || hostPage.title;
+  hostPage.blocks = [...coverBlocks, ...hostPage.blocks];
+  hostPage.blocks.forEach((b, i) => {
+    b.order = i;
+  });
+  // Re-parent the cover's children onto the host page.
+  for (const p of project.pages) {
+    if (p.parentId === cover.id) p.parentId = hostPage.id;
+  }
+  project.pages = project.pages.filter((p) => p !== cover);
+  // Re-sequence sibling order around the host so the navigation looks clean.
+  project.pages
+    .filter((p) => p.parentId === hostPage.id)
+    .forEach((p, i) => {
+      p.order = i + 1;
+    });
 }
 
 /** Treat html as empty when stripping tags + entities yields no glyphs and

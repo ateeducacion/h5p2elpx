@@ -4,6 +4,7 @@ import type { AdcAsset, AdcComponent, AdcPackage } from "./types.ts";
 import { basename } from "../utils/path.ts";
 import { guessMime } from "../utils/mime.ts";
 import { decodeEntities } from "./entities.ts";
+import { sanitizeProjectTitle } from "./read-adc-json.ts";
 
 export type ReadAdcNativeOptions = {
   sourceFilename?: string;
@@ -45,8 +46,8 @@ export async function readAdcNative(
   const courseInfoXml = await courseInfoFile.async("string");
   const courseInfo = parser.parse(courseInfoXml) as { course?: Record<string, unknown> };
   const course = courseInfo.course ?? {};
-  const title = decodeEntities(
-    pickString(course.name) ?? options.sourceFilename ?? "Imported ADC content"
+  const title = sanitizeProjectTitle(
+    decodeEntities(pickString(course.name) ?? options.sourceFilename ?? "Imported ADC content")
   );
   const language = pickString(course.language);
   const guionId = pickString(course.guion);
