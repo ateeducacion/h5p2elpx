@@ -194,7 +194,10 @@ function adaptPageContent(comp: AdcComponent, ctx: AdcCtx): NormalizedPageNode {
     pickProp(comp, "titleHtml") ??
     "Page";
   const title = stripHtml(raw);
-  const children = comp.componentChildren.map((cid) => visit(cid, ctx));
+  const children = groupMediaClusters(
+    comp.componentChildren.map((cid) => visit(cid, ctx)),
+    ctx
+  );
   return {
     id: uniqueId("adc-page"),
     sourceType: "ADC.pageContent",
@@ -352,12 +355,107 @@ function adaptVideo(comp: AdcComponent): NormalizedNode {
 }
 
 function adaptContainer(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
+  const children = comp.componentChildren.map((cid) => visit(cid, ctx));
   return {
     id: uniqueId("adc-container"),
     sourceType: `ADC.${comp.name}`,
     kind: "container",
-    children: comp.componentChildren.map((cid) => visit(cid, ctx))
+    children: groupMediaClusters(children, ctx)
   };
+}
+
+/**
+ * Collapse sibling `[text, media, text]` runs into a single rich-text node
+ * so eXeLearning gets one iDevice that contains intro paragraph + media +
+ * caption — the way ADC laid the page out. Without this, each piece becomes
+ * its own block and the visual relationship between a video and its caption
+ * is lost.
+ *
+ * Heuristic: scan left-to-right; when a single media leaf (`image`, `video`,
+ * `audio`, `iframe`) is found, look at one immediate `text` sibling before
+ * and one after — if either qualifies, fold them together. Only the
+ * immediate neighbours are merged: longer runs are conservative non-merges
+ * to avoid swallowing unrelated content.
+ */
+function groupMediaClusters(nodes: NormalizedNode[], ctx: AdcCtx): NormalizedNode[] {
+  const out: NormalizedNode[] = [];
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i]!;
+    if (!isMediaLeaf(node)) {
+      out.push(node);
+      continue;
+    }
+    const prev = out.length > 0 ? out[out.length - 1]! : null;
+    const next = nodes[i + 1] ?? null;
+    const intro = prev && prev.kind === "text" ? prev : null;
+    const caption = next && next.kind === "text" ? next : null;
+    if (!intro && !caption) {
+      out.push(node);
+      continue;
+    }
+    if (intro) out.pop();
+    if (caption) i++;
+    out.push(mergeMediaCluster(intro, node, caption, ctx));
+  }
+  return out;
+}
+
+function isMediaLeaf(node: NormalizedNode): boolean {
+  return (
+    node.kind === "image" ||
+    node.kind === "video" ||
+    node.kind === "audio" ||
+    node.kind === "iframe"
+  );
+}
+
+function mergeMediaCluster(
+  intro: NormalizedNode | null,
+  media: NormalizedNode,
+  caption: NormalizedNode | null,
+  ctx: AdcCtx
+): NormalizedNode {
+  const parts: string[] = [];
+  if (intro && intro.kind === "text") parts.push(intro.html);
+  parts.push(renderMediaInline(media, ctx, caption?.kind === "text" ? caption.html : ""));
+  return {
+    id: uniqueId("adc-media-cluster"),
+    sourceType: media.sourceType,
+    kind: "text",
+    html: parts.join("\n")
+  };
+}
+
+/** Render a media leaf as standalone HTML (the same shape eXeLearning's
+ *  text iDevice would accept), optionally with a `<figcaption>` carrying the
+ *  caption text from the trailing sibling. Asset URLs stay verbatim — the
+ *  convert layer's `rewriteUrls` then maps them to `{{context_path}}/…`. */
+function renderMediaInline(media: NormalizedNode, _ctx: AdcCtx, captionHtml: string): string {
+  if (media.kind === "image") {
+    const alt = escapeAttr(media.alt ?? media.title ?? "");
+    const caption = captionHtml
+      ? `<figcaption>${captionHtml}</figcaption>`
+      : media.caption
+        ? `<figcaption>${escapeHtml(media.caption)}</figcaption>`
+        : "";
+    return `<figure><img src="${escapeAttr(media.src)}" alt="${alt}" />${caption}</figure>`;
+  }
+  if (media.kind === "audio") {
+    const caption = captionHtml ? `<figcaption>${captionHtml}</figcaption>` : "";
+    return `<figure><audio controls src="${escapeAttr(media.src)}"></audio>${caption}</figure>`;
+  }
+  if (media.kind === "video") {
+    const poster = media.poster ? ` poster="${escapeAttr(media.poster)}"` : "";
+    const caption = captionHtml ? `<figcaption>${captionHtml}</figcaption>` : "";
+    return `<figure><video controls src="${escapeAttr(media.src)}"${poster}></video>${caption}</figure>`;
+  }
+  if (media.kind === "iframe") {
+    const w = media.width ? ` width="${media.width}"` : "";
+    const h = media.height ? ` height="${media.height}"` : "";
+    const caption = captionHtml ? `<figcaption>${captionHtml}</figcaption>` : "";
+    return `<figure><iframe src="${escapeAttr(media.src)}"${w}${h} allowfullscreen></iframe>${caption}</figure>`;
+  }
+  return "";
 }
 
 /**
@@ -546,21 +644,23 @@ function adaptMultiChoiceActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNo
 /**
  * `qTapTapActivity` pairs items from the first column (`qTapTapOrigin`)
  * with items from the second (`qTapTapTarget`). Each origin holds the id
- * of its correct target in `correct`. eXeLearning has no native pair-
- * matching iDevice, so we emit a text iDevice that prints the prompt, the
- * two columns, and the answer key (origin → target). The author can
- * convert it into a Form afterwards if desired.
+ * of its correct target in `correct`. eXeLearning's **flipcards** iDevice
+ * is the natural target: each pair becomes a card with the origin text on
+ * the front and the matched target text on the back. The author can leave
+ * it as flipcards or switch to memory-game mode (3) in the editor.
+ *
+ * When wording is set, it is emitted as a sibling text node before the
+ * flipcards (so the activity intro survives).
  */
 function adaptTapTapActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
   const wording = extractWording(comp, ctx);
-  const origins: Array<{ id: string; text: string; targetId: string }> = [];
+  const origins: Array<{ text: string; targetId: string }> = [];
   const targets = new Map<string, string>();
   for (const cid of comp.componentChildren) {
     const child = ctx.pkg.components.get(cid);
     if (!child) continue;
     if (child.name === "qTapTapOrigin") {
       origins.push({
-        id: child.id,
         text: extractInlineText(child.id, ctx),
         targetId: pickProp(child, "correct") ?? ""
       });
@@ -568,31 +668,38 @@ function adaptTapTapActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
       targets.set(child.id, extractInlineText(child.id, ctx));
     }
   }
-
-  const parts: string[] = [];
-  if (wording) parts.push(`<div>${wording}</div>`);
-  if (origins.length && targets.size) {
-    parts.push(
-      `<table><thead><tr><th>${escapeHtml("Elemento")}</th><th>${escapeHtml("Pareja")}</th></tr></thead><tbody>`
-    );
-    for (const o of origins) {
-      const pair = targets.get(o.targetId) ?? "";
-      parts.push(`<tr><td>${escapeHtml(o.text)}</td><td>${escapeHtml(pair)}</td></tr>`);
-    }
-    parts.push(`</tbody></table>`);
-  } else {
-    // Either origins or targets missing — at least dump every label found.
-    const all = [...origins.map((o) => o.text), ...Array.from(targets.values())].filter(Boolean);
-    if (all.length) parts.push(`<ul>${all.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}</ul>`);
+  const cards = origins
+    .map((o) => ({ front: o.text, back: targets.get(o.targetId) ?? "" }))
+    .filter((c) => c.front || c.back);
+  if (cards.length === 0) {
+    return {
+      id: uniqueId("adc-taptap-empty"),
+      sourceType: "ADC.qTapTapActivity",
+      kind: "text",
+      html: wording || "<p>Actividad de emparejar (sin pares).</p>"
+    };
   }
-  parts.push(
-    `<p><em>${escapeHtml("Actividad de emparejar (Tap-Tap) — eXeLearning no tiene un iDevice nativo equivalente; arriba se muestra la clave de respuestas.")}</em></p>`
-  );
-  return {
+  const flip: NormalizedNode = {
     id: uniqueId("adc-taptap"),
     sourceType: "ADC.qTapTapActivity",
-    kind: "text",
-    html: parts.join("\n")
+    kind: "flipcards",
+    title: stripHtml(wording) || "Empareja",
+    cards
+  };
+  if (!wording) return flip;
+  return {
+    id: uniqueId("adc-taptap-wrap"),
+    sourceType: "ADC.qTapTapActivity",
+    kind: "container",
+    children: [
+      {
+        id: uniqueId("adc-taptap-intro"),
+        sourceType: "ADC.qTapTapActivity",
+        kind: "text",
+        html: wording
+      },
+      flip
+    ]
   };
 }
 
@@ -776,50 +883,95 @@ function adaptLauncher(comp: AdcComponent): NormalizedNode {
  * -------------------------------------------------------------------------- */
 
 /**
- * `qComboActivity` shows a row of statements each followed by a dropdown
- * (the `qComboOption`s) whose `qComboOptionItem` children are the picker
- * choices. The right answer is `qComboOption.correct === item.id`. Render
- * as a `<table>` of "row → dropdown options → correct answer" so eXe shows
- * the activity as a readable answer key.
+ * `qComboActivity` is a series of dropdown-selection rows. The structure
+ * found in real ADC content is:
+ *
+ *   qComboActivity
+ *     qWording
+ *       text                      ← global instruction
+ *       text (×N)                 ← one per row, the statement to classify
+ *     qComboOption (×N)           ← positional pair with the row statements
+ *       qComboOptionItem (×K)     ← dropdown choices
+ *       correct = <item.id>       ← id of the right choice
+ *
+ * Maps to a *real* eXeLearning activity: emit a `container` with the global
+ * instruction as a `text` node, then one `kind: "question"` (multichoice)
+ * per row. The convert dispatcher turns each question into a Form iDevice
+ * with `activityType: "selection"`, so the learner gets a working quiz
+ * instead of a static answer key.
  */
 function adaptComboActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
-  const wording = extractWording(comp, ctx);
-  const rows: string[] = [];
-  for (const cid of comp.componentChildren) {
-    const child = ctx.pkg.components.get(cid);
-    if (!child || child.name !== "qComboOption") continue;
-    const items = child.componentChildren
+  const wordingComp = comp.componentChildren
+    .map((cid) => ctx.pkg.components.get(cid))
+    .find((c): c is AdcComponent => !!c && c.name === "qWording");
+  const wordingTexts = wordingComp
+    ? wordingComp.componentChildren
+        .map((cid) => ctx.pkg.components.get(cid))
+        .filter((c): c is AdcComponent => !!c && c.name === "text")
+        .map((c) => pickProp(c, "textContent") ?? "")
+        .filter((s) => s.trim().length > 0)
+    : [];
+  // First text inside qWording is the global instruction; the rest pair
+  // positionally with the qComboOption rows.
+  const [globalInstruction, ...rowPrompts] = wordingTexts;
+
+  const comboRows = comp.componentChildren
+    .map((cid) => ctx.pkg.components.get(cid))
+    .filter((c): c is AdcComponent => !!c && c.name === "qComboOption");
+
+  const children: NormalizedNode[] = [];
+  if (globalInstruction) {
+    children.push({
+      id: uniqueId("adc-combo-intro"),
+      sourceType: "ADC.qComboActivity",
+      kind: "text",
+      html: globalInstruction
+    });
+  }
+  comboRows.forEach((row, idx) => {
+    const items = row.componentChildren
       .map((iid) => ctx.pkg.components.get(iid))
       .filter((it): it is AdcComponent => !!it && it.name === "qComboOptionItem");
-    const correctId = pickProp(child, "correct") ?? "";
-    const correctItem = items.find((it) => it.id === correctId);
-    const correctText = correctItem
-      ? stripHtml(pickProp(correctItem, "titleHtml") ?? pickProp(correctItem, "title") ?? "")
-      : "";
-    const optionsText = items
-      .map((it) => stripHtml(pickProp(it, "titleHtml") ?? pickProp(it, "title") ?? ""))
-      .filter(Boolean)
-      .join(" / ");
-    const label = pickProp(child, "title") ?? "";
-    rows.push(
-      `<tr><td>${escapeHtml(label)}</td><td>${escapeHtml(optionsText)}</td><td><strong>${escapeHtml(correctText)}</strong></td></tr>`
-    );
+    const correctId = pickProp(row, "correct") ?? "";
+    const answers: NormalizedAnswer[] = items.map((it) => ({
+      text: stripHtml(pickProp(it, "titleHtml") ?? pickProp(it, "title") ?? ""),
+      correct: it.id === correctId
+    }));
+    const prompt =
+      rowPrompts[idx] || `<p>${escapeHtml(pickProp(row, "title") ?? `Pregunta ${idx + 1}`)}</p>`;
+    if (answers.length === 0) {
+      children.push({
+        id: uniqueId("adc-combo-row-text"),
+        sourceType: "ADC.qComboOption",
+        kind: "text",
+        html: prompt
+      });
+      return;
+    }
+    children.push({
+      id: uniqueId("adc-combo-row"),
+      sourceType: "ADC.qComboOption",
+      kind: "question",
+      questionType: "multichoice",
+      prompt,
+      answers,
+      selectionType: "single"
+    });
+  });
+
+  if (children.length === 0) {
+    return {
+      id: uniqueId("adc-combo-empty"),
+      sourceType: "ADC.qComboActivity",
+      kind: "text",
+      html: "<p>Actividad de selección (sin opciones).</p>"
+    };
   }
-  const parts: string[] = [];
-  if (wording) parts.push(`<div>${wording}</div>`);
-  if (rows.length) {
-    parts.push(
-      `<table><thead><tr><th>${escapeHtml("Fila")}</th><th>${escapeHtml("Opciones")}</th><th>${escapeHtml("Correcta")}</th></tr></thead><tbody>${rows.join("")}</tbody></table>`
-    );
-  }
-  parts.push(
-    `<p><em>${escapeHtml("Actividad de selección con desplegables — la clave de respuestas se muestra arriba.")}</em></p>`
-  );
   return {
     id: uniqueId("adc-combo"),
     sourceType: "ADC.qComboActivity",
-    kind: "text",
-    html: parts.join("\n")
+    kind: "container",
+    children
   };
 }
 
