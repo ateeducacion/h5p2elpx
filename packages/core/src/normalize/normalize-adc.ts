@@ -112,12 +112,21 @@ function dispatch(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
  * from learners unless they toggle teacher mode on.
  */
 function adaptTeacherContent(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
+  // Same post-processing as `adaptContainer` so headings inside teacher
+  // boxes (often wrapped in row > column > text) collapse and label the
+  // following iDevice the way they do everywhere else.
+  const children = groupMediaClusters(
+    absorbHeadings(
+      flattenSingleChildContainers(comp.componentChildren.map((cid) => visit(cid, ctx)))
+    ),
+    ctx
+  );
   return {
     id: uniqueId("adc-teacher"),
     sourceType: "ADC.teacherContent",
     kind: "container",
     teacherOnly: true,
-    children: comp.componentChildren.map((cid) => visit(cid, ctx))
+    children
   };
 }
 
@@ -194,11 +203,11 @@ function adaptPageContent(comp: AdcComponent, ctx: AdcCtx): NormalizedPageNode {
     pickProp(comp, "titleHtml") ??
     "Page";
   const title = stripHtml(raw);
-  const children = absorbHeadings(
-    groupMediaClusters(
-      comp.componentChildren.map((cid) => visit(cid, ctx)),
-      ctx
-    )
+  const children = groupMediaClusters(
+    absorbHeadings(
+      flattenSingleChildContainers(comp.componentChildren.map((cid) => visit(cid, ctx)))
+    ),
+    ctx
   );
   return {
     id: uniqueId("adc-page"),
@@ -340,6 +349,31 @@ function adaptText(comp: AdcComponent): NormalizedNode {
   };
 }
 
+/** Authoring tool placeholders that survive when the author never renames
+ *  the component. Treated as "no title" so they don't pollute eXe block
+ *  names with generic strings like "Video Title", "Audio Title", etc. */
+const PLACEHOLDER_TITLES = new Set([
+  "Video Title",
+  "Audio Title",
+  "Image",
+  "Image Title",
+  "Page Title",
+  "Page Title 2",
+  "Page Title 3",
+  "Title",
+  "Subtitle Header",
+  "Title button",
+  "Launcher",
+  "Audio Title"
+]);
+
+function meaningfulTitle(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const trimmed = raw.trim();
+  if (!trimmed || PLACEHOLDER_TITLES.has(trimmed)) return undefined;
+  return trimmed;
+}
+
 function adaptImage(comp: AdcComponent): NormalizedNode {
   // altia stores the resolved URL under resourceProperties.srcName.url;
   // native stores the author-typed relative path as a plain `srcName`
@@ -355,7 +389,7 @@ function adaptImage(comp: AdcComponent): NormalizedNode {
     kind: "image",
     src,
     alt: pickProp(comp, "alt") ?? pickProp(comp, "title"),
-    title: pickProp(comp, "title")
+    title: meaningfulTitle(pickProp(comp, "title"))
   };
 }
 
@@ -370,7 +404,7 @@ function adaptVideo(comp: AdcComponent): NormalizedNode {
       id: uniqueId("adc-video"),
       sourceType: "ADC.allTypeVideo",
       kind: "iframe",
-      title: pickProp(comp, "title"),
+      title: meaningfulTitle(pickProp(comp, "title")),
       src
     };
   }
@@ -380,7 +414,7 @@ function adaptVideo(comp: AdcComponent): NormalizedNode {
     kind: "video",
     src,
     poster: cover,
-    title: pickProp(comp, "title")
+    title: meaningfulTitle(pickProp(comp, "title"))
   };
 }
 
@@ -390,7 +424,7 @@ function adaptContainer(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
     id: uniqueId("adc-container"),
     sourceType: `ADC.${comp.name}`,
     kind: "container",
-    children: absorbHeadings(groupMediaClusters(children, ctx))
+    children: groupMediaClusters(absorbHeadings(flattenSingleChildContainers(children)), ctx)
   };
 }
 
@@ -426,6 +460,39 @@ function groupMediaClusters(nodes: NormalizedNode[], ctx: AdcCtx): NormalizedNod
     if (intro) out.pop();
     if (caption) i++;
     out.push(mergeMediaCluster(intro, node, caption, ctx));
+  }
+  return out;
+}
+
+/**
+ * ADC layouts often wrap a single text/image/quiz leaf in a chain of
+ * structural containers — `row → column → text`, or `column → text`. Once
+ * normalized those collapse into nested `kind:"container"` nodes that
+ * eXeLearning doesn't need (the convert dispatcher just iterates them
+ * anyway), and they hide leaves from sibling-based passes like
+ * `groupMediaClusters` and `absorbHeadings`.
+ *
+ * Walk the list once and replace every `container` whose only child is
+ * meaningful with that child, recursively. Containers with `teacherOnly`
+ * are preserved untouched — the flag is meaningful for the convert layer.
+ */
+function flattenSingleChildContainers(nodes: NormalizedNode[]): NormalizedNode[] {
+  const out: NormalizedNode[] = [];
+  for (const node of nodes) {
+    if (node.kind !== "container") {
+      out.push(node);
+      continue;
+    }
+    if (node.teacherOnly) {
+      out.push({ ...node, children: flattenSingleChildContainers(node.children) });
+      continue;
+    }
+    const flat = flattenSingleChildContainers(node.children);
+    if (flat.length === 1) {
+      out.push(flat[0]!);
+    } else {
+      out.push({ ...node, children: flat });
+    }
   }
   return out;
 }
@@ -499,12 +566,18 @@ function mergeMediaCluster(
   const parts: string[] = [];
   if (intro && intro.kind === "text") parts.push(intro.html);
   parts.push(renderMediaInline(media, ctx, caption?.kind === "text" ? caption.html : ""));
-  return {
+  // Preserve any title the media node carried (typically set by
+  // `absorbHeadings` from a preceding `<hN>` sibling) so the merged
+  // cluster still ends up as a named block in the eXe output.
+  const title = media.title ?? (intro?.kind === "text" ? intro.title : undefined);
+  const out: NormalizedNode = {
     id: uniqueId("adc-media-cluster"),
     sourceType: media.sourceType,
     kind: "text",
     html: parts.join("\n")
   };
+  if (title) out.title = title;
+  return out;
 }
 
 /** Render a media leaf as standalone HTML (the same shape eXeLearning's
@@ -893,7 +966,7 @@ function adaptAudio(comp: AdcComponent): NormalizedNode {
     sourceType: "ADC.audio",
     kind: "audio",
     src,
-    title: pickProp(comp, "title")
+    title: meaningfulTitle(pickProp(comp, "title"))
   };
 }
 
