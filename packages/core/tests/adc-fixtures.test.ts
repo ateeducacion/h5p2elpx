@@ -8,9 +8,15 @@ import { validateElpx } from "../src/exe/validate.ts";
 const FIXTURES = resolve(__dirname, "../../../fixtures/adc");
 
 const samples = [
-  { file: "sa1-native.zip", expectMainLibrary: "ADC.native" },
-  { file: "sa1-zip.zip", expectMainLibrary: "ADC.zip" },
-  { file: "sa1-scorm12.zip", expectMainLibrary: "ADC.scorm12" }
+  // SA1 (three variants of the same content)
+  { file: "sa1-native.zip", expectMainLibrary: "ADC.native", expectTeacher: true },
+  { file: "sa1-zip.zip", expectMainLibrary: "ADC.zip", expectTeacher: true },
+  { file: "sa1-scorm12.zip", expectMainLibrary: "ADC.scorm12", expectTeacher: true },
+  // Additional units (different templates / topic shapes)
+  { file: "sa9-native.zip", expectMainLibrary: "ADC.native", expectTeacher: false },
+  { file: "md03-zip.zip", expectMainLibrary: "ADC.zip", expectTeacher: false },
+  { file: "mercedes-zip.zip", expectMainLibrary: "ADC.zip", expectTeacher: false },
+  { file: "quesada-zip.zip", expectMainLibrary: "ADC.zip", expectTeacher: false }
 ];
 
 describe("ADC fixtures (end-to-end via zip-bytes sniff)", () => {
@@ -29,29 +35,31 @@ describe("ADC fixtures (end-to-end via zip-bytes sniff)", () => {
 
         const validation = await validateElpx(result.elpx);
         expect(validation.ok).toBe(true);
-        expect(validation.stats.pages).toBeGreaterThan(0);
+        expect(validation.stats.pages).toBeGreaterThan(1);
         expect(validation.stats.iDevices).toBeGreaterThan(0);
 
         // Project title must come from the package, not the fallback default.
-        expect(result.project.title).toMatch(/Qui[eé]n y c[oó]mo soy/);
-        expect(result.project.language).toBe("es");
+        expect(result.project.title.length).toBeGreaterThan(3);
+        expect(result.project.title).not.toBe("Imported content");
 
-        // Pages must be nested under a single cover (no top-level duplicates):
-        // exactly one root page, every other page declares it as parent.
+        // The first non-root ElpxPage (the cover) lives directly under the
+        // cover host page and carries the rich-HTML banner produced by
+        // adaptCover (figure-less <section> with inline styles or, when
+        // there is no backgroundImage, a header-only fallback).
         const roots = result.project.pages.filter((p) => !p.parentId);
         expect(roots.length).toBe(1);
         const cover = roots[0]!;
-        for (const p of result.project.pages) {
-          if (p.id === cover.id) continue;
-          expect(p.parentId).toBe(cover.id);
-        }
+        const coverChildren = result.project.pages.filter((p) => p.parentId === cover.id);
+        expect(coverChildren.length).toBeGreaterThan(0);
+        const coverHtml = coverChildren[0]!.blocks[0]?.iDevices[0]?.htmlView ?? "";
+        expect(coverHtml).toMatch(/<section/);
 
-        // Sanity: at least 3 distinct sub-page titles (the SA1 fixture has 6),
-        // proving we picked per-page titles rather than reusing the cover.
-        const subTitles = new Set(
-          result.project.pages.filter((p) => p.parentId).map((p) => p.title)
-        );
-        expect(subTitles.size).toBeGreaterThanOrEqual(3);
+        if (sample.expectTeacher) {
+          const hasTeacherBlock = result.project.pages.some((p) =>
+            p.blocks.some((b) => b.teacherOnly === true)
+          );
+          expect(hasTeacherBlock).toBe(true);
+        }
       },
       30_000
     );

@@ -24,6 +24,7 @@ type CliOpts = {
   /** commander's --no-search flips this to false (default true). */
   search?: boolean;
   mathjax?: boolean;
+  coverStyle?: ConversionOptions["coverStyle"];
 };
 
 function findDefaultTemplate(): string | undefined {
@@ -80,7 +81,8 @@ export async function runConvert(input: string, opts: CliOpts): Promise<void> {
     templateBytes,
     theme: opts.theme,
     enableSearch: opts.search !== false,
-    enableMathJax: !!opts.mathjax
+    enableMathJax: !!opts.mathjax,
+    coverStyle: opts.coverStyle
   });
 
   await writeFile(opts.output, result.elpx);

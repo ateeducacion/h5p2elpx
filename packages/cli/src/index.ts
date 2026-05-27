@@ -36,6 +36,11 @@ program
   .option("--theme <name>", "Output theme: base|nova|zen|neo|flux|universal", "base")
   .option("--no-search", "Don't generate search_index.js / search box")
   .option("--mathjax", "Inject MathJax v3 (CDN) into every page", false)
+  .option(
+    "--cover-style <mode>",
+    "ADC cover rendering: rich (banner image + title overlay) or minimal",
+    "rich"
+  )
   .action(async (input: string, opts) => {
     await runConvert(input, opts);
   });

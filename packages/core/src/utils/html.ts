@@ -20,15 +20,30 @@ export function sanitizeHtml(input: string): string {
 }
 
 export function rewriteUrls(html: string, mapper: (src: string) => string): string {
-  return html.replace(/\s(src|href|poster)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi, (m, attr, dq, sq) => {
-    const orig = dq ?? sq ?? "";
-    if (!orig || SAFE_PROTOCOL.test(orig)) {
-      const remapped = mapper(orig);
-      if (remapped === orig) return m;
-      return ` ${attr}="${remapped}"`;
+  let out = html.replace(
+    /\s(src|href|poster)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi,
+    (m, attr, dq, sq) => {
+      const orig = dq ?? sq ?? "";
+      if (!orig || SAFE_PROTOCOL.test(orig)) {
+        const remapped = mapper(orig);
+        if (remapped === orig) return m;
+        return ` ${attr}="${remapped}"`;
+      }
+      return ` ${attr}="${mapper(orig)}"`;
     }
-    return ` ${attr}="${mapper(orig)}"`;
+  );
+  // Also process CSS `url(...)` inside inline styles. ADC's portada
+  // ships its hero image as `background-image:url('resources/...')` and
+  // eXeLearning needs the `{{context_path}}/...` token form to link the
+  // asset back to the project on import.
+  out = out.replace(/url\(\s*(['"]?)([^'")\s]+)\1\s*\)/gi, (m, quote, raw) => {
+    const orig = raw as string;
+    const remapped = mapper(orig);
+    if (remapped === orig) return m;
+    const q = quote || "'";
+    return `url(${q}${remapped}${q})`;
   });
+  return out;
 }
 
 export function escapeHtml(text: string): string {

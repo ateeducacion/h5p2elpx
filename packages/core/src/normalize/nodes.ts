@@ -3,6 +3,10 @@ export type BaseNode = {
   sourceType: string;
   title?: string;
   metadata?: Record<string, unknown>;
+  /** When true, the node and everything inside it should be emitted as
+   *  teacher-only content (eXe `teacherOnly` flag). Set by adapters that
+   *  recognise teacher-mode containers like ADC's `teacherContent`. */
+  teacherOnly?: boolean;
 };
 
 export type NormalizedTextNode = BaseNode & {
