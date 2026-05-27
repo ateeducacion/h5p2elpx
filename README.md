@@ -1,7 +1,6 @@
 # h5p2elpx
 
-Convert H5P activities — and ADC (Aula Digital Canaria) "Content" exports —
-into editable eXeLearning `.elpx` projects.
+Convert H5P activities into editable eXeLearning `.elpx` projects.
 
 `h5p2elpx` is a **conservative** converter: it maps supported source content
 into editable eXeLearning iDevices and keeps unsupported content visible with
