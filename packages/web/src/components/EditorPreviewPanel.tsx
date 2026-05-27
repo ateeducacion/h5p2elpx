@@ -13,7 +13,8 @@ type Status = "loading" | "ready" | "sending" | "opened" | "error";
 
 export function EditorPreviewPanel({ elpx, filename }: Props) {
   const { t } = useI18n();
-  const editorUrl = (import.meta.env.VITE_EXE_EDITOR_URL as string | undefined) || DEFAULT_EDITOR_URL;
+  const editorUrl =
+    (import.meta.env.VITE_EXE_EDITOR_URL as string | undefined) || DEFAULT_EDITOR_URL;
   const editorOrigin = useMemo(() => {
     try {
       return new URL(editorUrl).origin;
@@ -38,11 +39,11 @@ export function EditorPreviewPanel({ elpx, filename }: Props) {
     setStatus("loading");
     setErrorMsg(null);
 
-    const requestId = `open-${Date.now()}`;
+    const requestId = `open-${reloadKey}-${Date.now()}`;
 
     function sendOpenFile() {
       const iframe = iframeRef.current;
-      if (!iframe || !iframe.contentWindow) return;
+      if (!iframe?.contentWindow) return;
       // Send a fresh copy so the original buffer remains usable for download.
       const copy = elpx.slice().buffer;
       setStatus("sending");
@@ -59,7 +60,11 @@ export function EditorPreviewPanel({ elpx, filename }: Props) {
     function onMessage(event: MessageEvent) {
       if (editorOrigin && event.origin !== editorOrigin) return;
       if (event.source !== iframeRef.current?.contentWindow) return;
-      const data = event.data as { type?: string; requestId?: string; error?: { message?: string } } | null;
+      const data = event.data as {
+        type?: string;
+        requestId?: string;
+        error?: { message?: string };
+      } | null;
       if (!data || typeof data.type !== "string") return;
 
       switch (data.type) {
@@ -91,17 +96,18 @@ export function EditorPreviewPanel({ elpx, filename }: Props) {
     status === "loading"
       ? t("preview.loading")
       : status === "ready"
-      ? t("preview.ready")
-      : status === "sending"
-      ? t("preview.sending")
-      : status === "opened"
-      ? t("preview.opened")
-      : t("preview.openFailed", { msg: errorMsg ?? "" });
+        ? t("preview.ready")
+        : status === "sending"
+          ? t("preview.sending")
+          : status === "opened"
+            ? t("preview.opened")
+            : t("preview.openFailed", { msg: errorMsg ?? "" });
 
   return (
     <Box icon="info" title={t("preview.title")} meta={statusLabel}>
       <p className="preview-intro">
-        {t("preview.intro")} <span className="preview-host">{t("preview.poweredBy", { host: editorHost })}</span>
+        {t("preview.intro")}{" "}
+        <span className="preview-host">{t("preview.poweredBy", { host: editorHost })}</span>
       </p>
       <div className="preview-frame-wrap">
         <iframe

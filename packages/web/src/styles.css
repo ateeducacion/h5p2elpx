@@ -840,7 +840,7 @@ code,
 .report-details[open] > .report-summary svg {
   transform: rotate(180deg);
 }
-.report-details > .report {
+.report-details .report-body {
   margin-top: 8px;
 }
 

@@ -122,7 +122,7 @@ export function DownloadPanel({ elpx, report, filename }: Props) {
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </summary>
-        <pre className="report">{summarizeReport(report)}</pre>
+        <pre className="report report-body">{summarizeReport(report)}</pre>
       </details>
     </>
   );

@@ -9,13 +9,24 @@ type Props = {
   children: ReactNode;
 };
 
-export function Box({ icon, title, meta, collapsible = false, defaultOpen = true, children }: Props) {
+export function Box({
+  icon,
+  title,
+  meta,
+  collapsible = false,
+  defaultOpen = true,
+  children
+}: Props) {
   const iconImg = (
     <img className="box-icon" src={`${import.meta.env.BASE_URL}icons/${icon}.png`} alt="" />
   );
 
   if (collapsible) {
-    return <CollapsibleBox iconImg={iconImg} title={title} meta={meta} defaultOpen={defaultOpen}>{children}</CollapsibleBox>;
+    return (
+      <CollapsibleBox iconImg={iconImg} title={title} meta={meta} defaultOpen={defaultOpen}>
+        {children}
+      </CollapsibleBox>
+    );
   }
 
   return (
