@@ -60,6 +60,23 @@ describe("ADC fixtures (end-to-end via zip-bytes sniff)", () => {
           );
           expect(hasTeacherBlock).toBe(true);
         }
+
+        // No emitted iDevice should have a visually empty `htmlView` — that
+        // would render as a blank box in eXe. Text iDevices are now skipped
+        // when their sanitised html is empty.
+        for (const page of result.project.pages) {
+          for (const block of page.blocks) {
+            for (const idev of block.iDevices) {
+              if (idev.typeName !== "freeText") continue;
+              const txt = (idev.htmlView ?? "")
+                .replace(/<[^>]+>/g, "")
+                .replace(/&nbsp;|&#160;/g, " ")
+                .trim();
+              const hasMedia = /<(img|iframe|audio|video|svg)\b/i.test(idev.htmlView ?? "");
+              expect(txt.length > 0 || hasMedia).toBe(true);
+            }
+          }
+        }
       },
       30_000
     );

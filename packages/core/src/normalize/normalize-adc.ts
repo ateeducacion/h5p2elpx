@@ -403,16 +403,36 @@ function collectInlineHtml(id: string, ctx: AdcCtx, out: string[]): void {
 }
 
 function adaptQuiz(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
-  // SA1 fixture only carries qEssayActivity (free-text); we map essay
-  // questions to a `text` node with the wording + an empty answer area.
-  // Multiple-choice quizzes would surface qOption children with `correct`
-  // flags — handled here when present.
+  // Quiz is a container that holds one or more *activities*. ADC supports
+  // many activity types and each maps differently to eXeLearning:
+  //  - quizActivity / *Activity with qOption[correct]: form (selection)
+  //  - qEssayActivity: free-text → blanks question with empty answer slot
+  //  - qTapTapActivity: matching pairs → text iDevice listing pairs + key
+  //  - qDragAndDropActivity: sequence/grouping → text iDevice with list
+  //  - qDrawActivity: drawing → text iDevice with prompt + canvas image
   const questions: NormalizedNode[] = [];
   for (const cid of comp.componentChildren) {
     const child = ctx.pkg.components.get(cid);
     if (!child) continue;
-    if (child.name === "qEssayActivity") questions.push(adaptEssayActivity(child, ctx));
-    else questions.push(visit(cid, ctx));
+    switch (child.name) {
+      case "qEssayActivity":
+        questions.push(adaptEssayActivity(child, ctx));
+        break;
+      case "qTapTapActivity":
+        questions.push(adaptTapTapActivity(child, ctx));
+        break;
+      case "qDragAndDropActivity":
+        questions.push(adaptDragAndDropActivity(child, ctx));
+        break;
+      case "qDrawActivity":
+        questions.push(adaptDrawActivity(child, ctx));
+        break;
+      case "quizActivity":
+        questions.push(adaptMultiChoiceActivity(child, ctx));
+        break;
+      default:
+        questions.push(visit(cid, ctx));
+    }
   }
   return {
     id: uniqueId("adc-quiz"),
@@ -423,18 +443,35 @@ function adaptQuiz(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
   };
 }
 
-function adaptEssayActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
-  let wording = "";
-  for (const cid of comp.componentChildren) {
+/** Gather the `qWording` child's rich HTML — the question prompt that ADC
+ *  shows above every activity. Falls back to the activity's titleHtml. */
+function extractWording(activity: AdcComponent, ctx: AdcCtx): string {
+  for (const cid of activity.componentChildren) {
     const child = ctx.pkg.components.get(cid);
     if (child?.name === "qWording") {
       const buf: string[] = [];
       collectInlineHtml(child.id, ctx, buf);
-      wording = buf.join("\n");
-      break;
+      const joined = buf.join("\n").trim();
+      if (joined) return joined;
     }
   }
-  const prompt = wording || pickProp(comp, "titleHtml") || "Question";
+  return pickProp(activity, "titleHtml") ?? pickProp(activity, "title") ?? "";
+}
+
+/** Pull plain text out of a component's direct text/image children — used to
+ *  describe drag-target / tap-target labels for matching activities. */
+function extractInlineText(id: string, ctx: AdcCtx): string {
+  const parts: string[] = [];
+  collectInlineHtml(id, ctx, parts);
+  return parts
+    .join(" ")
+    .replace(/<[^>]+>/g, "")
+    .trim();
+}
+
+function adaptEssayActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
+  const wording = extractWording(comp, ctx);
+  const prompt = wording || "Question";
   const answers: NormalizedAnswer[] = [{ text: "" }];
   return {
     id: uniqueId("adc-essay"),
@@ -443,6 +480,171 @@ function adaptEssayActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
     questionType: "blanks",
     prompt,
     answers
+  };
+}
+
+/**
+ * `quizActivity` is the canonical multiple-choice activity. Each
+ * `quizOption` child carries `correct: "true"|"false"` plus inner text;
+ * map them to a single eXeLearning form (selection) question.
+ */
+function adaptMultiChoiceActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
+  const wording = extractWording(comp, ctx);
+  const answers: NormalizedAnswer[] = [];
+  for (const cid of comp.componentChildren) {
+    const child = ctx.pkg.components.get(cid);
+    if (!child || child.name !== "quizOption") continue;
+    const text = extractInlineText(child.id, ctx) || pickProp(child, "titleHtml") || "";
+    if (!text) continue;
+    const correctRaw = pickProp(child, "correct") ?? "";
+    answers.push({ text, correct: /^(true|1)$/i.test(correctRaw) });
+  }
+  if (answers.length === 0) {
+    // No options resolved — fall back to a readable text iDevice rather
+    // than emitting an unsupported placeholder.
+    return {
+      id: uniqueId("adc-quiz-text"),
+      sourceType: "ADC.quizActivity",
+      kind: "text",
+      html: wording || "<p>Quiz</p>"
+    };
+  }
+  const correctCount = answers.filter((a) => a.correct).length;
+  return {
+    id: uniqueId("adc-quiz-q"),
+    sourceType: "ADC.quizActivity",
+    kind: "question",
+    questionType: "multichoice",
+    prompt: wording || "Question",
+    answers,
+    selectionType: correctCount > 1 ? "multiple" : "single"
+  };
+}
+
+/**
+ * `qTapTapActivity` pairs items from the first column (`qTapTapOrigin`)
+ * with items from the second (`qTapTapTarget`). Each origin holds the id
+ * of its correct target in `correct`. eXeLearning has no native pair-
+ * matching iDevice, so we emit a text iDevice that prints the prompt, the
+ * two columns, and the answer key (origin → target). The author can
+ * convert it into a Form afterwards if desired.
+ */
+function adaptTapTapActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
+  const wording = extractWording(comp, ctx);
+  const origins: Array<{ id: string; text: string; targetId: string }> = [];
+  const targets = new Map<string, string>();
+  for (const cid of comp.componentChildren) {
+    const child = ctx.pkg.components.get(cid);
+    if (!child) continue;
+    if (child.name === "qTapTapOrigin") {
+      origins.push({
+        id: child.id,
+        text: extractInlineText(child.id, ctx),
+        targetId: pickProp(child, "correct") ?? ""
+      });
+    } else if (child.name === "qTapTapTarget") {
+      targets.set(child.id, extractInlineText(child.id, ctx));
+    }
+  }
+
+  const parts: string[] = [];
+  if (wording) parts.push(`<div>${wording}</div>`);
+  if (origins.length && targets.size) {
+    parts.push(
+      `<table><thead><tr><th>${escapeHtml("Elemento")}</th><th>${escapeHtml("Pareja")}</th></tr></thead><tbody>`
+    );
+    for (const o of origins) {
+      const pair = targets.get(o.targetId) ?? "";
+      parts.push(`<tr><td>${escapeHtml(o.text)}</td><td>${escapeHtml(pair)}</td></tr>`);
+    }
+    parts.push(`</tbody></table>`);
+  } else {
+    // Either origins or targets missing — at least dump every label found.
+    const all = [...origins.map((o) => o.text), ...Array.from(targets.values())].filter(Boolean);
+    if (all.length) parts.push(`<ul>${all.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}</ul>`);
+  }
+  parts.push(
+    `<p><em>${escapeHtml("Actividad de emparejar (Tap-Tap) — eXeLearning no tiene un iDevice nativo equivalente; arriba se muestra la clave de respuestas.")}</em></p>`
+  );
+  return {
+    id: uniqueId("adc-taptap"),
+    sourceType: "ADC.qTapTapActivity",
+    kind: "text",
+    html: parts.join("\n")
+  };
+}
+
+/**
+ * `qDragAndDropActivity` is typically used to order or group items. The
+ * activity body lives in `rowActivity` → `columnActivity` cells (text or
+ * image). We surface the wording + the list of items as a sequence so the
+ * eXe author can rebuild the activity as a Form fill-in if needed.
+ */
+function adaptDragAndDropActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
+  const wording = extractWording(comp, ctx);
+  const items: string[] = [];
+  function collectColumns(id: string): void {
+    const c = ctx.pkg.components.get(id);
+    if (!c) return;
+    if (c.name === "columnActivity") {
+      const buf: string[] = [];
+      collectInlineHtml(c.id, ctx, buf);
+      const html = buf.join(" ").trim();
+      if (html) items.push(html);
+      return;
+    }
+    for (const cid of c.componentChildren) collectColumns(cid);
+  }
+  for (const cid of comp.componentChildren) collectColumns(cid);
+
+  const parts: string[] = [];
+  if (wording) parts.push(`<div>${wording}</div>`);
+  if (items.length) {
+    parts.push(`<ol>${items.map((it) => `<li>${it}</li>`).join("")}</ol>`);
+  }
+  parts.push(
+    `<p><em>${escapeHtml("Actividad de arrastrar y soltar — eXeLearning no tiene un iDevice equivalente; los elementos se listan en el orden original.")}</em></p>`
+  );
+  return {
+    id: uniqueId("adc-dnd"),
+    sourceType: "ADC.qDragAndDropActivity",
+    kind: "text",
+    html: parts.join("\n")
+  };
+}
+
+/**
+ * `qDrawActivity` is a free-drawing exercise over a background image
+ * (`qDrawOption.backgroundImage`). No eXe equivalent; render the prompt
+ * and the canvas image with a note explaining the limitation.
+ */
+function adaptDrawActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
+  const wording = extractWording(comp, ctx);
+  let bg = "";
+  for (const cid of comp.componentChildren) {
+    const child = ctx.pkg.components.get(cid);
+    if (child?.name === "qDrawOption") {
+      bg =
+        pickResource(child, "backgroundImage")?.url ??
+        pickResource(child, "backgroundImage")?.relativePath ??
+        pickProp(child, "backgroundImage") ??
+        "";
+      if (bg) break;
+    }
+  }
+  const parts: string[] = [];
+  if (wording) parts.push(`<div>${wording}</div>`);
+  if (bg) {
+    parts.push(`<figure><img src="${escapeAttr(bg)}" alt="" /></figure>`);
+  }
+  parts.push(
+    `<p><em>${escapeHtml("Actividad de dibujo — eXeLearning no tiene un iDevice equivalente; arriba se muestra el lienzo original.")}</em></p>`
+  );
+  return {
+    id: uniqueId("adc-draw"),
+    sourceType: "ADC.qDrawActivity",
+    kind: "text",
+    html: parts.join("\n")
   };
 }
 

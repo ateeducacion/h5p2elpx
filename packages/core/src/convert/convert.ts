@@ -207,9 +207,18 @@ type BuildCtx = {
    *  eXe `teacherOnly` mark, so each emitted block matches the ADC
    *  `teacherContent` semantics regardless of the iDevice type. */
   teacherOnly?: boolean;
+  /** When set, leaf-iDevice emitters route their new iDevice into this
+   *  existing block instead of creating a fresh one. Used to group every
+   *  iDevice produced from one ADC `teacherContent` container into a
+   *  single eXe block so the teacher-only box is one cohesive unit. */
+  currentBlock?: ElpxBlock;
 };
 
-function newBlock(page: ElpxPage, ctx?: { teacherOnly?: boolean }): ElpxBlock {
+function newBlock(
+  page: ElpxPage,
+  ctx?: { teacherOnly?: boolean; currentBlock?: ElpxBlock }
+): ElpxBlock {
+  if (ctx?.currentBlock && ctx.currentBlock.pageId === page.id) return ctx.currentBlock;
   const block: ElpxBlock = {
     id: newBlockId(),
     pageId: page.id,
@@ -234,8 +243,12 @@ function emitNode(
 ): void {
   switch (node.kind) {
     case "text": {
-      const block = newBlock(hostPage, ctx);
       const html = rewriteUrls(sanitizeHtml(node.html), ctx.forHtml);
+      // Skip text iDevices that sanitise to nothing — those would show up
+      // as empty boxes in the editor (frequent in ADC exports whose
+      // `panel`/`accordion` containers wrap empty placeholders).
+      if (!hasVisibleContent(html)) return;
+      const block = newBlock(hostPage, ctx);
       addIdevice(
         block,
         buildTextIdevice({
@@ -404,8 +417,16 @@ function emitNode(
     }
     case "container": {
       if (node.teacherOnly && !ctx.teacherOnly) {
-        const inner: BuildCtx = { ...ctx, teacherOnly: true };
+        // Group every descendant iDevice into a *single* teacher-only block,
+        // matching the visual unit ADC's `teacherContent` represents (one
+        // boxed area per teacherContent component, not one box per child).
+        const teacherBlock = newBlock(hostPage, { teacherOnly: true });
+        const inner: BuildCtx = { ...ctx, teacherOnly: true, currentBlock: teacherBlock };
         for (const child of node.children) emitNode(child, project, hostPage, inner);
+        // Drop the empty block if no child produced anything visible.
+        if (teacherBlock.iDevices.length === 0) {
+          hostPage.blocks = hostPage.blocks.filter((b) => b !== teacherBlock);
+        }
         return;
       }
       for (const child of node.children) emitNode(child, project, hostPage, ctx);
@@ -744,6 +765,21 @@ function toResolvedAdc(pkg: AdcPackage): ResolvedAdc {
     language: pkg.language,
     mainLibrary: `ADC.${pkg.flavor}`
   };
+}
+
+/** Treat html as empty when stripping tags + entities yields no glyphs and
+ *  the markup carries no embedded media (img/iframe/audio/video). Keeps the
+ *  editor free of placeholder iDevices from empty ADC `panel`/`accordion`
+ *  wrappers. */
+function hasVisibleContent(html: string): boolean {
+  if (!html) return false;
+  if (/<(img|iframe|audio|video|svg|object|embed)\b/i.test(html)) return true;
+  const text = html
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;|&#160;/g, " ")
+    .replace(/&[a-z]+;/g, "")
+    .trim();
+  return text.length > 0;
 }
 
 export { TOOL_VERSION };
