@@ -56,6 +56,16 @@ function dispatch(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
       return adaptImage(comp);
     case "allTypeVideo":
       return adaptVideo(comp);
+    case "audio":
+      return adaptAudio(comp);
+    case "cite":
+      return adaptCite(comp);
+    case "headerIcon":
+      return adaptHeaderIcon(comp);
+    case "instruction":
+      return adaptInstruction(comp);
+    case "launcher":
+      return adaptLauncher(comp);
     case "quiz":
       return adaptQuiz(comp, ctx);
     case "teacherContent":
@@ -430,6 +440,18 @@ function adaptQuiz(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
       case "quizActivity":
         questions.push(adaptMultiChoiceActivity(child, ctx));
         break;
+      case "qComboActivity":
+        questions.push(adaptComboActivity(child, ctx));
+        break;
+      case "qFillInActivity":
+        questions.push(adaptFillInActivity(child, ctx));
+        break;
+      case "qLikertActivity":
+        questions.push(adaptLikertActivity(child, ctx));
+        break;
+      case "qSpeakingActivity":
+        questions.push(adaptSpeakingActivity(child, ctx));
+        break;
       default:
         questions.push(visit(cid, ctx));
     }
@@ -643,6 +665,264 @@ function adaptDrawActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
   return {
     id: uniqueId("adc-draw"),
     sourceType: "ADC.qDrawActivity",
+    kind: "text",
+    html: parts.join("\n")
+  };
+}
+
+/* -------------------------------------------------------------------------- *
+ *  Small leaf adapters (cite, audio, headerIcon, instruction, launcher)
+ * -------------------------------------------------------------------------- */
+
+/** `cite` is a quote callout: rich quote text + author byline. Render as a
+ *  semantic `<blockquote>` so eXe themes can style it consistently and the
+ *  author can edit either part in the rich-text editor. */
+function adaptCite(comp: AdcComponent): NormalizedNode {
+  const quote = pickProp(comp, "citeHtml") ?? "";
+  const author = pickProp(comp, "authorHtml") ?? "";
+  const parts: string[] = [];
+  if (quote) parts.push(`<blockquote>${quote}`);
+  if (author) parts.push(`<footer>— ${author}</footer>`);
+  if (quote || author) parts.push(`</blockquote>`);
+  const html = parts.join("") || "<blockquote></blockquote>";
+  return {
+    id: uniqueId("adc-cite"),
+    sourceType: "ADC.cite",
+    kind: "text",
+    html
+  };
+}
+
+/** ADC's standalone `audio` component (separate from `allTypeVideo`) ships
+ *  an `srcMp3` resource — surface it through the existing audio iDevice
+ *  pipeline so we get the eXe `<audio controls>` widget. */
+function adaptAudio(comp: AdcComponent): NormalizedNode {
+  const ref = pickResource(comp, "srcMp3");
+  const src = ref?.url ?? ref?.relativePath ?? pickProp(comp, "srcMp3") ?? "";
+  if (!src) return unsupported("ADC.audio", "Audio without srcMp3");
+  return {
+    id: uniqueId("adc-audio"),
+    sourceType: "ADC.audio",
+    kind: "audio",
+    src,
+    title: pickProp(comp, "title")
+  };
+}
+
+/** `headerIcon` is a section banner: big title plus an icon image. Emit a
+ *  small inline-styled card so the visual weight of the banner survives the
+ *  trip to eXe without needing a custom iDevice. */
+function adaptHeaderIcon(comp: AdcComponent): NormalizedNode {
+  const title =
+    pickProp(comp, "titleHtml") ?? pickProp(comp, "titlehtml") ?? pickProp(comp, "title") ?? "";
+  const subtitle = pickProp(comp, "title2Html") ?? pickProp(comp, "title2html") ?? "";
+  const ref = pickResource(comp, "srcName");
+  const icon = ref?.url ?? ref?.relativePath ?? pickProp(comp, "srcName") ?? "";
+  const parts: string[] = [
+    `<div style="display:flex;align-items:center;gap:1em;border-left:4px solid currentColor;padding:.6em 1em;margin:.5em 0">`
+  ];
+  if (icon) {
+    parts.push(
+      `<img src="${escapeAttr(icon)}" alt="" style="width:48px;height:auto;flex:0 0 auto" />`
+    );
+  }
+  parts.push(`<div>${title}${subtitle ? `<div style="opacity:.7">${subtitle}</div>` : ""}</div>`);
+  parts.push(`</div>`);
+  return {
+    id: uniqueId("adc-header-icon"),
+    sourceType: "ADC.headerIcon",
+    kind: "text",
+    html: parts.join("")
+  };
+}
+
+/** `instruction` is a one-liner hint ("Despliega la caja"). Tiny but worth
+ *  preserving so the page reads the way ADC authored it. */
+function adaptInstruction(comp: AdcComponent): NormalizedNode {
+  const html = pickProp(comp, "titleHtml") ?? pickProp(comp, "title") ?? "";
+  return {
+    id: uniqueId("adc-instruction"),
+    sourceType: "ADC.instruction",
+    kind: "text",
+    html: html ? `<p><em>${html}</em></p>` : ""
+  };
+}
+
+/** `launcher` is an image button: clicking it opens a popup component in
+ *  ADC. eXe has no popup primitive — render it as an image with a caption
+ *  noting it was an interactive element so the author can decide whether
+ *  to inline the popup content. */
+function adaptLauncher(comp: AdcComponent): NormalizedNode {
+  const ref = pickResource(comp, "srcName");
+  const src = ref?.url ?? ref?.relativePath ?? pickProp(comp, "srcName") ?? "";
+  const alt = pickProp(comp, "alt") ?? pickProp(comp, "titleHtml") ?? "";
+  const html = src
+    ? `<figure><img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}" />${
+        alt
+          ? `<figcaption><em>${escapeHtml(alt)} (elemento interactivo en el original)</em></figcaption>`
+          : ""
+      }</figure>`
+    : `<p><em>${escapeHtml(alt || "Elemento interactivo (launcher)")}</em></p>`;
+  return {
+    id: uniqueId("adc-launcher"),
+    sourceType: "ADC.launcher",
+    kind: "text",
+    html
+  };
+}
+
+/* -------------------------------------------------------------------------- *
+ *  Activity adapters (combo, fill-in, likert, speaking)
+ * -------------------------------------------------------------------------- */
+
+/**
+ * `qComboActivity` shows a row of statements each followed by a dropdown
+ * (the `qComboOption`s) whose `qComboOptionItem` children are the picker
+ * choices. The right answer is `qComboOption.correct === item.id`. Render
+ * as a `<table>` of "row → dropdown options → correct answer" so eXe shows
+ * the activity as a readable answer key.
+ */
+function adaptComboActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
+  const wording = extractWording(comp, ctx);
+  const rows: string[] = [];
+  for (const cid of comp.componentChildren) {
+    const child = ctx.pkg.components.get(cid);
+    if (!child || child.name !== "qComboOption") continue;
+    const items = child.componentChildren
+      .map((iid) => ctx.pkg.components.get(iid))
+      .filter((it): it is AdcComponent => !!it && it.name === "qComboOptionItem");
+    const correctId = pickProp(child, "correct") ?? "";
+    const correctItem = items.find((it) => it.id === correctId);
+    const correctText = correctItem
+      ? stripHtml(pickProp(correctItem, "titleHtml") ?? pickProp(correctItem, "title") ?? "")
+      : "";
+    const optionsText = items
+      .map((it) => stripHtml(pickProp(it, "titleHtml") ?? pickProp(it, "title") ?? ""))
+      .filter(Boolean)
+      .join(" / ");
+    const label = pickProp(child, "title") ?? "";
+    rows.push(
+      `<tr><td>${escapeHtml(label)}</td><td>${escapeHtml(optionsText)}</td><td><strong>${escapeHtml(correctText)}</strong></td></tr>`
+    );
+  }
+  const parts: string[] = [];
+  if (wording) parts.push(`<div>${wording}</div>`);
+  if (rows.length) {
+    parts.push(
+      `<table><thead><tr><th>${escapeHtml("Fila")}</th><th>${escapeHtml("Opciones")}</th><th>${escapeHtml("Correcta")}</th></tr></thead><tbody>${rows.join("")}</tbody></table>`
+    );
+  }
+  parts.push(
+    `<p><em>${escapeHtml("Actividad de selección con desplegables — la clave de respuestas se muestra arriba.")}</em></p>`
+  );
+  return {
+    id: uniqueId("adc-combo"),
+    sourceType: "ADC.qComboActivity",
+    kind: "text",
+    html: parts.join("\n")
+  };
+}
+
+/**
+ * `qFillInActivity` is a fill-in-the-blank: each `qFillInOption` carries
+ * the accepted answer in `correct` (or `title`). Maps cleanly to eXe's
+ * Form `fill` activity — surface as a `blanks` question with the answer
+ * string as `text`, so the existing `blanksToFill` converter substitutes
+ * the proper `<u>answer</u>` markup downstream.
+ */
+function adaptFillInActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
+  const wording = extractWording(comp, ctx);
+  const answers: NormalizedAnswer[] = [];
+  function walk(id: string): void {
+    const c = ctx.pkg.components.get(id);
+    if (!c) return;
+    if (c.name === "qFillInOption") {
+      const ans = pickProp(c, "correct") ?? pickProp(c, "title") ?? "";
+      if (ans) answers.push({ text: `*${ans}*` });
+      return;
+    }
+    for (const cid of c.componentChildren) walk(cid);
+  }
+  for (const cid of comp.componentChildren) walk(cid);
+  if (answers.length === 0) {
+    return {
+      id: uniqueId("adc-fillin"),
+      sourceType: "ADC.qFillInActivity",
+      kind: "text",
+      html: wording || "<p>Fill-in question</p>"
+    };
+  }
+  return {
+    id: uniqueId("adc-fillin"),
+    sourceType: "ADC.qFillInActivity",
+    kind: "question",
+    questionType: "blanks",
+    prompt: wording || "Completa los huecos",
+    answers
+  };
+}
+
+/**
+ * `qLikertActivity` ⇒ scale-based opinion question. Each `qLikertQuestion`
+ * has the same set of `qLikertOption` columns (Nunca / A veces / Siempre).
+ * No equivalent in eXe; emit a table that preserves the questions and
+ * the scale columns as readable text.
+ */
+function adaptLikertActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
+  const wording = extractWording(comp, ctx);
+  let scale: string[] = [];
+  const questions: string[] = [];
+  for (const cid of comp.componentChildren) {
+    const child = ctx.pkg.components.get(cid);
+    if (!child || child.name !== "qLikertQuestion") continue;
+    const qText = extractInlineText(child.id, ctx);
+    if (qText) questions.push(qText);
+    if (scale.length === 0) {
+      scale = child.componentChildren
+        .map((iid) => ctx.pkg.components.get(iid))
+        .filter((it): it is AdcComponent => !!it && it.name === "qLikertOption")
+        .map((it) => stripHtml(pickProp(it, "titleHtml") ?? pickProp(it, "title") ?? ""))
+        .filter(Boolean);
+    }
+  }
+  const parts: string[] = [];
+  if (wording) parts.push(`<div>${wording}</div>`);
+  if (questions.length && scale.length) {
+    parts.push(
+      `<table><thead><tr><th>${escapeHtml("Pregunta")}</th>${scale.map((s) => `<th>${escapeHtml(s)}</th>`).join("")}</tr></thead><tbody>`
+    );
+    for (const q of questions) {
+      parts.push(`<tr><td>${escapeHtml(q)}</td>${scale.map(() => `<td>☐</td>`).join("")}</tr>`);
+    }
+    parts.push(`</tbody></table>`);
+  } else if (questions.length) {
+    parts.push(`<ul>${questions.map((q) => `<li>${escapeHtml(q)}</li>`).join("")}</ul>`);
+  }
+  parts.push(
+    `<p><em>${escapeHtml("Escala Likert — eXeLearning no tiene un iDevice equivalente; arriba se muestran las preguntas y la escala.")}</em></p>`
+  );
+  return {
+    id: uniqueId("adc-likert"),
+    sourceType: "ADC.qLikertActivity",
+    kind: "text",
+    html: parts.join("\n")
+  };
+}
+
+/**
+ * `qSpeakingActivity` asks the learner to record audio. No equivalent in
+ * eXe; preserve the prompt with a clear note explaining the activity type.
+ */
+function adaptSpeakingActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
+  const wording = extractWording(comp, ctx);
+  const parts: string[] = [];
+  if (wording) parts.push(`<div>${wording}</div>`);
+  parts.push(
+    `<p><em>${escapeHtml("Actividad de grabación de audio — eXeLearning no tiene un iDevice equivalente; el estudiante grabaría su respuesta en el original.")}</em></p>`
+  );
+  return {
+    id: uniqueId("adc-speaking"),
+    sourceType: "ADC.qSpeakingActivity",
     kind: "text",
     html: parts.join("\n")
   };
