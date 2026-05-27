@@ -805,17 +805,25 @@ function promoteAdcCover(project: ElpxProject, hostPage: ElpxPage): void {
   hostPage.blocks.forEach((b, i) => {
     b.order = i;
   });
-  // Re-parent the cover's children onto the host page.
+  // Re-parent the cover's grandchildren onto the host page first (they
+  // would otherwise dangle when the cover is removed).
   for (const p of project.pages) {
     if (p.parentId === cover.id) p.parentId = hostPage.id;
   }
   project.pages = project.pages.filter((p) => p !== cover);
-  // Re-sequence sibling order around the host so the navigation looks clean.
-  project.pages
-    .filter((p) => p.parentId === hostPage.id)
-    .forEach((p, i) => {
-      p.order = i + 1;
-    });
+  // Flatten: ADC content pages display as top-level siblings of the
+  // promoted cover, not nested under it. Clear `parentId` on every page
+  // that was hanging off the host (the cover is already top-level since
+  // it IS the host).
+  for (const p of project.pages) {
+    if (p.parentId === hostPage.id) p.parentId = undefined;
+  }
+  // Re-sequence the project's top-level pages so the host stays at 0 and
+  // the rest follow in their original ADC order.
+  let order = 0;
+  for (const p of project.pages) {
+    if (!p.parentId) p.order = order++;
+  }
 }
 
 /** Treat html as empty when stripping tags + entities yields no glyphs and

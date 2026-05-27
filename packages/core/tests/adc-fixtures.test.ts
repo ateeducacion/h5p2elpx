@@ -42,15 +42,13 @@ describe("ADC fixtures (end-to-end via zip-bytes sniff)", () => {
         expect(result.project.title.length).toBeGreaterThan(3);
         expect(result.project.title).not.toBe("Imported content");
 
-        // The cover IS the project root (promoted by promoteAdcCover): a
-        // single top-level page that carries the rich-HTML banner from
-        // adaptCover plus any content blocks the ADC `pageContent` had.
-        // Subsequent pages nest under it.
+        // For ADC the cover is the first top-level page (promoted by
+        // `promoteAdcCover`), and the rest of the content pages are
+        // *flat* siblings of the cover — not nested children — so the
+        // editor's nav shows them at the same level.
         const roots = result.project.pages.filter((p) => !p.parentId);
-        expect(roots.length).toBe(1);
-        const cover = roots[0]!;
-        const children = result.project.pages.filter((p) => p.parentId === cover.id);
-        expect(children.length).toBeGreaterThan(0);
+        expect(roots.length).toBeGreaterThan(1);
+        const cover = roots.slice().sort((a, b) => a.order - b.order)[0]!;
         const rootHtml = cover.blocks[0]?.iDevices[0]?.htmlView ?? "";
         expect(rootHtml).toMatch(/<section/);
 
