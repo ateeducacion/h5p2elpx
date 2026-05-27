@@ -45,7 +45,7 @@ function toInput(filename: string, bytes: Uint8Array): ConvertInput {
     return { kind: "h5p-bytes", data: bytes, filename };
   }
   // .zip (and anything else) is sniffed at convert time so the user can
-  // drop either an H5P, an ADC native, or an altia/SCORM/xAPI bundle.
+  // drop either an H5P, an ADC native, or an ADC SCORM/xAPI bundle.
   return { kind: "zip-bytes", data: bytes, filename };
 }
 

@@ -8,9 +8,9 @@ import { validateElpx } from "../src/exe/validate.ts";
 const FIXTURES = resolve(__dirname, "../../../fixtures/adc");
 
 const samples = [
-  { file: "sa1-native.zip", expectMainLibrary: "ADC.native-content" },
-  { file: "sa1-altia-zip.zip", expectMainLibrary: "ADC.altia-zip" },
-  { file: "sa1-altia-scorm12.zip", expectMainLibrary: "ADC.altia-scorm12" }
+  { file: "sa1-native.zip", expectMainLibrary: "ADC.native" },
+  { file: "sa1-zip.zip", expectMainLibrary: "ADC.zip" },
+  { file: "sa1-scorm12.zip", expectMainLibrary: "ADC.scorm12" }
 ];
 
 describe("ADC fixtures (end-to-end via zip-bytes sniff)", () => {

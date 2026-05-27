@@ -21,7 +21,7 @@ program
 program
   .command("convert <input>")
   .description(
-    "Convert an .h5p or ADC .zip (Aula Digital Canaria native / altia / SCORM 1.2 / SCORM 2004 / xAPI / local) into an .elpx project"
+    "Convert an .h5p or ADC .zip (Aula Digital Canaria native / SCORM 1.2 / SCORM 2004 / xAPI / local) into an .elpx project"
   )
   .option("-o, --output <file>", "Output .elpx path", "output.elpx")
   .option("--layout <mode>", "Layout: blocks|pages|preserve", "preserve")

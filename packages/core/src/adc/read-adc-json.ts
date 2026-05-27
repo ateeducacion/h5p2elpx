@@ -4,18 +4,19 @@ import { basename } from "../utils/path.ts";
 import { guessMime } from "../utils/mime.ts";
 import { decompressNtxCaf, extractNtxCafBase64 } from "./decompress-ntxcaf.ts";
 
-export type ReadAdcAltiaOptions = {
+export type ReadAdcJsonOptions = {
   sourceFilename?: string;
   flavor: AdcFlavor;
 };
 
 /**
- * Parse an altia-flavoured Content/ADC bundle (zip/scorm12/scorm2004/xapi/local).
- * All five variants ship the same authoring payload — they differ only in the
- * tracking manifest wrapper. Prefers `project.json` when present; otherwise
- * falls back to deobfuscating `var ntxCafCompressed` from `index.html`.
+ * Parse a JSON-based ADC bundle (zip / scorm12 / scorm2004 / xapi / local /
+ * ntx). All these flavours ship the same authoring payload — they differ
+ * only in the tracking manifest wrapper. Prefers `project.json` when present;
+ * otherwise falls back to deobfuscating `var ntxCafCompressed` from
+ * `index.html` (zlib + base64; not encryption).
  */
-export async function readAdcAltia(zip: JSZip, options: ReadAdcAltiaOptions): Promise<AdcPackage> {
+export async function readAdcJson(zip: JSZip, options: ReadAdcJsonOptions): Promise<AdcPackage> {
   const projectRaw = await readProjectJson(zip);
   const langKey = pickLanguage(projectRaw);
   const lang = projectRaw[langKey] as Record<string, unknown>;
@@ -47,17 +48,17 @@ async function readProjectJson(zip: JSZip): Promise<Record<string, unknown>> {
   }
   const indexHtmlFile = zip.file("index.html");
   if (!indexHtmlFile) {
-    throw new Error("ADC altia bundle: missing project.json and index.html");
+    throw new Error("ADC JSON bundle: missing project.json and index.html");
   }
   const html = await indexHtmlFile.async("string");
   const b64 = extractNtxCafBase64(html);
   if (!b64) {
-    throw new Error("ADC altia bundle: no project.json and no ntxCafCompressed blob");
+    throw new Error("ADC JSON bundle: no project.json and no ntxCafCompressed blob");
   }
   const ntx = (await decompressNtxCaf(b64)) as { ntxdat?: { projectDataCollection?: unknown } };
   const collection = ntx.ntxdat?.projectDataCollection;
   if (!collection || typeof collection !== "object") {
-    throw new Error("ADC altia bundle: ntxCafCompressed did not unpack to a projectDataCollection");
+    throw new Error("ADC JSON bundle: ntxCafCompressed did not unpack to a projectDataCollection");
   }
   return collection as Record<string, unknown>;
 }
@@ -98,7 +99,7 @@ function findRootModule(components: Map<string, AdcComponent>): string {
     if (c.name === "module" && (!c.parent || c.parent === "")) return id;
   }
   for (const [id, c] of components) if (c.name === "module") return id;
-  throw new Error("ADC altia bundle: no `module` component found");
+  throw new Error("ADC JSON bundle: no `module` component found");
 }
 
 async function collectAssets(zip: JSZip): Promise<AdcAsset[]> {

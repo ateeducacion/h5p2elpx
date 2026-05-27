@@ -20,7 +20,7 @@ export {
 
 export type { AdcPackage, AdcFlavor, AdcComponent, AdcAsset } from "./adc/types.ts";
 export { readAdc } from "./adc/read-adc.ts";
-export { readAdcAltia } from "./adc/read-adc-altia.ts";
+export { readAdcJson } from "./adc/read-adc-json.ts";
 export { readAdcNative } from "./adc/read-adc-native.ts";
 export { sniffAdcZip, sniffLoadedZip } from "./adc/sniff.ts";
 export type { AdcSniffResult } from "./adc/sniff.ts";

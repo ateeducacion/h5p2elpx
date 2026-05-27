@@ -1,6 +1,6 @@
 # h5p2elpx
 
-Convert H5P activities — and ADC (Aula Digital Canaria) Content/altia exports —
+Convert H5P activities — and ADC (Aula Digital Canaria) "Content" exports —
 into editable eXeLearning `.elpx` projects.
 
 `h5p2elpx` is a **conservative** converter: it maps supported source content
@@ -13,11 +13,11 @@ Supported inputs:
 
 - **H5P** (`.h5p`) — 50+ content type adapters.
 - **ADC / Content** (`.zip`) — the legacy authoring tool used by the Aula
-  Digital Canaria platform (also branded *altia*). All five export flavours are
-  detected automatically: *native*, plain *altia zip*, *SCORM 1.2*,
-  *SCORM 2004*, *xAPI/Tin Can*, and *local*. Bundles that omit `project.json`
-  are recovered by deobfuscating the `ntxCafCompressed` blob in `index.html`
-  (zlib + base64; no encryption).
+  Digital Canaria platform. All six export flavours are detected
+  automatically: *native*, plain *zip*, *SCORM 1.2*, *SCORM 2004*,
+  *xAPI/Tin Can*, and *local*. Bundles that omit `project.json` are recovered
+  by deobfuscating the `ntxCafCompressed` blob in `index.html` (zlib + base64;
+  no encryption).
 
 > Status: MVP. CLI + browser-only web app + 50+ H5P adapters + ADC import.
 

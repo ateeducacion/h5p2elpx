@@ -42,7 +42,7 @@ import {
 export type ConvertInput =
   | { kind: "h5p-bytes"; data: Uint8Array; filename: string }
   | { kind: "h5p-package"; pkg: H5PPackage }
-  /** Unknown ZIP — sniffed at convert time (ADC altia/scorm/xapi/local/native,
+  /** Unknown ZIP — sniffed at convert time (ADC zip/scorm/xapi/local/native,
    *  falling back to H5P). Use this from CLI/web entry points where the user
    *  may drop either format. */
   | { kind: "zip-bytes"; data: Uint8Array; filename: string }

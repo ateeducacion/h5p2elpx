@@ -24,13 +24,13 @@ export type AdcComponent = {
 };
 
 export type AdcFlavor =
-  | "altia-zip"
-  | "altia-scorm12"
-  | "altia-scorm2004"
-  | "altia-xapi"
-  | "altia-local"
-  | "altia-ntx"
-  | "native-content";
+  | "zip"
+  | "scorm12"
+  | "scorm2004"
+  | "xapi"
+  | "local"
+  | "ntx"
+  | "native";
 
 export type AdcPackage = {
   flavor: AdcFlavor;

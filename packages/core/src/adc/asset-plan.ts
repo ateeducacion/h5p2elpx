@@ -33,8 +33,8 @@ export function planAdcAssets(pkg: AdcPackage): AdcAssetPlan {
     urlMap.set(`resources/${inner}`, url);
     urlMap.set(`/resources/${inner}`, url);
     urlMap.set(inner, url);
-    // Case-insensitive fallback — altia lowercases paths in `url` but
-    // the original `relativePath` may carry mixed case.
+    // Case-insensitive fallback — the ADC authoring tool lowercases paths
+    // in `url` but the original `relativePath` may carry mixed case.
     urlMap.set(`resources/${inner}`.toLowerCase(), url);
 
     resources.push({ path: outPath, data: asset.data, mimeType: asset.mimeType });

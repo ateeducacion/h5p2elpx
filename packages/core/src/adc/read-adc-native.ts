@@ -9,12 +9,12 @@ export type ReadAdcNativeOptions = {
 };
 
 /**
- * Minimal best-effort parser for the *native* Content/ADC export ZIP
- * (the one produced by the authoring tool when no LMS wrapper is selected).
+ * Minimal best-effort parser for the *native* ADC export ZIP (the one
+ * produced by the authoring tool when no LMS wrapper is selected).
  *
  * The native format stores each page as a separate XML file under
  * `data/<n>/lang/<lang>/<guion>.xml`. Those XMLs use the same 100+ tag
- * vocabulary as the altia JSON tree but in a verbose, document-shaped form.
+ * vocabulary as the JSON-based bundles but in a verbose, document-shaped form.
  * Rather than re-implement the full grammar, we flatten each page into a
  * single rich-text iDevice — that already covers the dominant case (text
  * + image content) and keeps quizzes/interactives as an explicit follow-up.
@@ -77,7 +77,7 @@ export async function readAdcNative(
   });
 
   return {
-    flavor: "native-content",
+    flavor: "native",
     title,
     language,
     components,

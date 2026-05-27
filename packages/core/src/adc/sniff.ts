@@ -25,9 +25,9 @@ export async function sniffAdcZip(data: Uint8Array | ArrayBuffer): Promise<AdcSn
 export async function sniffLoadedZip(zip: JSZip): Promise<AdcSniffResult | null> {
   const has = (name: string) => zip.file(name) !== null;
 
-  // Native Content export (Aula Digital Canaria, Berlin Smart authoring tool).
+  // Native ADC export (Aula Digital Canaria, "Content" authoring tool).
   if (has("courseInfo.xml") && has("unitCourseData.json")) {
-    return { flavor: "native-content", hasPlainJson: false, hasNtxCaf: false };
+    return { flavor: "native", hasPlainJson: false, hasNtxCaf: false };
   }
 
   const hasProject = has("project.json");
@@ -41,18 +41,18 @@ export async function sniffLoadedZip(zip: JSZip): Promise<AdcSniffResult | null>
   if (!hasProject && !hasNtxCaf) return null;
 
   let flavor: AdcFlavor;
-  if (has("tincan.xml")) flavor = "altia-xapi";
+  if (has("tincan.xml")) flavor = "xapi";
   else if (has("imsmanifest.xml")) {
     // Tell the SCORM variants apart by the IMS/ADL namespaces declared in
-    // the manifest. Plain altia zip has no schemaLocation.
+    // the manifest. The plain ADC zip has no schemaLocation.
     const manifestText = await zip.file("imsmanifest.xml")!.async("string");
-    if (/adlcp_v1p3|imscp_v1p1|2004/.test(manifestText)) flavor = "altia-scorm2004";
-    else if (/adlcp_rootv1p2|imscp_rootv1p1p2/.test(manifestText)) flavor = "altia-scorm12";
-    else flavor = "altia-zip";
+    if (/adlcp_v1p3|imscp_v1p1|2004/.test(manifestText)) flavor = "scorm2004";
+    else if (/adlcp_rootv1p2|imscp_rootv1p1p2/.test(manifestText)) flavor = "scorm12";
+    else flavor = "zip";
   } else if (hasProject) {
-    flavor = "altia-local";
+    flavor = "local";
   } else {
-    flavor = "altia-ntx";
+    flavor = "ntx";
   }
   return { flavor, hasPlainJson: hasProject, hasNtxCaf };
 }

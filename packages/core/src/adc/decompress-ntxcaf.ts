@@ -1,7 +1,7 @@
 const NTX_CAPTURE = /ntxCafCompressed\s*=\s*"([^"]+)"/;
 
 /**
- * Recover the `ntxdat` JSON object that altia bundles ship inside the
+ * Recover the `ntxdat` JSON object that ADC bundles ship inside the
  * `var ntxCafCompressed = "<base64>"` blob in `index.html`. The blob is
  * base64-encoded zlib data (RFC 1950), not encryption — useful when a
  * bundle has been stripped of `project.json` (some learner-facing SCORM

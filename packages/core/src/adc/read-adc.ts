@@ -1,7 +1,7 @@
 import JSZip from "jszip";
 import type { AdcPackage } from "./types.ts";
 import { sniffLoadedZip } from "./sniff.ts";
-import { readAdcAltia } from "./read-adc-altia.ts";
+import { readAdcJson } from "./read-adc-json.ts";
 import { readAdcNative } from "./read-adc-native.ts";
 
 export type ReadAdcOptions = {
@@ -9,7 +9,7 @@ export type ReadAdcOptions = {
 };
 
 /**
- * Open any ADC (Aula Digital Canaria / Content / "altia") ZIP and return an
+ * Open any ADC (Aula Digital Canaria / "Content") ZIP and return an
  * `AdcPackage`. Sniffs the flavor, then dispatches to the matching reader.
  * Returns `null` when the ZIP isn't recognised as an ADC bundle, so callers
  * can fall through to other readers (e.g. H5P).
@@ -27,8 +27,8 @@ export async function readAdc(
   }
   const sniff = await sniffLoadedZip(zip);
   if (!sniff) return null;
-  if (sniff.flavor === "native-content") {
+  if (sniff.flavor === "native") {
     return readAdcNative(zip, { sourceFilename: options.sourceFilename });
   }
-  return readAdcAltia(zip, { sourceFilename: options.sourceFilename, flavor: sniff.flavor });
+  return readAdcJson(zip, { sourceFilename: options.sourceFilename, flavor: sniff.flavor });
 }
