@@ -23,14 +23,7 @@ export type AdcComponent = {
   componentChildren: string[];
 };
 
-export type AdcFlavor =
-  | "zip"
-  | "scorm12"
-  | "scorm2004"
-  | "xapi"
-  | "local"
-  | "ntx"
-  | "native";
+export type AdcFlavor = "zip" | "scorm12" | "scorm2004" | "xapi" | "local" | "ntx" | "native";
 
 export type AdcPackage = {
   flavor: AdcFlavor;
