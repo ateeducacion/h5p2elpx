@@ -3,6 +3,7 @@ import type { AdcAsset, AdcComponent, AdcFlavor, AdcPackage } from "./types.ts";
 import { basename } from "../utils/path.ts";
 import { guessMime } from "../utils/mime.ts";
 import { decompressNtxCaf, extractNtxCafBase64 } from "./decompress-ntxcaf.ts";
+import { decodeEntities } from "./entities.ts";
 
 export type ReadAdcJsonOptions = {
   sourceFilename?: string;
@@ -21,7 +22,9 @@ export async function readAdcJson(zip: JSZip, options: ReadAdcJsonOptions): Prom
   const langKey = pickLanguage(projectRaw);
   const lang = projectRaw[langKey] as Record<string, unknown>;
 
-  const title = readProjectTitle(lang) ?? options.sourceFilename ?? "Imported ADC content";
+  const title = decodeEntities(
+    readProjectTitle(lang) ?? options.sourceFilename ?? "Imported ADC content"
+  );
   const componentsRaw = (lang.components ?? {}) as Record<string, AdcComponent>;
   const components = new Map<string, AdcComponent>();
   for (const [id, comp] of Object.entries(componentsRaw)) {

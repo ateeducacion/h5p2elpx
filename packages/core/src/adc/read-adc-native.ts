@@ -3,21 +3,29 @@ import { XMLParser } from "fast-xml-parser";
 import type { AdcAsset, AdcComponent, AdcPackage } from "./types.ts";
 import { basename } from "../utils/path.ts";
 import { guessMime } from "../utils/mime.ts";
+import { decodeEntities } from "./entities.ts";
 
 export type ReadAdcNativeOptions = {
   sourceFilename?: string;
 };
 
 /**
- * Minimal best-effort parser for the *native* ADC export ZIP (the one
- * produced by the authoring tool when no LMS wrapper is selected).
+ * Parse the *native* ADC export ZIP (the one produced by the authoring tool
+ * when no LMS wrapper is selected).
  *
- * The native format stores each page as a separate XML file under
- * `data/<n>/lang/<lang>/<guion>.xml`. Those XMLs use the same 100+ tag
- * vocabulary as the JSON-based bundles but in a verbose, document-shaped form.
- * Rather than re-implement the full grammar, we flatten each page into a
- * single rich-text iDevice — that already covers the dominant case (text
- * + image content) and keeps quizzes/interactives as an explicit follow-up.
+ * Layout:
+ *   - `courseInfo.xml` — top-level project metadata. Crucially it declares
+ *     `<revision_id>` and `<guion>`: only the matching `data/N/` folder is
+ *     the live revision; the other `data/<other-N>/` folders are historical
+ *     revisions that look identical and must be skipped to avoid duplicating
+ *     every page once per revision.
+ *   - `data/<N>/rev.xml` — declares the revision id for that folder.
+ *   - `data/<N>/lang/<lang>/<guion>.xml` — the entire module tree as nested
+ *     XML. Each element with an `@id` attribute is a component, mirroring the
+ *     altia JSON shape (`module`, `interface`, `pageBlock`, `pageContent`,
+ *     `text`, `image`, `quiz`, …). We walk the tree into a flat
+ *     `Map<id, AdcComponent>` so the rest of the converter can treat native
+ *     and altia exports identically.
  */
 export async function readAdcNative(
   zip: JSZip,
@@ -25,56 +33,40 @@ export async function readAdcNative(
 ): Promise<AdcPackage> {
   const courseInfoFile = zip.file("courseInfo.xml");
   if (!courseInfoFile) throw new Error("ADC native bundle: missing courseInfo.xml");
-  const courseInfoXml = await courseInfoFile.async("string");
   const parser = new XMLParser({
     ignoreAttributes: false,
     attributeNamePrefix: "@_",
     parseTagValue: false,
-    trimValues: true
+    trimValues: true,
+    processEntities: true,
+    htmlEntities: true,
+    isArray: () => false
   });
+  const courseInfoXml = await courseInfoFile.async("string");
   const courseInfo = parser.parse(courseInfoXml) as { course?: Record<string, unknown> };
   const course = courseInfo.course ?? {};
-  const title = pickString(course["name"]) ?? options.sourceFilename ?? "Imported ADC content";
-  const language = pickString(course["language"]);
+  const title = decodeEntities(
+    pickString(course.name) ?? options.sourceFilename ?? "Imported ADC content"
+  );
+  const language = pickString(course.language);
+  const guionId = pickString(course.guion);
+  const revisionId = pickString(course.revision_id);
 
-  const guions = await collectGuions(zip, parser);
+  const dataFolder = await pickActiveRevision(zip, revisionId);
+  if (!dataFolder) throw new Error("ADC native bundle: no matching data/<N>/ revision");
 
-  // Synthesise a flat component tree: a single `module` root with one
-  // `pageContent` child per guion. Each pageContent has a single `text`
-  // child carrying the concatenated rich-text excerpt from the XML.
-  const components = new Map<string, AdcComponent>();
-  const rootId = "adc-native-root";
-  const moduleChildren: string[] = [];
-  for (let i = 0; i < guions.length; i++) {
-    const g = guions[i]!;
-    const pageId = `adc-native-page-${i}`;
-    const textId = `adc-native-text-${i}`;
-    moduleChildren.push(pageId);
-    components.set(pageId, {
-      id: pageId,
-      name: "pageContent",
-      parent: rootId,
-      properties: { titleHtml: g.title, title: g.title },
-      resourceProperties: {},
-      componentChildren: [textId]
-    });
-    components.set(textId, {
-      id: textId,
-      name: "text",
-      parent: pageId,
-      properties: { textContent: g.html },
-      resourceProperties: {},
-      componentChildren: []
-    });
+  const guionPath = await findGuionXml(zip, dataFolder, language ?? "es", guionId);
+  if (!guionPath) {
+    throw new Error(`ADC native bundle: no guion XML under ${dataFolder}`);
   }
-  components.set(rootId, {
-    id: rootId,
-    name: "module",
-    parent: null,
-    properties: {},
-    resourceProperties: {},
-    componentChildren: moduleChildren
-  });
+  const guionXml = await zip.file(guionPath)!.async("string");
+  const parsed = parser.parse(guionXml) as Record<string, unknown>;
+
+  const components = new Map<string, AdcComponent>();
+  const rootId = walkRoot(parsed, components);
+  if (!rootId) {
+    throw new Error("ADC native bundle: no `module` element in guion XML");
+  }
 
   return {
     flavor: "native",
@@ -87,49 +79,160 @@ export async function readAdcNative(
   };
 }
 
-type GuionPage = { title: string; html: string };
-
-async function collectGuions(zip: JSZip, parser: XMLParser): Promise<GuionPage[]> {
-  const xmlPaths: string[] = [];
+/** Iterate `data/<N>/rev.xml` and return the folder whose `<version><id>`
+ *  matches `courseInfo.revision_id`. Falls back to the numerically highest
+ *  folder when no revision id is declared. */
+async function pickActiveRevision(zip: JSZip, revisionId?: string): Promise<string | null> {
+  const folders = new Set<string>();
   zip.forEach((path, file) => {
-    if (!file.dir && /^data\/\d+\/lang\/[^/]+\/[^/]+\.xml$/.test(path)) {
-      xmlPaths.push(path);
+    if (file.dir) return;
+    const m = path.match(/^(data\/\d+)\//);
+    if (m) folders.add(m[1]!);
+  });
+  if (folders.size === 0) return null;
+  if (revisionId) {
+    for (const folder of folders) {
+      const revFile = zip.file(`${folder}/rev.xml`);
+      if (!revFile) continue;
+      const rev = await revFile.async("string");
+      const m = rev.match(/<id>([^<]+)<\/id>/);
+      if (m && m[1] === revisionId) return folder;
     }
-  });
-  xmlPaths.sort((a, b) => {
-    const an = Number(a.split("/")[1] ?? 0);
-    const bn = Number(b.split("/")[1] ?? 0);
-    return an - bn;
-  });
-  const out: GuionPage[] = [];
-  for (const path of xmlPaths) {
-    const text = await zip.file(path)!.async("string");
-    const parsed = parser.parse(text) as unknown;
-    const page = extractGuionExcerpt(parsed);
-    if (page) out.push(page);
   }
-  return out;
+  // Fall back to the highest-numbered folder (newest revision when ids align
+  // with creation order — typical case in the authoring tool).
+  return [...folders].sort((a, b) => Number(b.split("/")[1]) - Number(a.split("/")[1]))[0] ?? null;
 }
 
-function extractGuionExcerpt(parsed: unknown): GuionPage | null {
-  const title =
-    findFirstString(parsed, ["title1", "titleHtml", "title2Html", "title3Html"]) ?? "Page";
-  const blobs: string[] = [];
-  collectStrings(parsed, ["textContent", "title3Html", "titleHtml", "subtitleHtml"], blobs);
-  if (blobs.length === 0) return null;
-  // Dedupe consecutive duplicates and assemble as <p>…</p> blocks. Values are
-  // already HTML-encoded by fast-xml-parser.
-  const seen = new Set<string>();
-  const html = blobs
-    .filter((b) => {
-      const k = b.trim();
-      if (!k) return false;
-      if (seen.has(k)) return false;
-      seen.add(k);
-      return true;
-    })
-    .join("\n");
-  return { title: stripHtml(title) || "Page", html };
+/** Locate `<dataFolder>/lang/<lang>/<guionId>.xml` (falling back to the first
+ *  XML under `lang/<lang>/` if the named guion isn't there, then to any
+ *  language). */
+async function findGuionXml(
+  zip: JSZip,
+  dataFolder: string,
+  lang: string,
+  guionId?: string
+): Promise<string | null> {
+  if (guionId) {
+    const direct = `${dataFolder}/lang/${lang}/${guionId}.xml`;
+    if (zip.file(direct)) return direct;
+  }
+  const candidates: string[] = [];
+  zip.forEach((path, file) => {
+    if (!file.dir && path.startsWith(`${dataFolder}/lang/`) && path.endsWith(".xml")) {
+      candidates.push(path);
+    }
+  });
+  if (candidates.length === 0) return null;
+  // Prefer the requested language.
+  const preferred = candidates.filter((p) => p.includes(`/lang/${lang}/`));
+  return preferred[0] ?? candidates[0] ?? null;
+}
+
+function walkRoot(
+  parsedXml: Record<string, unknown>,
+  components: Map<string, AdcComponent>
+): string | null {
+  for (const [name, value] of Object.entries(parsedXml)) {
+    if (name.startsWith("?")) continue; // skip <?xml ?> declaration
+    const id = walkComponent(name, value, null, components);
+    if (id) return id;
+  }
+  return null;
+}
+
+/**
+ * Walk one XML node into the flat component map.
+ *
+ * - Object with `@_id` → component. Its scalar/string children are flattened
+ *   into `properties`; child objects with `@_id` recurse and their ids land
+ *   in `componentChildren`.
+ * - Array → each element is walked individually (multi-occurrence siblings
+ *   like a `pageBlock` carrying 6 `pageContent` entries).
+ * - Anything else (bare string / number) is ignored at this level — those
+ *   are picked up as properties by the parent.
+ */
+function walkComponent(
+  name: string,
+  value: unknown,
+  parentId: string | null,
+  components: Map<string, AdcComponent>
+): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return null;
+  }
+  if (Array.isArray(value)) {
+    // The caller will only ever see arrays for *child* elements, where we
+    // need to add every item as a sibling component but only return one id.
+    // We add all, the caller already pushes ids one by one — see walkProps.
+    return null;
+  }
+  const obj = value as Record<string, unknown>;
+  const idAttr = obj["@_id"];
+  if (!idAttr || typeof idAttr !== "string") {
+    // No id — treat as a property carrier of the parent (handled in walkProps).
+    return null;
+  }
+  const id = idAttr;
+  if (components.has(id)) {
+    // Should be rare; the authoring tool seems to ensure unique ids.
+    return id;
+  }
+  const properties: Record<string, string> = {};
+  const componentChildren: string[] = [];
+  walkProps(obj, id, properties, componentChildren, components);
+  components.set(id, {
+    id,
+    name,
+    parent: parentId,
+    properties,
+    resourceProperties: {},
+    componentChildren
+  });
+  return id;
+}
+
+function walkProps(
+  obj: Record<string, unknown>,
+  selfId: string,
+  properties: Record<string, string>,
+  componentChildren: string[],
+  components: Map<string, AdcComponent>
+): void {
+  for (const [k, v] of Object.entries(obj)) {
+    if (k.startsWith("@_")) continue;
+    if (v === null || v === undefined) continue;
+    if (typeof v === "string") {
+      properties[k] = decodeEntities(v);
+      continue;
+    }
+    if (typeof v === "number" || typeof v === "boolean") {
+      properties[k] = String(v);
+      continue;
+    }
+    if (Array.isArray(v)) {
+      for (const item of v) {
+        if (item && typeof item === "object" && "@_id" in (item as Record<string, unknown>)) {
+          const cid = walkComponent(k, item, selfId, components);
+          if (cid) componentChildren.push(cid);
+        } else if (typeof item === "string") {
+          properties[k] = (properties[k] ? `${properties[k]} ` : "") + decodeEntities(item);
+        }
+      }
+      continue;
+    }
+    if (typeof v === "object") {
+      const childObj = v as Record<string, unknown>;
+      if ("@_id" in childObj) {
+        const cid = walkComponent(k, childObj, selfId, components);
+        if (cid) componentChildren.push(cid);
+      } else if ("#text" in childObj && typeof childObj["#text"] === "string") {
+        properties[k] = decodeEntities(childObj["#text"] as string);
+      }
+      // else: ignore nested object without id and without text
+    }
+  }
 }
 
 function pickString(v: unknown): string | undefined {
@@ -143,42 +246,6 @@ function pickString(v: unknown): string | undefined {
     return (v as { "#text": string })["#text"];
   }
   return undefined;
-}
-
-function findFirstString(node: unknown, keys: string[]): string | undefined {
-  if (!node || typeof node !== "object") return undefined;
-  const obj = node as Record<string, unknown>;
-  for (const k of keys) {
-    const s = pickString(obj[k]);
-    if (s && s.length > 0) return s;
-  }
-  for (const v of Object.values(obj)) {
-    const s = findFirstString(v, keys);
-    if (s) return s;
-  }
-  return undefined;
-}
-
-function collectStrings(node: unknown, keys: string[], out: string[]): void {
-  if (!node) return;
-  if (Array.isArray(node)) {
-    for (const item of node) collectStrings(item, keys, out);
-    return;
-  }
-  if (typeof node !== "object") return;
-  const obj = node as Record<string, unknown>;
-  for (const [k, v] of Object.entries(obj)) {
-    if (keys.includes(k)) {
-      const s = pickString(v);
-      if (s) out.push(s);
-    } else {
-      collectStrings(v, keys, out);
-    }
-  }
-}
-
-function stripHtml(s: string): string {
-  return s.replace(/<[^>]+>/g, "").trim();
 }
 
 async function collectAssets(zip: JSZip): Promise<AdcAsset[]> {

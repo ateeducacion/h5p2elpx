@@ -1,4 +1,5 @@
 import type { AdcComponent, AdcPackage, AdcResourceRef } from "../adc/types.ts";
+import { decodeEntities } from "../adc/entities.ts";
 import { uniqueId } from "../utils/slug.ts";
 import type { NormalizedAnswer, NormalizedNode, NormalizedPageNode } from "./nodes.ts";
 
@@ -11,12 +12,11 @@ import type { NormalizedAnswer, NormalizedNode, NormalizedPageNode } from "./nod
 export function normalizeAdcPackage(pkg: AdcPackage): NormalizedNode {
   const ctx: AdcCtx = { pkg, seen: new Set() };
   const root = visit(pkg.rootId, ctx);
-  if (root.kind === "page" || root.kind === "container") return root;
+  if (root.kind === "container") return root;
   return {
     id: uniqueId("adc-root"),
     sourceType: "ADC.Module",
-    kind: "page",
-    title: pkg.title,
+    kind: "container",
     children: [root]
   };
 }
@@ -84,32 +84,33 @@ function dispatch(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
 }
 
 function adaptModule(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
-  const pages = comp.componentChildren
-    .map((cid) => visit(cid, ctx))
-    .filter((n) => n.kind !== "unsupported" || hasMeaningfulChildren(n));
+  // Module is a logical wrapper, not a renderable page. Return a `container`
+  // so the convert dispatcher just iterates the children into the host page
+  // (no double-page wrap).
   return {
     id: uniqueId("adc-module"),
     sourceType: "ADC.Module",
-    kind: "page",
-    title: ctx.pkg.title,
-    children: pages
+    kind: "container",
+    children: comp.componentChildren.map((cid) => visit(cid, ctx))
   };
 }
 
-function hasMeaningfulChildren(_n: NormalizedNode): boolean {
-  return false;
-}
-
 function adaptPageContent(comp: AdcComponent, ctx: AdcCtx): NormalizedPageNode {
-  const titleHtml =
-    pickProp(comp, "title3Html") ?? pickProp(comp, "titleHtml") ?? pickProp(comp, "title");
-  const title = titleHtml ? stripHtml(titleHtml) : "Page";
+  // `properties.title` is the per-page plain-text name set by the author
+  // (e.g. "Presentación de la materia"). title3Html / titleHtml are theme
+  // placeholders or the course-wide banner and would repeat across pages.
+  const raw =
+    pickProp(comp, "title") ??
+    pickProp(comp, "title3Html") ??
+    pickProp(comp, "titleHtml") ??
+    "Page";
+  const title = stripHtml(raw);
   const children = comp.componentChildren.map((cid) => visit(cid, ctx));
   return {
     id: uniqueId("adc-page"),
     sourceType: "ADC.pageContent",
     kind: "page",
-    title,
+    title: title || "Page",
     children
   };
 }
@@ -125,8 +126,13 @@ function adaptText(comp: AdcComponent): NormalizedNode {
 }
 
 function adaptImage(comp: AdcComponent): NormalizedNode {
+  // altia stores the resolved URL under resourceProperties.srcName.url;
+  // native stores the author-typed relative path as a plain `srcName`
+  // property (e.g. "Imagenes/foo.jpg"). Asset URL resolution happens later
+  // in the converter via forHtml, which understands both shapes.
   const ref = pickResource(comp, "srcName");
-  const src = ref?.url ?? ref?.relativePath ?? "";
+  const src =
+    ref?.url ?? ref?.relativePath ?? pickProp(comp, "srcName") ?? pickProp(comp, "srcImage") ?? "";
   if (!src) return unsupported("ADC.image", "Image without srcName");
   return {
     id: uniqueId("adc-image"),
@@ -140,8 +146,8 @@ function adaptImage(comp: AdcComponent): NormalizedNode {
 
 function adaptVideo(comp: AdcComponent): NormalizedNode {
   const url = pickProp(comp, "url");
-  const mp4 = pickResource(comp, "srcMp4")?.url;
-  const cover = pickResource(comp, "srcCover")?.url;
+  const mp4 = pickResource(comp, "srcMp4")?.url ?? pickProp(comp, "srcMp4");
+  const cover = pickResource(comp, "srcCover")?.url ?? pickProp(comp, "srcCover");
   const src = mp4 || url || "";
   if (!src) return unsupported("ADC.allTypeVideo", "Video without url/srcMp4");
   if (/^https?:\/\/(www\.)?(youtube\.com|youtu\.be|vimeo\.com)/i.test(src)) {
@@ -291,13 +297,7 @@ function unsupported(library: string, reason: string): NormalizedNode {
 }
 
 function stripHtml(s: string): string {
-  return s
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .trim();
+  return decodeEntities(s.replace(/<[^>]+>/g, "")).trim();
 }
 
 function escapeAttr(s: string): string {

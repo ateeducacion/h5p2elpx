@@ -64,10 +64,15 @@ export async function convert(
   const assets = new AssetCollector();
   const originals: Array<{ name: string; data: Uint8Array }> = [];
 
+  // Resolve every input up-front so we can derive a sensible project title /
+  // language from the first one when the caller didn't pass --title / --lang.
+  const resolvedInputs = await Promise.all(inputs.map((i) => resolveInput(i, opts)));
+  const firstResolved = resolvedInputs[0];
+
   const project: ElpxProject = {
     id: newProjectId(),
-    title: opts.title ?? "Imported H5P content",
-    language: opts.language,
+    title: opts.title ?? firstResolved?.title ?? "Imported content",
+    language: opts.language ?? firstResolved?.language,
     pages: [],
     resources: []
   };
@@ -85,9 +90,7 @@ export async function convert(
 
   const adcResources: ElpxResource[] = [];
 
-  for (const rawInput of inputs) {
-    const resolved = await resolveInput(rawInput, opts);
-
+  for (const resolved of resolvedInputs) {
     const sourceFile = resolved.sourceFile;
     report.input.files.push(sourceFile);
 
@@ -442,6 +445,7 @@ function emitNode(
       if (ctx.options.layout === "preserve") {
         const newP: ElpxPage = {
           id: newPageId(),
+          parentId: hostPage.id,
           title: node.title ?? "Page",
           order: project.pages.length,
           blocks: []
@@ -668,6 +672,7 @@ type ResolvedH5p = {
   pkg: H5PPackage;
   sourceFile: string;
   title: string;
+  language?: string;
   mainLibrary: string;
 };
 
@@ -676,6 +681,7 @@ type ResolvedAdc = {
   pkg: AdcPackage;
   sourceFile: string;
   title: string;
+  language?: string;
   mainLibrary: string;
 };
 
@@ -713,6 +719,7 @@ function toResolvedH5p(pkg: H5PPackage): ResolvedH5p {
     pkg,
     sourceFile: pkg.sourceFilename ?? "package.h5p",
     title: pkg.title,
+    language: pkg.language,
     mainLibrary: libraryRefString(pkg.mainLibrary)
   };
 }
@@ -723,6 +730,7 @@ function toResolvedAdc(pkg: AdcPackage): ResolvedAdc {
     pkg,
     sourceFile: pkg.sourceFilename ?? "package.zip",
     title: pkg.title,
+    language: pkg.language,
     mainLibrary: `ADC.${pkg.flavor}`
   };
 }
