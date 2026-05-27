@@ -89,7 +89,20 @@ export const en = {
     statPartial: "Partial",
     statUnsupported: "Unsupported",
     statWarnings: "Warnings",
-    statErrors: "Errors"
+    statErrors: "Errors",
+    logToggle: "Show conversion log"
+  },
+  preview: {
+    title: "Preview & edit",
+    intro: "Open the converted .elpx in the embedded eXeLearning editor.",
+    poweredBy: "Powered by {host}",
+    loading: "Loading editor…",
+    ready: "Editor ready",
+    sending: "Sending project to editor…",
+    opened: "Project opened",
+    openFailed: "Could not open the project in the editor: {msg}",
+    reload: "Reload preview",
+    openInNewTab: "Download & open in editor"
   },
   footer: {
     madeWithBefore: "Made with ",

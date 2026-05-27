@@ -11,6 +11,7 @@ import { CompatibilityReport } from "./components/CompatibilityReport.tsx";
 import { ConversionOptionsForm, type UiOptions } from "./components/ConversionOptions.tsx";
 import { ConvertBar } from "./components/ConvertBar.tsx";
 import { DownloadPanel } from "./components/DownloadPanel.tsx";
+import { EditorPreviewPanel } from "./components/EditorPreviewPanel.tsx";
 import { Dropzone } from "./components/Dropzone.tsx";
 import { CliSection } from "./components/CliSection.tsx";
 import { ExperimentalBanner } from "./components/ExperimentalBanner.tsx";
@@ -150,7 +151,13 @@ export function App() {
 
         {error && <div className="error-banner">{error}</div>}
 
-        <Box icon="share" title={t("boxes.upload")} meta={filesMeta}>
+        <Box
+          icon="share"
+          title={t("boxes.upload")}
+          meta={filesMeta}
+          collapsible
+          defaultOpen={!hasReport}
+        >
           <Dropzone onFiles={onFilesDropped} files={files} onRemove={onRemoveFile} />
           <CliSection githubUrl={REPO_URL} />
         </Box>
@@ -160,13 +167,15 @@ export function App() {
             icon="competencies"
             title={t("boxes.preview")}
             meta={allOk ? t("meta.allOk") : t("meta.someAttention")}
+            collapsible
+            defaultOpen={!hasReport}
           >
             <CompatibilityReport entries={preview} />
           </Box>
         )}
 
         {hasFiles && (
-          <Box icon="agreement" title={t("boxes.options")}>
+          <Box icon="agreement" title={t("boxes.options")} collapsible defaultOpen={!hasReport}>
             <ConversionOptionsForm value={options} onChange={setOptions} />
           </Box>
         )}
@@ -182,6 +191,12 @@ export function App() {
         )}
 
         {conv && <DownloadPanel elpx={conv.elpx} report={conv.report} filename={conv.outputName} />}
+
+        {conv && (
+          <div className="shell-wide-break">
+            <EditorPreviewPanel elpx={conv.elpx} filename={conv.outputName} />
+          </div>
+        )}
 
         <Footer githubUrl={REPO_URL} />
       </div>

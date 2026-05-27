@@ -105,7 +105,25 @@ export function DownloadPanel({ elpx, report, filename }: Props) {
         </div>
       </div>
 
-      <pre className="report">{summarizeReport(report)}</pre>
+      <details className="report-details">
+        <summary className="report-summary">
+          {t("download.logToggle")}
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            width="14"
+            height="14"
+            aria-hidden="true"
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </summary>
+        <pre className="report">{summarizeReport(report)}</pre>
+      </details>
     </>
   );
 }
