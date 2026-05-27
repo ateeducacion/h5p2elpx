@@ -66,6 +66,10 @@ function dispatch(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
       return adaptInstruction(comp);
     case "launcher":
       return adaptLauncher(comp);
+    case "pdfLink":
+      return adaptPdfLink(comp);
+    case "hr":
+      return adaptHr();
     case "quiz":
       return adaptQuiz(comp, ctx);
     case "teacherContent":
@@ -346,6 +350,118 @@ function adaptText(comp: AdcComponent): NormalizedNode {
     sourceType: `ADC.${comp.name}`,
     kind: "text",
     html
+  };
+}
+
+/** `pdfLink` is a download-this-PDF anchor (ADC renders it as a button
+ *  in the page header/footer). Render as a small paragraph with a real
+ *  `<a>` so the link survives in eXe. Files referenced this way live
+ *  outside the bundle, so we keep the link verbatim. */
+function adaptPdfLink(comp: AdcComponent): NormalizedNode {
+  const name = pickProp(comp, "name") ?? "";
+  const title = pickProp(comp, "title") ?? pickProp(comp, "titleHtml") ?? (name || "Descargar PDF");
+  const href = pickResource(comp, "name")?.url ?? name;
+  if (!href) {
+    return {
+      id: uniqueId("adc-pdflink"),
+      sourceType: "ADC.pdfLink",
+      kind: "text",
+      html: `<p>${escapeHtml(title)}</p>`
+    };
+  }
+  return {
+    id: uniqueId("adc-pdflink"),
+    sourceType: "ADC.pdfLink",
+    kind: "text",
+    html: `<p><a href="${escapeAttr(href)}" target="_blank" rel="noopener">📄 ${escapeHtml(title)}</a></p>`
+  };
+}
+
+/** `hr` is just a visual rule between sections. Emit a literal `<hr>`. */
+function adaptHr(): NormalizedNode {
+  return {
+    id: uniqueId("adc-hr"),
+    sourceType: "ADC.hr",
+    kind: "text",
+    html: "<hr>"
+  };
+}
+
+/**
+ * `qListeningActivity` is ADC's audio-comprehension exercise: a background
+ * image where the learner clicks one or more bounding-box "hotspots" while
+ * listening to an audio source. The audio is *not* embedded in the bundle
+ * — it lives outside (CD, teacher's voice, …) — so this activity has no
+ * direct eXe equivalent. Render it as:
+ *   - the qWording text (instructions),
+ *   - the background image with an SVG overlay drawing the hotspots
+ *     (green = correct, red = decoy) so the author can see what was
+ *     clickable in the original render,
+ *   - if any `srcMp3` resource shows up, an `<audio controls>` widget,
+ *   - a short note explaining the activity type and that the audio was
+ *     external in the source.
+ */
+function adaptListeningActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
+  const wording = extractWording(comp, ctx);
+  const imgRef = pickResource(comp, "srcName");
+  const imgUrl = imgRef?.url ?? imgRef?.relativePath ?? pickProp(comp, "srcName") ?? "";
+  const imgW = imgRef?.width;
+  const imgH = imgRef?.height;
+  const audioRef = pickResource(comp, "srcMp3");
+  const audioUrl = audioRef?.url ?? audioRef?.relativePath ?? pickProp(comp, "srcMp3");
+
+  const hotspots = comp.componentChildren
+    .map((cid) => ctx.pkg.components.get(cid))
+    .filter((c): c is AdcComponent => !!c && c.name === "qListeningOption")
+    .map((opt) => ({
+      x1: Number(pickProp(opt, "x1") ?? 0),
+      y1: Number(pickProp(opt, "y1") ?? 0),
+      x2: Number(pickProp(opt, "x2") ?? 0),
+      y2: Number(pickProp(opt, "y2") ?? 0),
+      circle: /circle/i.test(pickProp(opt, "isCircle") ?? ""),
+      correct: /^(true|1)$/i.test(pickProp(opt, "correct") ?? "")
+    }));
+
+  const parts: string[] = [];
+  if (wording) parts.push(`<div>${wording}</div>`);
+  if (audioUrl) {
+    parts.push(`<figure><audio controls src="${escapeAttr(audioUrl)}"></audio></figure>`);
+  }
+  if (imgUrl) {
+    const w = imgW ?? 800;
+    const h = imgH ?? 600;
+    const overlay = hotspots
+      .map((s) => {
+        const stroke = s.correct ? "#1e7e34" : "#a94442";
+        const fill = s.correct ? "rgba(40,167,69,.15)" : "rgba(169,68,66,.12)";
+        if (s.circle) {
+          const cx = (s.x1 + s.x2) / 2;
+          const cy = (s.y1 + s.y2) / 2;
+          const r = Math.max(Math.abs(s.x2 - s.x1), Math.abs(s.y2 - s.y1)) / 2;
+          return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="3" />`;
+        }
+        const x = Math.min(s.x1, s.x2);
+        const y = Math.min(s.y1, s.y2);
+        const rw = Math.abs(s.x2 - s.x1);
+        const rh = Math.abs(s.y2 - s.y1);
+        return `<rect x="${x}" y="${y}" width="${rw}" height="${rh}" fill="${fill}" stroke="${stroke}" stroke-width="3" />`;
+      })
+      .join("");
+    parts.push(
+      `<figure style="position:relative;display:inline-block;max-width:100%"><img src="${escapeAttr(imgUrl)}" alt="" style="display:block;max-width:100%;height:auto" /><svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none">${overlay}</svg></figure>`
+    );
+  }
+  parts.push(
+    `<p><em>${escapeHtml(
+      "Actividad de escucha (Listening) — el alumnado pinchaba sobre las zonas correctas de la imagen mientras escuchaba el audio asociado. Las marcas verdes señalan las respuestas correctas; las rojas, las erróneas. eXeLearning no tiene un iDevice equivalente."
+    )}</em></p>`
+  );
+
+  return {
+    id: uniqueId("adc-listening"),
+    sourceType: "ADC.qListeningActivity",
+    kind: "text",
+    html: parts.join("\n")
   };
 }
 
@@ -760,6 +876,9 @@ function adaptQuiz(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
         break;
       case "qTrueFalseActivity":
         questions.push(adaptTrueFalseActivity(child, ctx));
+        break;
+      case "qListeningActivity":
+        questions.push(adaptListeningActivity(child, ctx));
         break;
       default:
         questions.push(visit(cid, ctx));
