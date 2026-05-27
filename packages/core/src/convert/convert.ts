@@ -324,7 +324,7 @@ function emitNode(
       const block = newBlock(hostPage, ctx);
       if (node.questionType === "truefalse" && node.answers) {
         const trueCorrect = !!node.answers.find((a) => a.text?.toLowerCase() === "true")?.correct;
-        let questionHtml = node.prompt;
+        let questionHtml = rewriteUrls(node.prompt, ctx.forHtml);
         if (node.media?.src) {
           const src = ctx.forHtml(node.media.src);
           const alt = escapeHtml(node.media.alt ?? "");
@@ -353,7 +353,7 @@ function emitNode(
         const correctCount = node.answers.filter((a) => a.correct).length;
         const selectionType: "single" | "multiple" =
           node.selectionType ?? (correctCount > 1 ? "multiple" : "single");
-        let baseText = node.prompt;
+        let baseText = rewriteUrls(node.prompt, ctx.forHtml);
         if (node.media?.src) {
           const src = ctx.forHtml(node.media.src);
           const alt = escapeHtml(node.media.alt ?? "");
@@ -393,7 +393,7 @@ function emitNode(
           // sometimes the prompt itself contains *answer* markers (DragText, etc.)
           questions.push(blanksToFill(node.prompt));
         }
-        let instructions = node.prompt;
+        let instructions = rewriteUrls(node.prompt, ctx.forHtml);
         if (node.media?.src) {
           const src = ctx.forHtml(node.media.src);
           const alt = escapeHtml(node.media.alt ?? "");
@@ -420,14 +420,43 @@ function emitNode(
       return;
     }
     case "container": {
+      // `groupAsBlock`: every child emits its iDevices into a single shared
+      // block (used to weld a `teacherContent` together with the next
+      // public sibling so the teacher-only material lives *inside* the
+      // public block as teacher-only iDevices, not as its own box).
+      if (node.metadata?.groupAsBlock) {
+        const block = newBlock(hostPage, ctx);
+        const inner: BuildCtx = { ...ctx, currentBlock: block };
+        for (const child of node.children) {
+          const before = block.iDevices.length;
+          emitNode(child, project, hostPage, inner);
+          if (child.teacherOnly) {
+            for (let i = before; i < block.iDevices.length; i++) {
+              block.iDevices[i]!.teacherOnly = true;
+            }
+          }
+        }
+        if (block.iDevices.length === 0) {
+          hostPage.blocks = hostPage.blocks.filter((b) => b !== block);
+        }
+        return;
+      }
       if (node.teacherOnly && !ctx.teacherOnly) {
-        // Group every descendant iDevice into a *single* teacher-only block,
-        // matching the visual unit ADC's `teacherContent` represents (one
-        // boxed area per teacherContent component, not one box per child).
+        // Already inside a shared block (the groupAsBlock path above): do
+        // *not* open a dedicated teacher block — recurse into the existing
+        // currentBlock so the teacher iDevices land alongside the public
+        // ones, and the wrapping groupAsBlock loop tags them.
+        if (ctx.currentBlock) {
+          const inner: BuildCtx = { ...ctx, teacherOnly: true };
+          for (const child of node.children) emitNode(child, project, hostPage, inner);
+          return;
+        }
+        // Standalone teacher container (no public sibling). Group every
+        // descendant iDevice into a single teacher-only block so the box
+        // matches the visual unit ADC's `teacherContent` represents.
         const teacherBlock = newBlock(hostPage, { teacherOnly: true });
         const inner: BuildCtx = { ...ctx, teacherOnly: true, currentBlock: teacherBlock };
         for (const child of node.children) emitNode(child, project, hostPage, inner);
-        // Drop the empty block if no child produced anything visible.
         if (teacherBlock.iDevices.length === 0) {
           hostPage.blocks = hostPage.blocks.filter((b) => b !== teacherBlock);
         }

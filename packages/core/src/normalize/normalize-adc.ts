@@ -119,11 +119,13 @@ function adaptTeacherContent(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
   // Same post-processing as `adaptContainer` so headings inside teacher
   // boxes (often wrapped in row > column > text) collapse and label the
   // following iDevice the way they do everywhere else.
-  const children = groupMediaClusters(
-    absorbHeadings(
-      flattenSingleChildContainers(comp.componentChildren.map((cid) => visit(cid, ctx)))
-    ),
-    ctx
+  const children = mergeTeacherIntoNext(
+    groupMediaClusters(
+      absorbHeadings(
+        flattenSingleChildContainers(comp.componentChildren.map((cid) => visit(cid, ctx)))
+      ),
+      ctx
+    )
   );
   return {
     id: uniqueId("adc-teacher"),
@@ -207,11 +209,13 @@ function adaptPageContent(comp: AdcComponent, ctx: AdcCtx): NormalizedPageNode {
     pickProp(comp, "titleHtml") ??
     "Page";
   const title = stripHtml(raw);
-  const children = groupMediaClusters(
-    absorbHeadings(
-      flattenSingleChildContainers(comp.componentChildren.map((cid) => visit(cid, ctx)))
-    ),
-    ctx
+  const children = mergeTeacherIntoNext(
+    groupMediaClusters(
+      absorbHeadings(
+        flattenSingleChildContainers(comp.componentChildren.map((cid) => visit(cid, ctx)))
+      ),
+      ctx
+    )
   );
   return {
     id: uniqueId("adc-page"),
@@ -531,10 +535,16 @@ const PLACEHOLDER_TITLES = new Set([
   "Page Title 2",
   "Page Title 3",
   "Title",
+  "Title PDFLink",
   "Subtitle Header",
   "Title button",
   "Launcher",
-  "Audio Title"
+  "Panel title",
+  "Panel Title",
+  "Accordion title",
+  "Accordion Title",
+  "Tab title",
+  "Tabs title"
 ]);
 
 function meaningfulTitle(raw: string | undefined): string | undefined {
@@ -594,7 +604,9 @@ function adaptContainer(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
     id: uniqueId("adc-container"),
     sourceType: `ADC.${comp.name}`,
     kind: "container",
-    children: groupMediaClusters(absorbHeadings(flattenSingleChildContainers(children)), ctx)
+    children: mergeTeacherIntoNext(
+      groupMediaClusters(absorbHeadings(flattenSingleChildContainers(children)), ctx)
+    )
   };
 }
 
@@ -665,6 +677,59 @@ function flattenSingleChildContainers(nodes: NormalizedNode[]): NormalizedNode[]
     }
   }
   return out;
+}
+
+/**
+ * Weld a teacher-only container to the *next* public sibling into a
+ * single `groupAsBlock` container. The convert layer will emit one block
+ * holding both sets of iDevices, with the teacher children tagged
+ * `teacherOnly` at the iDevice level so the block stays public-facing but
+ * the explanatory note only shows up when teacher mode is on. Matches
+ * what authors expect from ADC: "una caja con título — la nota docente —
+ * el contenido para el alumnado", all in one navigation block.
+ *
+ * Teacher containers without a following sibling stay as standalone
+ * teacher-only blocks (handled by `case "container"` legacy path).
+ */
+function mergeTeacherIntoNext(nodes: NormalizedNode[]): NormalizedNode[] {
+  const out: NormalizedNode[] = [];
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i]!;
+    if (!isTeacherContainer(node)) {
+      out.push(node);
+      continue;
+    }
+    // Look ahead for the next non-teacher sibling. Adjacent teacher
+    // containers can chain together until we hit a public node or the
+    // list ends.
+    const teacherPack: NormalizedNode[] = [node];
+    let j = i + 1;
+    while (j < nodes.length && isTeacherContainer(nodes[j]!)) {
+      teacherPack.push(nodes[j]!);
+      j++;
+    }
+    const next = nodes[j];
+    if (!next) {
+      // No public sibling — keep the teacher containers as-is so they
+      // produce their own teacher-only blocks via the legacy path.
+      out.push(...teacherPack);
+      continue;
+    }
+    out.push({
+      id: uniqueId("adc-merged-block"),
+      sourceType: "ADC.teacherContent.merged",
+      kind: "container",
+      title: next.title,
+      metadata: { groupAsBlock: true },
+      children: [...teacherPack, next]
+    });
+    i = j; // skip the consumed next sibling
+  }
+  return out;
+}
+
+function isTeacherContainer(node: NormalizedNode): boolean {
+  return node.kind === "container" && node.teacherOnly === true;
 }
 
 /**
@@ -790,15 +855,23 @@ function renderMediaInline(media: NormalizedNode, _ctx: AdcCtx, captionHtml: str
  */
 function adaptContainerAsText(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
   const parts: string[] = [];
-  const title = pickProp(comp, "titleHtml") ?? pickProp(comp, "title");
-  if (title) parts.push(`<h3>${title}</h3>`);
+  const titleRaw = pickProp(comp, "titleHtml") ?? pickProp(comp, "title");
+  // Skip the inline `<h3>` when the source title is one of ADC's authoring
+  // placeholders ("Panel title", "Accordion title", …) — those would
+  // otherwise leak into the rendered HTML as visible junk.
+  const titlePlain = titleRaw ? meaningfulTitle(stripHtml(titleRaw)) : undefined;
+  if (titlePlain && titleRaw) parts.push(`<h3>${titleRaw}</h3>`);
   collectInlineHtml(comp.id, ctx, parts);
-  return {
+  const node: NormalizedNode = {
     id: uniqueId("adc-grouped"),
     sourceType: `ADC.${comp.name}`,
     kind: "text",
     html: parts.join("\n")
   };
+  // Promote the meaningful title onto the node so the eXe block name is
+  // the panel/accordion/tabs label instead of the default "Texto".
+  if (titlePlain) node.title = titlePlain;
+  return node;
 }
 
 function collectInlineHtml(id: string, ctx: AdcCtx, out: string[]): void {
