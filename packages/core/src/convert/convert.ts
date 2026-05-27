@@ -131,7 +131,7 @@ export async function convert(
       adcResources.push(...plan.resources);
       forHtml = plan.toUrl;
       forJson = plan.toUrl;
-      ast = normalizeAdcPackage(resolved.pkg);
+      ast = normalizeAdcPackage(resolved.pkg, { coverStyle: opts.coverStyle ?? "rich" });
     }
 
     const ctx: BuildCtx = {
@@ -202,15 +202,21 @@ type BuildCtx = {
   forJson: (src: string) => string;
   activityReport: ConversionActivityReport;
   options: ConversionOptions;
+  /** Sticky flag set when emitting children of a `teacherOnly` container.
+   *  Every block (and every iDevice) created while it is true picks up the
+   *  eXe `teacherOnly` mark, so each emitted block matches the ADC
+   *  `teacherContent` semantics regardless of the iDevice type. */
+  teacherOnly?: boolean;
 };
 
-function newBlock(page: ElpxPage): ElpxBlock {
+function newBlock(page: ElpxPage, ctx?: { teacherOnly?: boolean }): ElpxBlock {
   const block: ElpxBlock = {
     id: newBlockId(),
     pageId: page.id,
     order: page.blocks.length,
     iDevices: []
   };
+  if (ctx?.teacherOnly) block.teacherOnly = true;
   page.blocks.push(block);
   return block;
 }
@@ -228,7 +234,7 @@ function emitNode(
 ): void {
   switch (node.kind) {
     case "text": {
-      const block = newBlock(hostPage);
+      const block = newBlock(hostPage, ctx);
       const html = rewriteUrls(sanitizeHtml(node.html), ctx.forHtml);
       addIdevice(
         block,
@@ -244,7 +250,7 @@ function emitNode(
       return;
     }
     case "image": {
-      const block = newBlock(hostPage);
+      const block = newBlock(hostPage, ctx);
       const src = ctx.forHtml(node.src);
       const html = `<figure><img src="${escapeHtml(src)}" alt="${escapeHtml(node.alt ?? "")}" />${
         node.caption ? `<figcaption>${escapeHtml(node.caption)}</figcaption>` : ""
@@ -263,7 +269,7 @@ function emitNode(
       return;
     }
     case "audio": {
-      const block = newBlock(hostPage);
+      const block = newBlock(hostPage, ctx);
       const src = ctx.forHtml(node.src);
       const html = `<audio controls src="${escapeHtml(src)}"></audio>`;
       addIdevice(
@@ -280,7 +286,7 @@ function emitNode(
       return;
     }
     case "video": {
-      const block = newBlock(hostPage);
+      const block = newBlock(hostPage, ctx);
       const src = ctx.forHtml(node.src);
       const poster = node.poster ? ctx.forHtml(node.poster) : undefined;
       const html = buildVideoEmbed(src, poster ? { poster } : {});
@@ -298,7 +304,7 @@ function emitNode(
       return;
     }
     case "question": {
-      const block = newBlock(hostPage);
+      const block = newBlock(hostPage, ctx);
       if (node.questionType === "truefalse" && node.answers) {
         const trueCorrect = !!node.answers.find((a) => a.text?.toLowerCase() === "true")?.correct;
         let questionHtml = node.prompt;
@@ -397,6 +403,11 @@ function emitNode(
       return;
     }
     case "container": {
+      if (node.teacherOnly && !ctx.teacherOnly) {
+        const inner: BuildCtx = { ...ctx, teacherOnly: true };
+        for (const child of node.children) emitNode(child, project, hostPage, inner);
+        return;
+      }
       for (const child of node.children) emitNode(child, project, hostPage, ctx);
       return;
     }
@@ -421,7 +432,7 @@ function emitNode(
               return p;
             })()
           : hostPage;
-        const block = newBlock(targetPage);
+        const block = newBlock(targetPage, ctx);
         const html = buildCpSlideHtml(slide, ctx.forHtml);
         addIdevice(
           block,
@@ -458,7 +469,7 @@ function emitNode(
       return;
     }
     case "crossword": {
-      const block = newBlock(hostPage);
+      const block = newBlock(hostPage, ctx);
       addIdevice(
         block,
         buildCrosswordIdevice({
@@ -473,7 +484,7 @@ function emitNode(
       return;
     }
     case "interactive-video": {
-      const block = newBlock(hostPage);
+      const block = newBlock(hostPage, ctx);
       const src = ctx.forHtml(node.src);
       const slides = node.slides.map((s) =>
         s.type === "text"
@@ -501,7 +512,7 @@ function emitNode(
       return;
     }
     case "flipcards": {
-      const block = newBlock(hostPage);
+      const block = newBlock(hostPage, ctx);
       addIdevice(
         block,
         buildFlipcardsIdevice({
@@ -519,7 +530,7 @@ function emitNode(
       return;
     }
     case "beforeafter": {
-      const block = newBlock(hostPage);
+      const block = newBlock(hostPage, ctx);
       addIdevice(
         block,
         buildBeforeAfterIdevice({
@@ -539,7 +550,7 @@ function emitNode(
       return;
     }
     case "iframe": {
-      const block = newBlock(hostPage);
+      const block = newBlock(hostPage, ctx);
       // Local-file sources are rewritten into asset URLs; remote URLs pass
       // through forHtml unchanged.
       const src = /^https?:\/\//i.test(node.src) ? node.src : ctx.forHtml(node.src);
@@ -559,7 +570,7 @@ function emitNode(
       return;
     }
     case "hotspot-map": {
-      const block = newBlock(hostPage);
+      const block = newBlock(hostPage, ctx);
       addIdevice(
         block,
         buildMapIdevice({
@@ -578,7 +589,7 @@ function emitNode(
       return;
     }
     case "word-search": {
-      const block = newBlock(hostPage);
+      const block = newBlock(hostPage, ctx);
       addIdevice(
         block,
         buildWordSearchIdevice({
@@ -637,7 +648,7 @@ function handleUnsupported(
   ctx.activityReport.unsupportedItems.push(item);
   if (ctx.options.unsupported === "drop") return;
   if (ctx.options.unsupported === "text") {
-    const block = newBlock(hostPage);
+    const block = newBlock(hostPage, ctx);
     addIdevice(
       block,
       buildTextIdevice({
@@ -653,8 +664,8 @@ function handleUnsupported(
   emitUnsupported(node.originalLibrary, hostPage, ctx, node.reason);
 }
 
-function emitUnsupported(library: string, hostPage: ElpxPage, _ctx: BuildCtx, reason: string) {
-  const block = newBlock(hostPage);
+function emitUnsupported(library: string, hostPage: ElpxPage, ctx: BuildCtx, reason: string) {
+  const block = newBlock(hostPage, ctx);
   addIdevice(
     block,
     buildUnsupportedIdevice({

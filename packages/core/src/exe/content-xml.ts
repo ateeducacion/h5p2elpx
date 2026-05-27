@@ -1,5 +1,5 @@
 import { XMLBuilder } from "fast-xml-parser";
-import type { ElpxIdevice, ElpxProject } from "./model.ts";
+import type { ElpxBlock, ElpxIdevice, ElpxProject } from "./model.ts";
 import { newOdeId } from "./ids.ts";
 
 /**
@@ -37,27 +37,30 @@ function kv(key: string, value: string | number) {
   return { key, value: String(value) };
 }
 
-const DEFAULT_PAG_PROPS = [
-  kv("visibility", "true"),
-  kv("teacherOnly", "false"),
-  kv("allowToggle", "true"),
-  kv("minimized", "false"),
-  kv("cssClass", "")
-];
+function pagProps(block: ElpxBlock) {
+  return [
+    kv("visibility", "true"),
+    kv("teacherOnly", block.teacherOnly ? "true" : "false"),
+    kv("allowToggle", "true"),
+    kv("minimized", "false"),
+    kv("cssClass", "")
+  ];
+}
 
 /**
- * The three component-level properties eXeLearning always emits per the
- * snippets in `doc/elpx-format/idevices/snippets.md`. `value` is omitted
- * (self-closing) when empty.
+ * Component-level properties eXeLearning always emits per the snippets in
+ * `doc/elpx-format/idevices/snippets.md`. `teacherOnly` is omitted when
+ * false to match the default eXe export shape; emitted as `"true"` when
+ * the iDevice is marked teacher-only.
  */
-function defaultComponentProps() {
-  return {
-    odeComponentsProperty: [
-      { key: "identifier", value: "" },
-      { key: "visibility", value: "true" },
-      { key: "cssClass", value: "" }
-    ]
-  };
+function componentProps(idev: ElpxIdevice) {
+  const props: Array<{ key: string; value: string }> = [
+    { key: "identifier", value: "" },
+    { key: "visibility", value: "true" },
+    { key: "cssClass", value: "" }
+  ];
+  if (idev.teacherOnly) props.push({ key: "teacherOnly", value: "true" });
+  return { odeComponentsProperty: props };
 }
 
 function buildComponent(idev: ElpxIdevice) {
@@ -69,7 +72,7 @@ function buildComponent(idev: ElpxIdevice) {
     htmlView: { __cdata: idev.htmlView ?? "" },
     jsonProperties: { __cdata: JSON.stringify(idev.jsonProperties ?? {}) },
     odeComponentsOrder: String(idev.order),
-    odeComponentsProperties: defaultComponentProps()
+    odeComponentsProperties: componentProps(idev)
   };
 }
 
@@ -116,7 +119,7 @@ export function buildContentXml(project: ElpxProject, opts: BuildContentXmlOptio
               iconName: "",
               odePagStructureOrder: String(bIdx + 1),
               odePagStructureProperties: {
-                odePagStructureProperty: DEFAULT_PAG_PROPS
+                odePagStructureProperty: pagProps(block)
               },
               odeComponents: {
                 odeComponent: block.iDevices
