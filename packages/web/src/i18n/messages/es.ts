@@ -122,14 +122,5 @@ export const es: Messages = {
     warning:
       "Aviso: esta funcionalidad está en fase experimental. Los archivos generados pueden contener errores, por lo que se recomienda revisarlos antes de utilizarlos.",
     dismiss: "Descartar aviso"
-  },
-  cli: {
-    title: "Uso desde la terminal (CLI)",
-    installInfo: "Instala Bun y ejecuta la CLI publicada en GitHub Packages.",
-    commandLabel: "Copia este ejemplo y sustituye archivo.h5p por tu paquete H5P:",
-    copy: "Copiar",
-    copied: "¡Copiado!",
-    issuesLabel: "¿Tienes problemas?",
-    issuesLink: "Reporta un H5P que falla"
   }
 };

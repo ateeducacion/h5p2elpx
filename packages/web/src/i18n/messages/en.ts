@@ -120,15 +120,6 @@ export const en = {
     warning:
       "Notice: this feature is in experimental phase. Generated files may contain errors, so reviewing them before use is recommended.",
     dismiss: "Dismiss warning"
-  },
-  cli: {
-    title: "Use from terminal (CLI)",
-    installInfo: "Install Bun and run the published CLI from GitHub Packages.",
-    commandLabel: "Copy this example and replace file.h5p with your H5P package:",
-    copy: "Copy",
-    copied: "Copied!",
-    issuesLabel: "Having issues?",
-    issuesLink: "Report a broken H5P file"
   }
 };
 

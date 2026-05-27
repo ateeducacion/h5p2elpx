@@ -14,7 +14,6 @@ import { ConvertBar } from "./components/ConvertBar.tsx";
 import { DownloadPanel } from "./components/DownloadPanel.tsx";
 import { EditorPreviewPanel } from "./components/EditorPreviewPanel.tsx";
 import { Dropzone } from "./components/Dropzone.tsx";
-import { CliSection } from "./components/CliSection.tsx";
 import { ExperimentalBanner } from "./components/ExperimentalBanner.tsx";
 import { Footer } from "./components/Footer.tsx";
 import { GithubCorner } from "./components/GithubCorner.tsx";
@@ -173,7 +172,6 @@ export function App() {
           defaultOpen={!hasReport}
         >
           <Dropzone onFiles={onFilesDropped} files={files} onRemove={onRemoveFile} />
-          <CliSection githubUrl={REPO_URL} />
         </Box>
 
         {hasFiles && (
@@ -182,14 +180,14 @@ export function App() {
             title={t("boxes.preview")}
             meta={allOk ? t("meta.allOk") : t("meta.someAttention")}
             collapsible
-            defaultOpen={!hasReport}
+            defaultOpen={false}
           >
             <CompatibilityReport entries={preview} />
           </Box>
         )}
 
         {hasFiles && (
-          <Box icon="agreement" title={t("boxes.options")} collapsible defaultOpen={!hasReport}>
+          <Box icon="agreement" title={t("boxes.options")} collapsible defaultOpen={false}>
             <ConversionOptionsForm value={options} onChange={setOptions} />
           </Box>
         )}
