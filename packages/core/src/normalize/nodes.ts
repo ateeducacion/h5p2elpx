@@ -40,7 +40,7 @@ export type NormalizedAnswer = {
 
 export type NormalizedQuestionNode = BaseNode & {
   kind: "question";
-  questionType: "truefalse" | "multichoice" | "blanks" | "unknown";
+  questionType: "truefalse" | "multichoice" | "blanks" | "casestudy" | "unknown";
   prompt: string;
   answers?: NormalizedAnswer[];
   feedback?: string;

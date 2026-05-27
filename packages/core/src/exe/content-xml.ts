@@ -37,6 +37,45 @@ function kv(key: string, value: string | number) {
   return { key, value: String(value) };
 }
 
+/** Default titles iDevice builders fall back to when no `title` is set
+ *  (and that the eXe editor shows by default for an unnamed block). We
+ *  suppress them as `<blockName>` so the editor doesn't render a useless
+ *  "Texto" / "Form" / "Image" label next to the Show/Hide toggle.
+ *
+ *  When the author *did* set a real title (a heading absorbed by
+ *  `absorbHeadings`, the panel/quiz label, etc.) it survives this filter
+ *  because the value differs from the placeholder defaults. */
+const DEFAULT_BLOCK_NAMES = new Set([
+  "",
+  "Texto",
+  "Text",
+  "Form",
+  "Image",
+  "Image Title",
+  "Audio",
+  "Audio Title",
+  "Video",
+  "Video Title",
+  "Bloque",
+  "Block",
+  "Before / After",
+  "Memory cards",
+  "Map",
+  "Crossword",
+  "Interactive video",
+  "Word search",
+  "External website",
+  "True or false",
+  "Verdadero o falso",
+  "Case study",
+  "Caso práctico"
+]);
+
+function pickBlockName(title: string | undefined): string {
+  if (!title) return "";
+  return DEFAULT_BLOCK_NAMES.has(title.trim()) ? "" : title;
+}
+
 function pagProps(block: ElpxBlock) {
   return [
     kv("visibility", "true"),
@@ -111,7 +150,7 @@ export function buildContentXml(project: ElpxProject, opts: BuildContentXmlOptio
           .sort((a, b) => a.order - b.order)
           .map((block, bIdx) => {
             const firstIdev = block.iDevices[0];
-            const blockName = firstIdev?.title ?? "Bloque";
+            const blockName = pickBlockName(firstIdev?.title);
             return {
               odePageId: page.id,
               odeBlockId: block.id,

@@ -13,6 +13,7 @@ import { buildCpSlideHtml } from "./cp-slide-html.ts";
 import { libraryRefString } from "../h5p/library-ref.ts";
 import {
   buildTextIdevice,
+  buildCaseStudyIdevice,
   buildUnsupportedIdevice,
   buildTrueOrFalseIdevice,
   buildFormIdevice,
@@ -410,6 +411,29 @@ function emitNode(
           })
         );
         ctx.activityReport.mappedTo!.push("form(fill)");
+        return;
+      }
+      if (node.questionType === "casestudy") {
+        // Open-text scenario: the learner reads the wording and either
+        // writes/draws/records elsewhere. Map to the native `casestudy`
+        // iDevice so eXe shows it as a "Caso práctico" with the prompt.
+        const history = rewriteUrls(node.prompt, ctx.forHtml);
+        const activities = (node.answers ?? []).map((a) => ({
+          activity: rewriteUrls(sanitizeHtml(a.text), ctx.forHtml),
+          feedback: a.feedback ? rewriteUrls(sanitizeHtml(a.feedback), ctx.forHtml) : ""
+        }));
+        addIdevice(
+          block,
+          buildCaseStudyIdevice({
+            pageId: hostPage.id,
+            blockId: block.id,
+            order: 0,
+            title: node.title,
+            history,
+            activities
+          })
+        );
+        ctx.activityReport.mappedTo!.push("casestudy");
         return;
       }
       ctx.activityReport.unsupportedItems.push({

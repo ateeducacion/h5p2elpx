@@ -856,22 +856,64 @@ function renderMediaInline(media: NormalizedNode, _ctx: AdcCtx, captionHtml: str
 function adaptContainerAsText(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
   const parts: string[] = [];
   const titleRaw = pickProp(comp, "titleHtml") ?? pickProp(comp, "title");
-  // Skip the inline `<h3>` when the source title is one of ADC's authoring
-  // placeholders ("Panel title", "Accordion title", …) — those would
-  // otherwise leak into the rendered HTML as visible junk.
   const titlePlain = titleRaw ? meaningfulTitle(stripHtml(titleRaw)) : undefined;
-  if (titlePlain && titleRaw) parts.push(`<h3>${titleRaw}</h3>`);
-  collectInlineHtml(comp.id, ctx, parts);
+
+  // Accordion / tabs → render their children as collapsible `<details>`
+  // blocks (native HTML, no JS needed; eXe's CKEditor passes them through
+  // untouched). Plain panels keep a simpler `<aside>` look so the visual
+  // weight of the original ADC panel survives.
+  if (comp.name === "accordion" || comp.name === "tabs") {
+    if (titlePlain && titleRaw) parts.push(`<p><strong>${titleRaw}</strong></p>`);
+    parts.push(`<div class="adc-accordion">`);
+    for (const cid of comp.componentChildren) {
+      parts.push(renderCollapsibleItem(cid, ctx));
+    }
+    parts.push(`</div>`);
+  } else if (comp.name === "accordionItem" || comp.name === "tabsItem") {
+    parts.push(renderCollapsibleItem(comp.id, ctx));
+  } else if (comp.name === "panel") {
+    if (titlePlain && titleRaw) parts.push(`<h3>${titleRaw}</h3>`);
+    parts.push(
+      `<aside class="adc-panel" style="border-left:4px solid #888;padding:.5em 1em;margin:.5em 0;background:#fafafa">`
+    );
+    collectInlineHtml(comp.id, ctx, parts);
+    parts.push(`</aside>`);
+  } else if (comp.name === "popupSingle" || comp.name === "popupBlock") {
+    if (titlePlain && titleRaw) parts.push(`<h3>${titleRaw}</h3>`);
+    parts.push(
+      `<details class="adc-popup"><summary>${escapeHtml(titlePlain || "Ver más")}</summary>`
+    );
+    collectInlineHtml(comp.id, ctx, parts);
+    parts.push(`</details>`);
+  } else {
+    // table or anything else fallback: preserve the previous inline-h3 +
+    // flat-text emission so we don't lose content.
+    if (titlePlain && titleRaw) parts.push(`<h3>${titleRaw}</h3>`);
+    collectInlineHtml(comp.id, ctx, parts);
+  }
+
   const node: NormalizedNode = {
     id: uniqueId("adc-grouped"),
     sourceType: `ADC.${comp.name}`,
     kind: "text",
     html: parts.join("\n")
   };
-  // Promote the meaningful title onto the node so the eXe block name is
-  // the panel/accordion/tabs label instead of the default "Texto".
   if (titlePlain) node.title = titlePlain;
   return node;
+}
+
+/** Render an `accordionItem` / `tabsItem` as a `<details>` block whose
+ *  `<summary>` carries the item's title and whose body is its descendants
+ *  collected inline. Used by `adaptContainerAsText` for accordion/tabs. */
+function renderCollapsibleItem(id: string, ctx: AdcCtx): string {
+  const comp = ctx.pkg.components.get(id);
+  if (!comp) return "";
+  const titleRaw = pickProp(comp, "titleHtml") ?? pickProp(comp, "title");
+  const titlePlain = titleRaw ? meaningfulTitle(stripHtml(titleRaw)) : undefined;
+  const summary = titlePlain || "Sección";
+  const body: string[] = [];
+  for (const cid of comp.componentChildren) collectInlineHtml(cid, ctx, body);
+  return `<details><summary>${escapeHtml(summary)}</summary>${body.join("\n")}</details>`;
 }
 
 function collectInlineHtml(id: string, ctx: AdcCtx, out: string[]): void {
@@ -893,12 +935,18 @@ function collectInlineHtml(id: string, ctx: AdcCtx, out: string[]): void {
       }
       break;
     }
-    case "qWording":
-    case "accordionItem":
-    case "tabsItem": {
+    case "qWording": {
       const title = pickProp(comp, "titleHtml") ?? pickProp(comp, "title");
       if (title) out.push(`<h4>${title}</h4>`);
       for (const cid of comp.componentChildren) collectInlineHtml(cid, ctx, out);
+      break;
+    }
+    case "accordionItem":
+    case "tabsItem": {
+      // Render nested collapsible items as `<details>` so they keep the
+      // accordion behaviour even when they appear *inside* another
+      // grouped block (e.g. a table cell).
+      out.push(renderCollapsibleItem(comp.id, ctx));
       break;
     }
     default: {
@@ -994,15 +1042,13 @@ function extractInlineText(id: string, ctx: AdcCtx): string {
 
 function adaptEssayActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
   const wording = extractWording(comp, ctx);
-  const prompt = wording || "Question";
-  const answers: NormalizedAnswer[] = [{ text: "" }];
   return {
     id: uniqueId("adc-essay"),
     sourceType: "ADC.qEssayActivity",
     kind: "question",
-    questionType: "blanks",
-    prompt,
-    answers
+    questionType: "casestudy",
+    prompt: wording || "<p>Pregunta abierta</p>",
+    answers: []
   };
 }
 
@@ -1164,19 +1210,19 @@ function adaptDrawActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
       if (bg) break;
     }
   }
-  const parts: string[] = [];
-  if (wording) parts.push(`<div>${wording}</div>`);
-  if (bg) {
-    parts.push(`<figure><img src="${escapeAttr(bg)}" alt="" /></figure>`);
-  }
-  parts.push(
-    `<p><em>${escapeHtml("Actividad de dibujo — eXeLearning no tiene un iDevice equivalente; arriba se muestra el lienzo original.")}</em></p>`
+  const history = wording || "<p>Actividad de dibujo</p>";
+  const activityParts: string[] = [];
+  if (bg) activityParts.push(`<figure><img src="${escapeAttr(bg)}" alt="" /></figure>`);
+  activityParts.push(
+    `<p><em>${escapeHtml("Actividad de dibujo — eXeLearning no captura el dibujo del alumnado. Imprimir la imagen superior o duplicar el lienzo en una herramienta externa.")}</em></p>`
   );
   return {
     id: uniqueId("adc-draw"),
     sourceType: "ADC.qDrawActivity",
-    kind: "text",
-    html: parts.join("\n")
+    kind: "question",
+    questionType: "casestudy",
+    prompt: history,
+    answers: [{ text: activityParts.join("\n") }]
   };
 }
 
@@ -1470,16 +1516,14 @@ function adaptLikertActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
  */
 function adaptSpeakingActivity(comp: AdcComponent, ctx: AdcCtx): NormalizedNode {
   const wording = extractWording(comp, ctx);
-  const parts: string[] = [];
-  if (wording) parts.push(`<div>${wording}</div>`);
-  parts.push(
-    `<p><em>${escapeHtml("Actividad de grabación de audio — eXeLearning no tiene un iDevice equivalente; el estudiante grabaría su respuesta en el original.")}</em></p>`
-  );
+  const note = `<p><em>${escapeHtml("Actividad de grabación de audio — eXeLearning no captura la grabación. El alumnado puede grabar su respuesta en una herramienta externa y compartirla aparte.")}</em></p>`;
   return {
     id: uniqueId("adc-speaking"),
     sourceType: "ADC.qSpeakingActivity",
-    kind: "text",
-    html: parts.join("\n")
+    kind: "question",
+    questionType: "casestudy",
+    prompt: wording || "<p>Actividad de hablar</p>",
+    answers: [{ text: note }]
   };
 }
 

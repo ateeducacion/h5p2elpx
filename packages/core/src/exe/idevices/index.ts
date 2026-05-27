@@ -1,4 +1,6 @@
 export { buildTextIdevice } from "./text.ts";
+export { buildCaseStudyIdevice } from "./casestudy.ts";
+export type { CaseStudyActivity, CaseStudyIdeviceInput } from "./casestudy.ts";
 export { buildUnsupportedIdevice } from "./unsupported.ts";
 export { buildTrueOrFalseIdevice } from "./trueorfalse.ts";
 export { buildFormIdevice, blanksToFill } from "./form.ts";
