@@ -3,6 +3,10 @@ import { readH5p } from "../h5p/read-h5p.ts";
 import { normalizePackage } from "../normalize/normalize.ts";
 import type { NormalizedNode, NormalizedSlideDeckNode } from "../normalize/nodes.ts";
 import { AssetCollector, buildUrlRewriters } from "../h5p/asset-extractor.ts";
+import { readAdc } from "../adc/read-adc.ts";
+import type { AdcPackage } from "../adc/types.ts";
+import { planAdcAssets } from "../adc/asset-plan.ts";
+import { normalizeAdcPackage } from "../normalize/normalize-adc.ts";
 import { rewriteUrls, sanitizeHtml, escapeHtml } from "../utils/html.ts";
 import { buildVideoEmbed } from "../utils/embed.ts";
 import { buildCpSlideHtml } from "./cp-slide-html.ts";
@@ -37,7 +41,13 @@ import {
 
 export type ConvertInput =
   | { kind: "h5p-bytes"; data: Uint8Array; filename: string }
-  | { kind: "h5p-package"; pkg: H5PPackage };
+  | { kind: "h5p-package"; pkg: H5PPackage }
+  /** Unknown ZIP — sniffed at convert time (ADC altia/scorm/xapi/local/native,
+   *  falling back to H5P). Use this from CLI/web entry points where the user
+   *  may drop either format. */
+  | { kind: "zip-bytes"; data: Uint8Array; filename: string }
+  | { kind: "adc-bytes"; data: Uint8Array; filename: string }
+  | { kind: "adc-package"; pkg: AdcPackage };
 
 export type ConvertResult = {
   elpx: Uint8Array;
@@ -73,23 +83,18 @@ export async function convert(
     project.pages.push(singlePage);
   }
 
-  for (const input of inputs) {
-    let pkg: H5PPackage;
-    if (input.kind === "h5p-bytes") {
-      pkg = await readH5p(input.data, {
-        sourceFilename: input.filename,
-        keepRawH5p: opts.includeOriginalH5p
-      });
-    } else {
-      pkg = input.pkg;
-    }
-    const sourceFile = pkg.sourceFilename ?? "package.h5p";
+  const adcResources: ElpxResource[] = [];
+
+  for (const rawInput of inputs) {
+    const resolved = await resolveInput(rawInput, opts);
+
+    const sourceFile = resolved.sourceFile;
     report.input.files.push(sourceFile);
 
     const activityReport: ConversionActivityReport = {
       sourceFile,
-      title: pkg.title,
-      mainLibrary: libraryRefString(pkg.mainLibrary),
+      title: resolved.title,
+      mainLibrary: resolved.mainLibrary,
       status: "converted",
       mappedTo: [],
       unsupportedItems: [],
@@ -97,20 +102,34 @@ export async function convert(
       errors: []
     };
 
-    // Plan all asset paths up-front so the URL rewriter resolves both
-    // htmlView and jsonProperties URLs consistently.
-    for (const asset of pkg.assets) assets.add(pkg, asset);
-    const perPkg = assets.perPackage(pkg);
-    const { forHtml, forJson } = buildUrlRewriters(perPkg);
+    let forHtml: (src: string) => string;
+    let forJson: (src: string) => string;
+    let ast: NormalizedNode;
 
-    if (opts.includeOriginalH5p && pkg.rawH5p) {
-      originals.push({
-        name: `${sourceFile.replace(/\.h5p$/i, "") || "package"}.h5p`,
-        data: pkg.rawH5p
-      });
+    if (resolved.kind === "h5p") {
+      const pkg = resolved.pkg;
+      // Plan all asset paths up-front so the URL rewriter resolves both
+      // htmlView and jsonProperties URLs consistently.
+      for (const asset of pkg.assets) assets.add(pkg, asset);
+      const perPkg = assets.perPackage(pkg);
+      const rewriters = buildUrlRewriters(perPkg);
+      forHtml = rewriters.forHtml;
+      forJson = rewriters.forJson;
+
+      if (opts.includeOriginalH5p && pkg.rawH5p) {
+        originals.push({
+          name: `${sourceFile.replace(/\.h5p$/i, "") || "package"}.h5p`,
+          data: pkg.rawH5p
+        });
+      }
+      ast = normalizePackage(pkg);
+    } else {
+      const plan = planAdcAssets(resolved.pkg);
+      adcResources.push(...plan.resources);
+      forHtml = plan.toUrl;
+      forJson = plan.toUrl;
+      ast = normalizeAdcPackage(resolved.pkg);
     }
-
-    const ast = normalizePackage(pkg);
 
     const ctx: BuildCtx = {
       forHtml,
@@ -125,7 +144,7 @@ export async function convert(
     } else {
       hostPage = {
         id: newPageId(),
-        title: pkg.title || sourceFile,
+        title: resolved.title || sourceFile,
         order: project.pages.length,
         blocks: []
       };
@@ -154,12 +173,15 @@ export async function convert(
     throw new Error(`Strict mode: conversion contains unsupported H5P content.\n${list}`);
   }
 
-  // Materialise the asset plan into the elpx resources list.
+  // Materialise the asset plan into the elpx resources list. H5P assets
+  // go through the AssetCollector (which dedupes across packages); ADC
+  // assets are pre-planned per package and appended verbatim.
   const resources: ElpxResource[] = assets.all().map((e) => ({
     path: e.outPath,
     data: e.data,
     mimeType: e.mimeType
   }));
+  resources.push(...adcResources);
   project.resources = resources;
 
   const elpx = await writeElpx(project, {
@@ -639,6 +661,70 @@ function emitUnsupported(library: string, hostPage: ElpxPage, _ctx: BuildCtx, re
       reason
     })
   );
+}
+
+type ResolvedH5p = {
+  kind: "h5p";
+  pkg: H5PPackage;
+  sourceFile: string;
+  title: string;
+  mainLibrary: string;
+};
+
+type ResolvedAdc = {
+  kind: "adc";
+  pkg: AdcPackage;
+  sourceFile: string;
+  title: string;
+  mainLibrary: string;
+};
+
+async function resolveInput(
+  input: ConvertInput,
+  opts: ConversionOptions
+): Promise<ResolvedH5p | ResolvedAdc> {
+  if (input.kind === "h5p-bytes") {
+    const pkg = await readH5p(input.data, {
+      sourceFilename: input.filename,
+      keepRawH5p: opts.includeOriginalH5p
+    });
+    return toResolvedH5p(pkg);
+  }
+  if (input.kind === "h5p-package") return toResolvedH5p(input.pkg);
+  if (input.kind === "adc-bytes") {
+    const pkg = await readAdc(input.data, { sourceFilename: input.filename });
+    if (!pkg) throw new Error(`Not a recognised ADC bundle: ${input.filename}`);
+    return toResolvedAdc(pkg);
+  }
+  if (input.kind === "adc-package") return toResolvedAdc(input.pkg);
+  // "zip-bytes" — sniff ADC first, fall back to H5P.
+  const adcPkg = await readAdc(input.data, { sourceFilename: input.filename });
+  if (adcPkg) return toResolvedAdc(adcPkg);
+  const h5p = await readH5p(input.data, {
+    sourceFilename: input.filename,
+    keepRawH5p: opts.includeOriginalH5p
+  });
+  return toResolvedH5p(h5p);
+}
+
+function toResolvedH5p(pkg: H5PPackage): ResolvedH5p {
+  return {
+    kind: "h5p",
+    pkg,
+    sourceFile: pkg.sourceFilename ?? "package.h5p",
+    title: pkg.title,
+    mainLibrary: libraryRefString(pkg.mainLibrary)
+  };
+}
+
+function toResolvedAdc(pkg: AdcPackage): ResolvedAdc {
+  return {
+    kind: "adc",
+    pkg,
+    sourceFile: pkg.sourceFilename ?? "package.zip",
+    title: pkg.title,
+    mainLibrary: `ADC.${pkg.flavor}`
+  };
 }
 
 export { TOOL_VERSION };

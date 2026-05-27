@@ -39,26 +39,29 @@ function findDefaultTemplate(): string | undefined {
   return candidates.find((p) => existsSync(p));
 }
 
+function toInput(filename: string, bytes: Uint8Array): ConvertInput {
+  const lower = filename.toLowerCase();
+  if (lower.endsWith(".h5p")) {
+    return { kind: "h5p-bytes", data: bytes, filename };
+  }
+  // .zip (and anything else) is sniffed at convert time so the user can
+  // drop either an H5P, an ADC native, or an altia/SCORM/xAPI bundle.
+  return { kind: "zip-bytes", data: bytes, filename };
+}
+
 async function gatherInputs(input: string): Promise<ConvertInput[]> {
   const s = await stat(input);
   if (s.isDirectory()) {
     const entries = await readdir(input);
-    const h5pFiles = entries.filter((e) => e.toLowerCase().endsWith(".h5p"));
+    const candidates = entries.filter((e) => {
+      const l = e.toLowerCase();
+      return l.endsWith(".h5p") || l.endsWith(".zip");
+    });
     return Promise.all(
-      h5pFiles.map(async (f) => ({
-        kind: "h5p-bytes" as const,
-        data: new Uint8Array(await readFile(join(input, f))),
-        filename: f
-      }))
+      candidates.map(async (f) => toInput(f, new Uint8Array(await readFile(join(input, f)))))
     );
   }
-  return [
-    {
-      kind: "h5p-bytes",
-      data: new Uint8Array(await readFile(input)),
-      filename: basename(input)
-    }
-  ];
+  return [toInput(basename(input), new Uint8Array(await readFile(input)))];
 }
 
 export async function runConvert(input: string, opts: CliOpts): Promise<void> {

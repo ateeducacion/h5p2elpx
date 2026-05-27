@@ -24,9 +24,10 @@ export function Dropzone({ onFiles, files, onRemove }: Props) {
     (e: React.DragEvent) => {
       e.preventDefault();
       setHover(false);
-      const dropped = Array.from(e.dataTransfer.files).filter((f) =>
-        f.name.toLowerCase().endsWith(".h5p")
-      );
+      const dropped = Array.from(e.dataTransfer.files).filter((f) => {
+        const n = f.name.toLowerCase();
+        return n.endsWith(".h5p") || n.endsWith(".zip");
+      });
       if (dropped.length) onFiles(dropped);
     },
     [onFiles]
@@ -86,7 +87,7 @@ export function Dropzone({ onFiles, files, onRemove }: Props) {
         <input
           ref={inputRef}
           type="file"
-          accept=".h5p"
+          accept=".h5p,.zip"
           multiple
           onChange={(e) => {
             const list = Array.from(e.target.files ?? []);
