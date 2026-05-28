@@ -758,10 +758,15 @@ function absorbHeadings(nodes: NormalizedNode[]): NormalizedNode[] {
       continue;
     }
     const next = nodes[i + 1];
-    if (!next || next.title) {
+    if (!next) {
       out.push(node);
       continue;
     }
+    // The heading text is explicit author metadata (a `<h2>`/`<h3>` block
+    // header above the content). It is always a more meaningful block
+    // name than an auto-derived alt/title carried by the next media node
+    // (e.g. an image whose `alt="Lectura"` got copied to `node.title`).
+    // Overwrite unconditionally.
     next.title = headingText;
     // Skip pushing the standalone heading node — its text is now the
     // block name of the next iDevice.

@@ -76,6 +76,24 @@ function pickBlockName(title: string | undefined): string {
   return DEFAULT_BLOCK_NAMES.has(title.trim()) ? "" : title;
 }
 
+/** When a block has multiple iDevices (e.g. a teacher-only note plus the
+ *  public content), the eXe block name should reflect the *public*
+ *  iDevice's title — that's what the learner reads. Look at non-teacher
+ *  iDevices first; if none has a meaningful title, fall back to scanning
+ *  every iDevice (including teacher-only ones). */
+function blockNameFor(block: ElpxBlock): string {
+  for (const idev of block.iDevices) {
+    if (idev.teacherOnly) continue;
+    const picked = pickBlockName(idev.title);
+    if (picked) return picked;
+  }
+  for (const idev of block.iDevices) {
+    const picked = pickBlockName(idev.title);
+    if (picked) return picked;
+  }
+  return "";
+}
+
 function pagProps(block: ElpxBlock) {
   return [
     kv("visibility", "true"),
@@ -149,8 +167,7 @@ export function buildContentXml(project: ElpxProject, opts: BuildContentXmlOptio
           .slice()
           .sort((a, b) => a.order - b.order)
           .map((block, bIdx) => {
-            const firstIdev = block.iDevices[0];
-            const blockName = pickBlockName(firstIdev?.title);
+            const blockName = blockNameFor(block);
             return {
               odePageId: page.id,
               odeBlockId: block.id,
