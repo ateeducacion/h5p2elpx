@@ -125,7 +125,11 @@ export async function validateElpx(data: Uint8Array): Promise<ValidationResult> 
           const v = attr.replace(/^[^"]*"|"$/g, "");
           if (v.startsWith("content/resources/")) referencedPaths.push(v);
         }
-        for (const m of jsonProps.matchAll(/\{\{context_path\}\}\/([^"'\s)]+)/g)) {
+        // Exclude backslash from the URL char class because jsonProperties
+        // is CDATA-wrapped JSON: the closing `"` in an inline `<img src="…">`
+        // becomes `\"`, so a naive `[^"]+` would swallow the backslash too
+        // and report bogus `…/foo.jpg\` "not found" warnings.
+        for (const m of jsonProps.matchAll(/\{\{context_path\}\}\/([^"'\s)\\]+)/g)) {
           referencedPaths.push(`content/resources/${m[1]}`);
         }
       }
