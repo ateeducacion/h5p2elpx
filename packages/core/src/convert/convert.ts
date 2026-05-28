@@ -422,13 +422,17 @@ function emitNode(
           activity: rewriteUrls(sanitizeHtml(a.text), ctx.forHtml),
           feedback: a.feedback ? rewriteUrls(sanitizeHtml(a.feedback), ctx.forHtml) : ""
         }));
+        // Derive a block title from the prompt when none was set so the
+        // editor shows a meaningful name (e.g. "¿Quién es el autor?")
+        // instead of empty — each open question gets its own block.
+        const derivedTitle = node.title || promptToTitle(node.prompt);
         addIdevice(
           block,
           buildCaseStudyIdevice({
             pageId: hostPage.id,
             blockId: block.id,
             order: 0,
-            title: node.title,
+            title: derivedTitle,
             history,
             activities
           })
@@ -877,6 +881,30 @@ function promoteAdcCover(project: ElpxProject, hostPage: ElpxPage): void {
   for (const p of project.pages) {
     if (!p.parentId) p.order = order++;
   }
+}
+
+/** Derive a short, human-readable block title from a question prompt:
+ *  strip HTML tags + decode common entities, then take the first sentence
+ *  or 70 chars. Returns empty when the prompt has no usable text. */
+function promptToTitle(prompt: string): string {
+  if (!prompt) return "";
+  const text = prompt
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;|&#160;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text) return "";
+  // Prefer the first sentence (stop at . ? ! ¿ ¡ … :) so titles stay tight.
+  const m = text.match(/^([^.!?…:¿¡]+[.!?…:])\s/);
+  let snippet = m ? m[1]!.trim() : text;
+  // Always cap; trailing ellipsis when truncated mid-word.
+  if (snippet.length > 70) snippet = `${snippet.slice(0, 67).trimEnd()}…`;
+  return snippet;
 }
 
 /** Treat html as empty when stripping tags + entities yields no glyphs and
