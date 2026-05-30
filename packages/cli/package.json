@@ -20,6 +20,6 @@
   },
   "dependencies": {
     "@ateeducacion/h5p2elpx-core": "0.0.0",
-    "commander": "^14.0.0"
+    "commander": "^15.0.0"
   }
 }
