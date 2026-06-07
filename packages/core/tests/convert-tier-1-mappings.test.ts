@@ -85,34 +85,34 @@ describe("convert H5P.AdventCalendar", () => {
         ]
       }
     });
-
-    describe("convert H5P.MemoryGame", () => {
-      it("uses the memory runtime mode and rewrites card images", async () => {
-        const bytes = await makeH5pZip({
-          mainLibrary: "H5P.MemoryGame",
-          content: {
-            cards: [
-              {
-                description: "Berry",
-                image: { path: "images/berry.jpg" }
-              }
-            ]
-          },
-          extras: { "content/images/berry.jpg": PNG_1PX }
-        });
-        const result = await convert([{ kind: "h5p-bytes", data: bytes, filename: "memory.h5p" }]);
-        const flat = result.project.pages.flatMap((p) => p.blocks.flatMap((b) => b.iDevices));
-        const fc = flat.find((i) => i.typeName === "flipcards")!;
-        const data = decodeFlipcards(fc);
-        expect(data.type).toBe(3);
-        expect(data.cardsGame[0].url).toBe("{{context_path}}/berry.jpg");
-      });
-    });
     const fc = idevices.find((i) => i.typeName === "flipcards")!;
     const data = decodeFlipcards(fc);
     expect(data.cardsGame).toHaveLength(2);
     expect(data.cardsGame[0].eText).toBe("Day 1");
     expect(data.cardsGame[0].eTextBk).toContain("Day one");
+  });
+});
+
+describe("convert H5P.MemoryGame", () => {
+  it("uses the memory runtime mode and rewrites card images", async () => {
+    const bytes = await makeH5pZip({
+      mainLibrary: "H5P.MemoryGame",
+      content: {
+        cards: [
+          {
+            description: "Berry",
+            image: { path: "images/berry.jpg" }
+          }
+        ]
+      },
+      extras: { "content/images/berry.jpg": PNG_1PX }
+    });
+    const result = await convert([{ kind: "h5p-bytes", data: bytes, filename: "memory.h5p" }]);
+    const flat = result.project.pages.flatMap((p) => p.blocks.flatMap((b) => b.iDevices));
+    const fc = flat.find((i) => i.typeName === "flipcards")!;
+    const data = decodeFlipcards(fc);
+    expect(data.type).toBe(3);
+    expect(data.cardsGame[0].url).toBe("{{context_path}}/berry.jpg");
   });
 });
 
