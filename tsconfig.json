@@ -15,13 +15,13 @@
     "declaration": true,
     "isolatedModules": true,
     "allowImportingTsExtensions": true,
+    "allowArbitraryExtensions": true,
     "noEmit": true,
     "jsx": "react-jsx",
     "types": ["bun"],
-    "baseUrl": ".",
     "paths": {
-      "@ateeducacion/h5p2elpx-core": ["packages/core/src/index.ts"],
-      "@ateeducacion/h5p2elpx-core/*": ["packages/core/src/*"]
+      "@ateeducacion/h5p2elpx-core": ["./packages/core/src/index.ts"],
+      "@ateeducacion/h5p2elpx-core/*": ["./packages/core/src/*"]
     }
   },
   "include": ["packages/*/src/**/*", "packages/*/tests/**/*"]
