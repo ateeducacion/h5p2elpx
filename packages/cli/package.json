@@ -19,7 +19,7 @@
     "h5p2elpx": "src/index.ts"
   },
   "dependencies": {
-    "@ateeducacion/h5p2elpx-core": "0.0.0",
+    "@ateeducacion/h5p2elpx-core": "0.1.0",
     "commander": "^15.0.0"
   }
 }

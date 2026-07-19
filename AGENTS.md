@@ -88,11 +88,17 @@ A `.h5p` is a ZIP with:
   → packages/core/src/normalize/adapters/*     (one per H5P library; registry)
   → Normalized AST (packages/core/src/normalize/nodes.ts)
   → packages/core/src/convert/convert.ts       (layout planner + dispatch)
+       convertToElpxProject()  → ElpxProject + ConversionReport
+       convert()               → project stage + writeElpx()
+       importH5pAsElpx()       → H5P-only browser facade (requires templateElpx)
   → packages/core/src/exe/idevices/*           (one writer per typeName; registry)
   → packages/core/src/exe/content-xml.ts       (real ODE format)
   → packages/core/src/exe/elpx-writer.ts       (clone template + inject content.xml)
   → .elpx + JSON ConversionReport
 ```
+
+Published package entry points are compiled ESM under `packages/core/dist/`
+(`make core-build`). See `docs/library-api.md` for the stable browser API.
 
 Two registries are the only places that know about specific libraries:
 

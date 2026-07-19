@@ -1,8 +1,9 @@
 {
   "name": "@ateeducacion/h5p2elpx-core",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "license": "AGPL-3.0-or-later",
+  "description": "Browser-safe H5P/ADC → eXeLearning .elpx conversion library",
   "repository": {
     "type": "git",
     "url": "https://github.com/ateeducacion/h5p2elpx.git",
@@ -12,14 +13,23 @@
     "registry": "https://npm.pkg.github.com",
     "access": "public"
   },
-  "main": "src/index.ts",
-  "module": "src/index.ts",
-  "types": "src/index.ts",
-  "files": [
-    "src"
-  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && bun run scripts/fix-dts-extensions.ts",
+    "prepack": "bun run build"
   },
   "dependencies": {
     "jszip": "^3.10.1",

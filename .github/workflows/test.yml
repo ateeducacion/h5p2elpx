@@ -21,6 +21,8 @@ jobs:
         run: bunx tsc --noEmit
       - name: Tests
         run: bunx vitest run
+      - name: Build core package (ESM + declarations)
+        run: bun run --cwd packages/core build
 
   e2e-exelearning-compat:
     runs-on: ubuntu-latest

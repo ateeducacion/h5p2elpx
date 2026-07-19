@@ -37,8 +37,26 @@ export * from "./exe/idevices/index.ts";
 export { newOdeId } from "./exe/ids.ts";
 
 export * from "./convert/conversion-options.ts";
-export { convert } from "./convert/convert.ts";
-export type { ConvertInput, ConvertResult } from "./convert/convert.ts";
+export {
+  convert,
+  convertToElpxProject,
+  convertH5pToElpxProject
+} from "./convert/convert.ts";
+export type {
+  ConvertInput,
+  ConvertResult,
+  ConvertToProjectResult
+} from "./convert/convert.ts";
+export {
+  importH5pAsElpx,
+  H5pImportError,
+  H5P_IMPORT_DEFAULTS
+} from "./convert/import-h5p.ts";
+export type {
+  H5pImportOptions,
+  H5pImportResult,
+  H5pImportErrorCode
+} from "./convert/import-h5p.ts";
 export { buildCompatibilityPreview } from "./convert/conversion-plan.ts";
 export type { CompatibilityEntry } from "./convert/conversion-plan.ts";
 

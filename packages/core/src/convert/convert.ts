@@ -56,10 +56,39 @@ export type ConvertResult = {
   project: ElpxProject;
 };
 
-export async function convert(
+/**
+ * Intermediate conversion result: a fully built `ElpxProject` and report
+ * without writing an `.elpx` ZIP. Shared by H5P and ADC inputs.
+ *
+ * Use {@link convert} when you need `.elpx` bytes, or
+ * {@link importH5pAsElpx} for the stable browser H5P import API.
+ */
+export type ConvertToProjectResult = {
+  project: ElpxProject;
+  report: ConversionReport;
+  /**
+   * Original H5P package bytes to embed under
+   * `content/resources/original/` when writing the ZIP. Only populated
+   * when `includeOriginalH5p` is true.
+   */
+  originalH5pPackages?: Array<{ name: string; data: Uint8Array }>;
+  /** Options after merging with {@link DEFAULT_OPTIONS}. */
+  options: ConversionOptions;
+};
+
+/**
+ * Build an `ElpxProject` and `ConversionReport` from H5P and/or ADC inputs
+ * without writing an `.elpx` ZIP.
+ *
+ * This is the shared lower-level pipeline for both H5P and ADC. The
+ * high-level browser API {@link importH5pAsElpx} wraps it with H5P-only
+ * defaults and template requirements. Prefer this name over the H5P-only
+ * alias when the host may also feed ADC bundles.
+ */
+export async function convertToElpxProject(
   inputs: ConvertInput[],
   partial: Partial<ConversionOptions> = {}
-): Promise<ConvertResult> {
+): Promise<ConvertToProjectResult> {
   const opts: ConversionOptions = { ...DEFAULT_OPTIONS, ...partial };
   const report = emptyReport([]);
   const assets = new AssetCollector();
@@ -192,14 +221,45 @@ export async function convert(
   resources.push(...adcResources);
   project.resources = resources;
 
-  const elpx = await writeElpx(project, {
-    templateBytes: opts.templateBytes,
+  return {
+    project,
+    report,
     originalH5pPackages: opts.includeOriginalH5p ? originals : undefined,
-    theme: opts.theme,
-    enableSearch: opts.enableSearch,
-    enableMathJax: opts.enableMathJax
+    options: opts
+  };
+}
+
+/**
+ * Alias of {@link convertToElpxProject} kept for issue #34 naming.
+ * Despite the H5P-oriented name, this function accepts the same mixed
+ * H5P/ADC {@link ConvertInput} union as the generic pipeline.
+ */
+export const convertH5pToElpxProject = convertToElpxProject;
+
+/**
+ * Full conversion: build the project then write an `.elpx` ZIP.
+ * Compatibility wrapper over {@link convertToElpxProject} + {@link writeElpx}.
+ * Template bytes remain optional here (bare ZIP fallback) so CLI/web
+ * callers keep their existing behaviour; the browser H5P wrapper requires
+ * a template explicitly.
+ */
+export async function convert(
+  inputs: ConvertInput[],
+  partial: Partial<ConversionOptions> = {}
+): Promise<ConvertResult> {
+  const conversion = await convertToElpxProject(inputs, partial);
+  const elpx = await writeElpx(conversion.project, {
+    templateBytes: conversion.options.templateBytes,
+    originalH5pPackages: conversion.originalH5pPackages,
+    theme: conversion.options.theme,
+    enableSearch: conversion.options.enableSearch,
+    enableMathJax: conversion.options.enableMathJax
   });
-  return { elpx, report, project };
+  return {
+    elpx,
+    report: conversion.report,
+    project: conversion.project
+  };
 }
 
 type BuildCtx = {
