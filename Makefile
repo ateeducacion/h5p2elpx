@@ -28,6 +28,10 @@ fix: check-bun
 typecheck: check-bun
 	bunx tsc --noEmit
 
+# Build the browser-consumable core package (ESM + declarations)
+core-build: check-bun
+	bun run --cwd packages/core build
+
 # Run the test suite once
 test: check-bun
 	bunx vitest run
@@ -65,11 +69,12 @@ up: check-bun
 web-build: check-bun
 	bun run --cwd packages/web build
 
-# CI / pre-push gate: typecheck + lint + tests
+# CI / pre-push gate: typecheck + lint + tests + core package build
 ci: check-bun
 	bunx tsc --noEmit
 	bunx biome check .
 	bunx vitest run
+	bun run --cwd packages/core build
 
 help:
 	@echo "h5p2elpx — make targets"
@@ -78,6 +83,7 @@ help:
 	@echo "  make lint        Run biome lint (read-only)"
 	@echo "  make fix         Auto-fix lint + formatting"
 	@echo "  make typecheck   Run tsc --noEmit"
+	@echo "  make core-build  Build packages/core to dist/ (ESM + .d.ts)"
 	@echo "  make test        Run vitest once"
 	@echo "  make test-watch  Run vitest in watch mode"
 	@echo "  make fetch-editor   Download pinned eXeLearning static editor for e2e"
@@ -89,4 +95,4 @@ help:
 	@echo "  make web-build   Build the production web bundle"
 	@echo "  make ci          Run the same gate CI runs"
 
-.PHONY: check-bun install lint fix typecheck test test-watch fetch-editor test-e2e test-e2e-smoke test-e2e-ui template up web-build ci help
+.PHONY: check-bun install lint fix typecheck core-build test test-watch fetch-editor test-e2e test-e2e-smoke test-e2e-ui template up web-build ci help

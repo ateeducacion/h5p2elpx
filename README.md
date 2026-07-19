@@ -112,6 +112,100 @@ bun run --cwd packages/web build        # production build → packages/web/dist
 Deployed automatically to GitHub Pages on every push to `main` via
 `.github/workflows/pages.yml`.
 
+## Library API (browser / eXeLearning)
+
+Use `@ateeducacion/h5p2elpx-core` when embedding conversion inside another
+app (for example eXeLearning **File → Import**). The package is isomorphic:
+no Node APIs, no filesystem paths, no CLI subprocesses.
+
+```bash
+echo "@ateeducacion:registry=https://npm.pkg.github.com" >> .npmrc
+# auth token with read:packages if the registry requires it
+bun add @ateeducacion/h5p2elpx-core
+```
+
+```ts
+import {
+  importH5pAsElpx,
+  H5pImportError,
+  type H5pImportResult
+} from "@ateeducacion/h5p2elpx-core";
+
+// Host supplies a template matching its eXeLearning runtime version.
+const templateElpx = new Uint8Array(
+  await fetch("/templates/template.elpx").then((r) => r.arrayBuffer())
+);
+
+async function onH5pFile(file: File): Promise<void> {
+  try {
+    const { elpx, report }: H5pImportResult = await importH5pAsElpx(
+      await file.arrayBuffer(),
+      {
+        filename: file.name,
+        templateElpx
+        // defaults: layout "preserve", unsupported "keep",
+        // includeOriginalH5p true, strict false, search/mathjax off
+      }
+    );
+
+    const blob = new Blob([elpx], { type: "application/zip" });
+    // hand blob to eXeLearning's .elpx importer, or trigger a download
+    console.log(report.summary);
+  } catch (err) {
+    if (err instanceof H5pImportError) {
+      // err.code: INVALID_H5P | TEMPLATE_REQUIRED | UNSUPPORTED_CONTENT | …
+      console.error(err.code, err.message);
+    }
+    throw err;
+  }
+}
+```
+
+| Piece | Role |
+| --- | --- |
+| `importH5pAsElpx(data, options)` | High-level H5P → `.elpx` bytes API for browsers |
+| `convertToElpxProject(inputs, options)` | Lower-level project build (H5P **and** ADC); no ZIP |
+| `convert(inputs, options)` | Full conversion (project + ZIP); CLI/web compatibility |
+| `writeElpx(project, options)` | Write an `.elpx` ZIP from a project (optional template) |
+
+**Template handling (required for `importH5pAsElpx`):** pass `templateElpx`
+bytes of an eXeLearning `.elpx` that matches the host runtime (themes, libs,
+idevice scripts). Without a real template the package would not open cleanly
+in eXeLearning. Rebuild the repo template with `make template` / see
+`fixtures/elpx/template.elpx`.
+
+**Defaults for `importH5pAsElpx` only** (CLI/web keep their own defaults):
+
+| Option | Default |
+| --- | --- |
+| `layout` | `"preserve"` |
+| `unsupported` | `"keep"` |
+| `includeOriginalH5p` | `true` |
+| `strict` | `false` |
+| `enableSearch` | `false` |
+| `enableMathJax` | `false` |
+
+**Notes**
+
+- Accepts `Uint8Array` or `ArrayBuffer`; returns `.elpx` as `Uint8Array`.
+- Conversion is entirely in memory (JSZip). Large H5P packages peak at
+  roughly several times the uncompressed size.
+- Non-strict mode returns a populated `ConversionReport` for partial
+  conversions; strict mode throws `H5pImportError` with code
+  `UNSUPPORTED_CONTENT`.
+- Mixed H5P/ADC workflows should keep using generic `convert()` (as the web
+  app does). Use `importH5pAsElpx` for H5P-only host integration.
+- Future work: direct project-model → eXe Yjs import without an intermediate
+  `.elpx` ZIP.
+
+Full reference: [`docs/library-api.md`](docs/library-api.md).
+
+Build the published artifacts locally:
+
+```bash
+make core-build   # → packages/core/dist (ESM + .d.ts)
+```
+
 ## Report a broken H5P file
 
 If an `.h5p` file does not convert correctly, open a GitHub issue with the

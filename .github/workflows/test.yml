@@ -21,6 +21,8 @@ jobs:
         run: bunx tsc --noEmit
       - name: Tests
         run: bunx vitest run
+      - name: Build core package (ESM + declarations)
+        run: bun run --cwd packages/core build
 
   e2e-exelearning-compat:
     runs-on: ubuntu-latest
@@ -36,6 +38,10 @@ jobs:
       - name: Install Playwright Chromium
         run: bunx playwright install --with-deps chromium
       - name: E2E (compat)
+        env:
+          # Full-template .elpx builds for large fixtures (interactive-book, etc.)
+          # need more than the default ~4 GB Node heap on ubuntu-latest.
+          NODE_OPTIONS: --max-old-space-size=8192
         run: bun run test:e2e
       - name: Upload Playwright report
         if: ${{ failure() }}
