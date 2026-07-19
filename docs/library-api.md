@@ -5,7 +5,7 @@ Browser-safe conversion library for embedding H5P import into eXeLearning
 
 ## Install
 
-Published to GitHub Packages:
+Published to **GitHub Packages** as `@ateeducacion/h5p2elpx-core`:
 
 ```bash
 echo "@ateeducacion:registry=https://npm.pkg.github.com" >> .npmrc
@@ -14,8 +14,31 @@ bun add @ateeducacion/h5p2elpx-core
 # or: npm install @ateeducacion/h5p2elpx-core
 ```
 
+The token needs at least `read:packages` (and SSO authorization if the org
+requires it). For CI installs from a private package, use
+`GITHUB_TOKEN` / a PAT with `read:packages`.
+
 The package exports compiled ESM under `dist/` with TypeScript declarations.
 Production `exports` never point at TypeScript source.
+
+### Publishing (maintainers)
+
+Releases are published by `.github/workflows/publish-packages.yml` when a
+GitHub Release is published (or via workflow_dispatch with a version).
+
+That workflow:
+
+1. Sets versions on root / core / cli / web
+2. Builds `packages/core` to `dist/`
+3. Verifies exports point at compiled files
+4. Publishes `@ateeducacion/h5p2elpx-core` then `@ateeducacion/h5p2elpx` to
+   `https://npm.pkg.github.com` with `packages: write`
+
+```bash
+# Manual publish trigger (example)
+gh workflow run publish-packages.yml -f version=0.1.0
+# or create a GitHub Release tagged v0.1.0
+```
 
 ## Public surface
 

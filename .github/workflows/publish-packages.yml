@@ -30,7 +30,9 @@ jobs:
       - run: bunx biome check .
       - run: bunx tsc --noEmit
       - run: bunx vitest run
+
       - name: Set package versions from release
+        id: version
         shell: bash
         run: |
           if [[ "${{ github.event_name }}" == "release" ]]; then
@@ -44,6 +46,8 @@ jobs:
             exit 1
           fi
 
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
           npm version "$VERSION" --no-git-tag-version
           npm version "$VERSION" --no-git-tag-version --prefix packages/core
           npm version "$VERSION" --no-git-tag-version --prefix packages/cli
@@ -51,13 +55,68 @@ jobs:
           npm pkg set "dependencies.@ateeducacion/h5p2elpx-core=$VERSION" --prefix packages/cli
           npm pkg set "dependencies.@ateeducacion/h5p2elpx-core=$VERSION" --prefix packages/web
           perl -0pi -e "s/export const TOOL_VERSION = \"[^\"]+\";/export const TOOL_VERSION = \"$VERSION\";/" packages/core/src/version.ts
-      - name: Publish core
+
+      - name: Build core package (ESM + declarations)
+        run: bun run --cwd packages/core build
+
+      - name: Verify core package is publishable
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f packages/core/dist/index.js
+          test -f packages/core/dist/index.d.ts
+          # Ensure production exports do not point at TypeScript sources
+          node -e '
+            const p = require("./packages/core/package.json");
+            const bad = (s) => typeof s === "string" && s.includes("src/") && s.endsWith(".ts");
+            if (bad(p.main) || bad(p.module) || bad(p.types)) {
+              console.error("core package still points at src/*.ts", p.main, p.types);
+              process.exit(1);
+            }
+            const exp = p.exports && p.exports["."];
+            if (exp && (bad(exp.import) || bad(exp.types) || bad(exp.default))) {
+              console.error("core exports still point at src/*.ts", exp);
+              process.exit(1);
+            }
+            console.log("core package.json exports OK");
+          '
+          # Dry-run pack (ignore lifecycle; dist already built)
+          npm pack --dry-run --ignore-scripts --prefix packages/core
+
+      - name: Configure npm for GitHub Packages
+        shell: bash
+        run: |
+          echo "@ateeducacion:registry=https://npm.pkg.github.com" > ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> ~/.npmrc
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish @ateeducacion/h5p2elpx-core
         working-directory: packages/core
-        run: npm publish --access public
+        run: npm publish --access public --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Publish CLI
+
+      - name: Publish @ateeducacion/h5p2elpx (CLI)
         working-directory: packages/cli
-        run: npm publish --access public
+        run: npm publish --access public --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          {
+            echo "## Published to GitHub Packages"
+            echo ""
+            echo "- \`@ateeducacion/h5p2elpx-core@${VERSION}\`"
+            echo "- \`@ateeducacion/h5p2elpx@${VERSION}\`"
+            echo ""
+            echo "Install:"
+            echo '```bash'
+            echo 'echo "@ateeducacion:registry=https://npm.pkg.github.com" >> .npmrc'
+            echo "echo \"//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}\" >> .npmrc"
+            echo "npm install @ateeducacion/h5p2elpx-core@${VERSION}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

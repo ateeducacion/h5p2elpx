@@ -32,9 +32,22 @@ export class HarnessPage {
   async openH5p(h5pName: string): Promise<{ pageCount: number; projectId: string }> {
     const built = await buildElpxFromH5p(h5pName);
     await this.navigate();
+    // Transfer as base64. Avoid Array.from(bytes) (millions of JS numbers → OOM on
+    // CI) and avoid raw ArrayBuffer arguments (Playwright can corrupt large
+    // binary payloads across the evaluate boundary → "invalid zip data").
+    const base64 = Buffer.from(
+      built.bytes.buffer,
+      built.bytes.byteOffset,
+      built.bytes.byteLength
+    ).toString("base64");
     const result = await this.page.evaluate(
-      async ({ bytes, filename }) => await window.openElpx(bytes, filename),
-      { bytes: Array.from(built.bytes), filename: built.filename }
+      async ({ base64, filename }) => {
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        return await window.openElpx(bytes.buffer, filename);
+      },
+      { base64, filename: built.filename }
     );
     if (result.open.type !== "OPEN_FILE_SUCCESS") {
       throw new Error(

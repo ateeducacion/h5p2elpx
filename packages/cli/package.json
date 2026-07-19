@@ -3,11 +3,23 @@
   "version": "0.0.0",
   "type": "module",
   "license": "AGPL-3.0-or-later",
+  "description": "CLI to convert H5P/ADC packages into eXeLearning .elpx projects",
+  "homepage": "https://github.com/ateeducacion/h5p2elpx#readme",
+  "bugs": {
+    "url": "https://github.com/ateeducacion/h5p2elpx/issues"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ateeducacion/h5p2elpx.git",
+    "url": "git+https://github.com/ateeducacion/h5p2elpx.git",
     "directory": "packages/cli"
   },
+  "keywords": [
+    "h5p",
+    "exelearning",
+    "elpx",
+    "cli",
+    "converter"
+  ],
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",
     "access": "public"
@@ -21,5 +33,8 @@
   "dependencies": {
     "@ateeducacion/h5p2elpx-core": "0.1.0",
     "commander": "^15.0.0"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
