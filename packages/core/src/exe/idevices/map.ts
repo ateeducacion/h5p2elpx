@@ -53,20 +53,36 @@ function normalizeCoordinate(value: number | undefined): number {
 
 function buildPoint(p: MapPoint): Record<string, unknown> {
   const id = nextPointId();
-  const iconType = p.iconType ?? 0;
+  const hasRectangle = Number.isFinite(p.x1) && Number.isFinite(p.y1);
+  const iconType = p.iconType ?? (hasRectangle ? 1 : 0);
   const type = p.type ?? 0;
   const title = p.title ?? "";
+  const x = normalizeCoordinate(p.x);
+  const y = normalizeCoordinate(p.y);
+  const x1 = normalizeCoordinate(p.x1);
+  const y1 = normalizeCoordinate(p.y1);
+  const points =
+    iconType === 1
+      ? [
+          { x: Math.min(x, x1), y: Math.min(y, y1) },
+          { x: Math.max(x, x1), y: Math.min(y, y1) },
+          { x: Math.max(x, x1), y: Math.max(y, y1) },
+          { x: Math.min(x, x1), y: Math.max(y, y1) }
+        ]
+      : iconType === 2 && p.vertices
+        ? p.vertices
+        : [];
   return {
     id,
     title,
     type,
     url: "",
     video: "",
-    x: normalizeCoordinate(p.x),
-    y: normalizeCoordinate(p.y),
-    x1: normalizeCoordinate(p.x1),
-    y1: normalizeCoordinate(p.y1),
-    points: iconType === 2 && p.vertices ? p.vertices : [],
+    x,
+    y,
+    x1,
+    y1,
+    points,
     pointsd: [],
     footer: "",
     author: "",

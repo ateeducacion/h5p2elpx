@@ -17,14 +17,21 @@ type RawHotspot = {
  * `selectsGame` quiz mode can grade clicks.
  */
 export function adapt(content: any): NormalizedNode {
-  // Some authoring tools nest the data under `multipleHotspotQuestion`.
-  const root = content?.multipleHotspotQuestion ?? content;
+  // Some authoring tools nest the data under a library-specific group.
+  const isImageMultipleHotspotQuestion = content?.imageMultipleHotspotQuestion != null;
+  const root = content?.multipleHotspotQuestion ?? content?.imageMultipleHotspotQuestion ?? content;
   const imgPath =
-    typeof root?.backgroundImageSettings?.path === "string"
-      ? root.backgroundImageSettings.path
-      : typeof root?.image?.path === "string"
-        ? root.image.path
-        : "";
+    typeof root?.backgroundImageSettings?.backgroundImage?.path === "string"
+      ? root.backgroundImageSettings.backgroundImage.path
+      : typeof root?.backgroundImageSettings?.path === "string"
+        ? root.backgroundImageSettings.path
+        : typeof root?.image?.path === "string"
+          ? root.image.path
+          : "";
+  const title =
+    typeof root?.backgroundImageSettings?.questionTitle === "string"
+      ? root.backgroundImageSettings.questionTitle
+      : undefined;
   const taskDescription =
     typeof root?.hotspotSettings?.taskDescription === "string"
       ? root.hotspotSettings.taskDescription
@@ -57,9 +64,11 @@ export function adapt(content: any): NormalizedNode {
 
   return {
     id: uniqueId("mhs"),
-    sourceType: machineName,
+    sourceType: isImageMultipleHotspotQuestion ? "H5P.ImageMultipleHotspotQuestion" : machineName,
     kind: "hotspot-map",
+    title,
     imageUrl: imgPath,
+    imageAlt: title,
     instructions: taskDescription,
     isQuiz: true,
     points

@@ -722,7 +722,7 @@ function emitNode(
           title: node.title,
           instructions: node.instructions,
           imageUrl: ctx.forHtml(node.imageUrl),
-          imageAlt: node.title,
+          imageAlt: node.imageAlt ?? node.title,
           isQuiz: node.isQuiz,
           points: node.points
         })
