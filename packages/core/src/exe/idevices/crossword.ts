@@ -1,3 +1,4 @@
+import { translateGameMessages } from "./i18n/translate-game-messages.ts";
 import type { ElpxIdevice } from "../model.ts";
 import { newIdeviceId } from "../ids.ts";
 import { encryptGameData } from "../encrypt.ts";
@@ -15,6 +16,7 @@ export type CrosswordEntry = {
 };
 
 export type CrosswordInput = {
+  language?: string;
   pageId: string;
   blockId: string;
   order: number;
@@ -89,7 +91,7 @@ export function buildCrosswordIdevice(input: CrosswordInput): ElpxIdevice {
     time: "0",
     authorBackImage: "",
     id,
-    msgs: CROSSWORD_DEFAULT_MSGS
+    msgs: translateGameMessages(CROSSWORD_DEFAULT_MSGS, input.language)
   };
   const dataEncoded = encryptGameData(JSON.stringify(gameData));
 

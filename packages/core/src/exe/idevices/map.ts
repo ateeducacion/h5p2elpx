@@ -1,3 +1,4 @@
+import { translateGameMessages } from "./i18n/translate-game-messages.ts";
 import type { ElpxIdevice } from "../model.ts";
 import { newIdeviceId } from "../ids.ts";
 import { escapeHtml } from "../../utils/html.ts";
@@ -26,6 +27,7 @@ export type MapPoint = {
 };
 
 export type MapInput = {
+  language?: string;
   pageId: string;
   blockId: string;
   order: number;
@@ -209,7 +211,7 @@ export function buildMapIdevice(input: MapInput): ElpxIdevice {
     order: "",
     hideScoreBar: false,
     hideAreas: false,
-    msgs: MAP_DEFAULT_MSGS
+    msgs: translateGameMessages(MAP_DEFAULT_MSGS, input.language)
   };
 
   const instructionsDiv = input.instructions

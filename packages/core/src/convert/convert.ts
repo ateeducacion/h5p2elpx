@@ -394,6 +394,7 @@ function emitNode(
         addIdevice(
           block,
           buildTrueOrFalseIdevice({
+            language: project.language,
             pageId: hostPage.id,
             blockId: block.id,
             order: 0,
@@ -437,6 +438,7 @@ function emitNode(
         addIdevice(
           block,
           buildFormIdevice({
+            language: project.language,
             pageId: hostPage.id,
             blockId: block.id,
             order: 0,
@@ -463,6 +465,7 @@ function emitNode(
         addIdevice(
           block,
           buildFormIdevice({
+            language: project.language,
             pageId: hostPage.id,
             blockId: block.id,
             order: 0,
@@ -615,6 +618,7 @@ function emitNode(
       addIdevice(
         block,
         buildCrosswordIdevice({
+          language: project.language,
           pageId: hostPage.id,
           blockId: block.id,
           order: 0,
@@ -658,6 +662,7 @@ function emitNode(
       addIdevice(
         block,
         buildFlipcardsIdevice({
+          language: project.language,
           pageId: hostPage.id,
           blockId: block.id,
           order: 0,
@@ -676,6 +681,7 @@ function emitNode(
       addIdevice(
         block,
         buildBeforeAfterIdevice({
+          language: project.language,
           pageId: hostPage.id,
           blockId: block.id,
           order: 0,
@@ -716,6 +722,7 @@ function emitNode(
       addIdevice(
         block,
         buildMapIdevice({
+          language: project.language,
           pageId: hostPage.id,
           blockId: block.id,
           order: 0,
@@ -735,6 +742,7 @@ function emitNode(
       addIdevice(
         block,
         buildWordSearchIdevice({
+          language: project.language,
           pageId: hostPage.id,
           blockId: block.id,
           order: 0,

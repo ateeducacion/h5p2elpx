@@ -1,3 +1,4 @@
+import { translateGameMessages } from "./i18n/translate-game-messages.ts";
 import type { ElpxIdevice } from "../model.ts";
 import { newIdeviceId } from "../ids.ts";
 import { escapeHtml } from "../../utils/html.ts";
@@ -15,6 +16,7 @@ export type FlipcardEntry = {
 };
 
 export type FlipcardsInput = {
+  language?: string;
   pageId: string;
   blockId: string;
   order: number;
@@ -194,7 +196,7 @@ export function buildFlipcardsIdevice(input: FlipcardsInput): ElpxIdevice {
     evaluation: false,
     evaluationID: "",
     imgCard: "",
-    msgs: FLIPCARDS_DEFAULT_MSGS
+    msgs: translateGameMessages(FLIPCARDS_DEFAULT_MSGS, input.language)
   };
   const dataGameJson = stringifyForDataGame(gameData);
 

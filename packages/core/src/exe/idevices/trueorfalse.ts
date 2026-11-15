@@ -1,3 +1,4 @@
+import { translateGameMessages } from "./i18n/translate-game-messages.ts";
 import type { ElpxIdevice } from "../model.ts";
 import { newIdeviceId } from "../ids.ts";
 import { TRUEORFALSE_MSGS_EN } from "./i18n/trueorfalse-en.ts";
@@ -14,6 +15,7 @@ export type TrueOrFalseQuestion = {
 };
 
 export type TrueOrFalseInput = {
+  language?: string;
   pageId: string;
   blockId: string;
   order: number;
@@ -42,7 +44,7 @@ export function buildTrueOrFalseIdevice(input: TrueOrFalseInput): ElpxIdevice {
     typeGame: "TrueOrFalse",
     eXeGameInstructions: input.instructions ?? "",
     eXeIdeviceTextAfter: "",
-    msgs: { ...TRUEORFALSE_MSGS_EN },
+    msgs: translateGameMessages(TRUEORFALSE_MSGS_EN, input.language),
     questionsRandom: false,
     percentageQuestions: 100,
     isTest: false,
