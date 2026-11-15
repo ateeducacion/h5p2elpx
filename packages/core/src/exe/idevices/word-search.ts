@@ -1,9 +1,11 @@
+import { translateGameMessages } from "./i18n/translate-game-messages.ts";
 import type { ElpxIdevice } from "../model.ts";
 import { newIdeviceId } from "../ids.ts";
 import { encryptGameData } from "../encrypt.ts";
 import { CROSSWORD_DEFAULT_MSGS } from "./crossword-i18n.ts";
 
 export type WordSearchInput = {
+  language?: string;
   pageId: string;
   blockId: string;
   order: number;
@@ -69,7 +71,7 @@ export function buildWordSearchIdevice(input: WordSearchInput): ElpxIdevice {
     evaluation: false,
     evaluationID: "",
     id,
-    msgs: CROSSWORD_DEFAULT_MSGS
+    msgs: translateGameMessages(CROSSWORD_DEFAULT_MSGS, input.language)
   };
   const dataEncoded = encryptGameData(JSON.stringify(gameData));
 

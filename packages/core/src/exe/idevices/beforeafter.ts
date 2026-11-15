@@ -1,8 +1,10 @@
+import { translateGameMessages } from "./i18n/translate-game-messages.ts";
 import type { ElpxIdevice } from "../model.ts";
 import { newIdeviceId } from "../ids.ts";
 import { escapeHtml } from "../../utils/html.ts";
 
 export type BeforeAfterInput = {
+  language?: string;
   pageId: string;
   blockId: string;
   order: number;
@@ -113,7 +115,7 @@ export function buildBeforeAfterIdevice(input: BeforeAfterInput): ElpxIdevice {
     evaluation: false,
     evaluationID: "",
     id,
-    msgs: BEFOREAFTER_DEFAULT_MSGS
+    msgs: translateGameMessages(BEFOREAFTER_DEFAULT_MSGS, input.language)
   };
   const dataGameJson = stringifyForDataGame(gameData);
   const htmlView = [

@@ -8,6 +8,48 @@ import {
   blanksToFill,
   newOdeId
 } from "../src/index.ts";
+import { buildMapIdevice } from "../src/exe/idevices/map.ts";
+import { buildWordSearchIdevice } from "../src/exe/idevices/word-search.ts";
+import { translateGameMessages } from "../src/exe/idevices/i18n/translate-game-messages.ts";
+
+describe("game message translations", () => {
+  it("uses the requested language and falls back to English", () => {
+    const messages = { msgReply: "Reply", missing: "Not translated" };
+    expect(translateGameMessages(messages, "es-ES")).toEqual({
+      msgReply: "Responder",
+      missing: "Not translated"
+    });
+    expect(translateGameMessages(messages, "unknown")).toEqual(messages);
+    expect(translateGameMessages(messages, "fr").msgReply).not.toBe("Reply");
+  });
+
+  it("writes translated messages in each game format", () => {
+    const common = { pageId: "p", blockId: "b", order: 0, language: "es" };
+    const form = buildFormIdevice({ ...common, questions: [] });
+    const trueFalse = buildTrueOrFalseIdevice({ ...common, questions: [] });
+    expect((form.jsonProperties as any).msgs.msgCheck).not.toBe("Check");
+    expect((trueFalse.jsonProperties as any).msgs.msgTrue).not.toBe("True");
+    const games = [
+      buildFlipcardsIdevice({ ...common, cards: [] }),
+      buildBeforeAfterIdevice({ ...common, beforeSrc: "a", afterSrc: "b" }),
+      buildMapIdevice({ ...common, imageUrl: "a", points: [] })
+    ];
+    for (const [index, game] of games.entries()) {
+      const data = JSON.parse(game.htmlView.match(/-DataGame js-hidden"[^>]*>([^<]+)</)![1]!);
+      expect(data.msgs.msgPlayStart).toBe(
+        index === 2 ? "Pulsa aquí para empezar" : "Pulsa aquí para jugar"
+      );
+    }
+    const wordSearch = buildWordSearchIdevice({ ...common, words: ["CAT"] });
+    const encoded = wordSearch.htmlView.match(/sopa-DataGame js-hidden"[^>]*>([^<]+)</)![1]!;
+    const data = JSON.parse(
+      Array.from(unescape(encoded))
+        .map((c) => String.fromCharCode(c.charCodeAt(0) ^ 146))
+        .join("")
+    );
+    expect(data.msgs.msgReply).toBe("Responder");
+  });
+});
 
 describe("ID format", () => {
   it("emits `YYYYMMDDHHmmss + 6 uppercase alphanumeric` as documented in doc/elpx-format/ids.md", () => {

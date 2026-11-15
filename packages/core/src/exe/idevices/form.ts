@@ -1,3 +1,4 @@
+import { translateGameMessages } from "./i18n/translate-game-messages.ts";
 import type { ElpxIdevice } from "../model.ts";
 import { newIdeviceId } from "../ids.ts";
 
@@ -31,6 +32,7 @@ export type TrueFalseFormQuestion = {
 export type FormQuestion = SelectionQuestion | FillQuestion | TrueFalseFormQuestion;
 
 export type FormInput = {
+  language?: string;
   pageId: string;
   blockId: string;
   order: number;
@@ -63,11 +65,14 @@ export function buildFormIdevice(input: FormInput): ElpxIdevice {
     isScorm: 0,
     textButtonScorm: "Save score",
     weighted: 100,
-    msgs: {
-      msgCheck: "Check",
-      msgReset: "Reset",
-      msgShowAnswers: "Show answers"
-    },
+    msgs: translateGameMessages(
+      {
+        msgCheck: "Check",
+        msgReset: "Reset",
+        msgShowAnswers: "Show answers"
+      },
+      input.language
+    ),
     questionsRandom: false,
     percentageQuestions: "100",
     time: "0",

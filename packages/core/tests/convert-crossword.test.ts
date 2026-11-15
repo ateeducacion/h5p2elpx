@@ -16,6 +16,26 @@ function decryptGameData(encoded: string): string {
 }
 
 describe("convert H5P.Crossword", () => {
+  it("uses the project language for game messages", async () => {
+    const bytes = await makeH5pZip({
+      title: "Animals",
+      mainLibrary: "H5P.Crossword",
+      content: {
+        words: [
+          { answer: "CAT", clue: "Animal" },
+          { answer: "DOG", clue: "Pet" }
+        ]
+      }
+    });
+    const result = await convert([{ kind: "h5p-bytes", data: bytes, filename: "crossword.h5p" }], {
+      language: "es"
+    });
+    const xml = await (await JSZip.loadAsync(result.elpx)).file("content.xml")!.async("string");
+    const match = xml.match(/crucigrama-DataGame[^>]*>([^<]+)</);
+    const decoded = JSON.parse(decryptGameData(match![1]!));
+    expect(decoded.msgs.msgReply).toBe("Responder");
+    expect(decoded.msgs.msgPlayStart).toBe("Pulsa aquí para jugar");
+  });
   it("produces a crossword iDevice with the H5P words encoded in the data blob", async () => {
     const bytes = await makeH5pZip({
       title: "Animals",
