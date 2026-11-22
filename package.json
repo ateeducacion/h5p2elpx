@@ -17,12 +17,11 @@
     "cli": "bun run packages/cli/src/index.ts",
     "web:dev": "bun run --cwd packages/web dev",
     "web:build": "bun run --cwd packages/web build",
-    "lint": "biome check .",
-    "fix": "biome check --write .",
+    "lint": "bun lint && bun fmt --check",
+    "fix": "bun lint --fix && bun fmt",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.10",
     "@playwright/test": "^1.65.1",
     "@types/bun": "latest",
     "jszip": "^3.10.1",

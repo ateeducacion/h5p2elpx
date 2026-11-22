@@ -170,15 +170,15 @@ Options for `convert`:
 
 Meaning:
 
-* `--layout blocks`: put everything in a single eXeLearning page, with each converted H5P item as a block.
-* `--layout pages`: create one eXeLearning page per H5P file.
-* `--layout preserve`: preserve the internal structure when possible, for example converting Course Presentation slides or Interactive Book sections into pages or blocks.
-* `--unsupported keep`: keep unsupported content as visible fallback iDevices.
-* `--unsupported text`: convert unsupported content into a text warning only.
-* `--unsupported drop`: omit unsupported content, but report it.
-* `--include-original-h5p`: attach the original `.h5p` package inside the `.elpx` resources.
-* `--strict`: fail the conversion if unsupported content is found.
-* `--report`: write a JSON conversion report.
+- `--layout blocks`: put everything in a single eXeLearning page, with each converted H5P item as a block.
+- `--layout pages`: create one eXeLearning page per H5P file.
+- `--layout preserve`: preserve the internal structure when possible, for example converting Course Presentation slides or Interactive Book sections into pages or blocks.
+- `--unsupported keep`: keep unsupported content as visible fallback iDevices.
+- `--unsupported text`: convert unsupported content into a text warning only.
+- `--unsupported drop`: omit unsupported content, but report it.
+- `--include-original-h5p`: attach the original `.h5p` package inside the `.elpx` resources.
+- `--strict`: fail the conversion if unsupported content is found.
+- `--report`: write a JSON conversion report.
 
 ---
 
@@ -197,37 +197,37 @@ H5P.* library folders
 
 The tool must parse at least:
 
-* `h5p.json`
-* `content/content.json`
-* asset files under `content/`
-* library references from `preloadedDependencies`
-* the `mainLibrary`
+- `h5p.json`
+- `content/content.json`
+- asset files under `content/`
+- library references from `preloadedDependencies`
+- the `mainLibrary`
 
 Create an internal type similar to:
 
 ```ts
 export type H5PPackage = {
-    title: string;
-    language?: string;
-    mainLibrary: H5PLibraryRef;
-    dependencies: H5PLibraryRef[];
-    contentJson: unknown;
-    assets: H5PAsset[];
-    rawFiles: Map<string, Uint8Array>;
+  title: string;
+  language?: string;
+  mainLibrary: H5PLibraryRef;
+  dependencies: H5PLibraryRef[];
+  contentJson: unknown;
+  assets: H5PAsset[];
+  rawFiles: Map<string, Uint8Array>;
 };
 
 export type H5PLibraryRef = {
-    machineName: string;
-    majorVersion?: number;
-    minorVersion?: number;
-    patchVersion?: number;
+  machineName: string;
+  majorVersion?: number;
+  minorVersion?: number;
+  patchVersion?: number;
 };
 
 export type H5PAsset = {
-    path: string;
-    filename: string;
-    mimeType?: string;
-    data: Uint8Array;
+  path: string;
+  filename: string;
+  mimeType?: string;
+  data: Uint8Array;
 };
 ```
 
@@ -251,84 +251,84 @@ Example:
 
 ```ts
 export type NormalizedNode =
-    | NormalizedTextNode
-    | NormalizedImageNode
-    | NormalizedAudioNode
-    | NormalizedVideoNode
-    | NormalizedQuestionNode
-    | NormalizedSlideDeckNode
-    | NormalizedSlideNode
-    | NormalizedPageNode
-    | NormalizedContainerNode
-    | NormalizedUnsupportedNode;
+  | NormalizedTextNode
+  | NormalizedImageNode
+  | NormalizedAudioNode
+  | NormalizedVideoNode
+  | NormalizedQuestionNode
+  | NormalizedSlideDeckNode
+  | NormalizedSlideNode
+  | NormalizedPageNode
+  | NormalizedContainerNode
+  | NormalizedUnsupportedNode;
 
 export type BaseNode = {
-    id: string;
-    sourceType: string;
-    title?: string;
-    metadata?: Record<string, unknown>;
+  id: string;
+  sourceType: string;
+  title?: string;
+  metadata?: Record<string, unknown>;
 };
 
 export type NormalizedTextNode = BaseNode & {
-    kind: "text";
-    html: string;
+  kind: "text";
+  html: string;
 };
 
 export type NormalizedImageNode = BaseNode & {
-    kind: "image";
-    src: string;
-    alt?: string;
-    title?: string;
-    caption?: string;
+  kind: "image";
+  src: string;
+  alt?: string;
+  title?: string;
+  caption?: string;
 };
 
 export type NormalizedAudioNode = BaseNode & {
-    kind: "audio";
-    src: string;
-    title?: string;
+  kind: "audio";
+  src: string;
+  title?: string;
 };
 
 export type NormalizedVideoNode = BaseNode & {
-    kind: "video";
-    src: string;
-    title?: string;
-    poster?: string;
+  kind: "video";
+  src: string;
+  title?: string;
+  poster?: string;
 };
 
 export type NormalizedQuestionNode = BaseNode & {
-    kind: "question";
-    questionType: "truefalse" | "multichoice" | "blanks" | "unknown";
-    prompt: string;
-    answers?: NormalizedAnswer[];
-    feedback?: string;
+  kind: "question";
+  questionType: "truefalse" | "multichoice" | "blanks" | "unknown";
+  prompt: string;
+  answers?: NormalizedAnswer[];
+  feedback?: string;
 };
 
 export type NormalizedAnswer = {
-    text: string;
-    correct?: boolean;
-    feedback?: string;
+  text: string;
+  correct?: boolean;
+  feedback?: string;
 };
 
 export type NormalizedSlideDeckNode = BaseNode & {
-    kind: "slide-deck";
-    slides: NormalizedSlideNode[];
+  kind: "slide-deck";
+  slides: NormalizedSlideNode[];
 };
 
 export type NormalizedSlideNode = BaseNode & {
-    kind: "slide";
-    children: NormalizedNode[];
+  kind: "slide";
+  children: NormalizedNode[];
 };
 
 export type NormalizedContainerNode = BaseNode & {
-    kind: "container";
-    children: NormalizedNode[];
+  kind: "container";
+  children: NormalizedNode[];
 };
 
 export type NormalizedUnsupportedNode = BaseNode & {
-    kind: "unsupported";
-    reason: string;
-    originalLibrary: string;
-    originalData?: unknown;
+  kind: "unsupported";
+  reason: string;
+  originalLibrary: string;
+  originalData?: unknown;
 };
 ```
 
@@ -400,7 +400,10 @@ For unsupported content, generate a visible eXeLearning `text` iDevice containin
 <div class="h5p2elpx-unsupported">
   <h2>Unsupported H5P content</h2>
   <p><strong>H5P type:</strong> H5P.ImageHotspots</p>
-  <p>This H5P activity type is not supported by h5p2elpx yet. The original content has not been converted into an editable eXeLearning interaction.</p>
+  <p>
+    This H5P activity type is not supported by h5p2elpx yet. The original content has not been
+    converted into an editable eXeLearning interaction.
+  </p>
 </div>
 ```
 
@@ -420,44 +423,44 @@ Build an internal model before writing XML:
 
 ```ts
 export type ElpxProject = {
-    id: string;
-    title: string;
-    language?: string;
-    pages: ElpxPage[];
-    resources: ElpxResource[];
+  id: string;
+  title: string;
+  language?: string;
+  pages: ElpxPage[];
+  resources: ElpxResource[];
 };
 
 export type ElpxPage = {
-    id: string;
-    parentId?: string;
-    title: string;
-    order: number;
-    blocks: ElpxBlock[];
+  id: string;
+  parentId?: string;
+  title: string;
+  order: number;
+  blocks: ElpxBlock[];
 };
 
 export type ElpxBlock = {
-    id: string;
-    pageId: string;
-    order: number;
-    iDevices: ElpxIdevice[];
+  id: string;
+  pageId: string;
+  order: number;
+  iDevices: ElpxIdevice[];
 };
 
 export type ElpxIdevice = {
-    id: string;
-    pageId: string;
-    blockId: string;
-    typeName: string;
-    title?: string;
-    htmlView: string;
-    jsonProperties: unknown;
-    order: number;
-    visibility?: boolean;
+  id: string;
+  pageId: string;
+  blockId: string;
+  typeName: string;
+  title?: string;
+  htmlView: string;
+  jsonProperties: unknown;
+  order: number;
+  visibility?: boolean;
 };
 
 export type ElpxResource = {
-    path: string;
-    data: Uint8Array;
-    mimeType?: string;
+  path: string;
+  data: Uint8Array;
+  mimeType?: string;
 };
 ```
 
@@ -473,10 +476,10 @@ content/resources/*
 
 Prefer using a minimal valid `.elpx` template exported from eXeLearning and replacing/injecting:
 
-* `content.xml`
-* `content/resources/*`
-* required metadata
-* generated iDevices
+- `content.xml`
+- `content/resources/*`
+- required metadata
+- generated iDevices
 
 Do not attempt to synthesize every eXeLearning file from scratch unless necessary.
 
@@ -523,10 +526,10 @@ Try to preserve H5P structure.
 
 Examples:
 
-* `H5P.CoursePresentation`: each slide becomes a page or block depending on configuration.
-* `H5P.InteractiveBook`: each chapter/section becomes a page.
-* `H5P.Column`: children become blocks/iDevices in the same page.
-* Simple H5P activities become one page or one block.
+- `H5P.CoursePresentation`: each slide becomes a page or block depending on configuration.
+- `H5P.InteractiveBook`: each chapter/section becomes a page.
+- `H5P.Column`: children become blocks/iDevices in the same page.
+- Simple H5P activities become one page or one block.
 
 ---
 
@@ -540,26 +543,26 @@ Input:
 
 ```ts
 {
-    html: string;
+  html: string;
 }
 ```
 
 Output:
 
-* `odeIdeviceTypeName`: `text`
-* `htmlView`: HTML wrapped in a valid eXeLearning text iDevice structure.
-* `jsonProperties`: must include the editable HTML content.
+- `odeIdeviceTypeName`: `text`
+- `htmlView`: HTML wrapped in a valid eXeLearning text iDevice structure.
+- `jsonProperties`: must include the editable HTML content.
 
 The generated HTML must preserve:
 
-* headings
-* paragraphs
-* lists
-* links
-* images
-* audio
-* video
-* simple tables where possible
+- headings
+- paragraphs
+- lists
+- links
+- images
+- audio
+- video
+- simple tables where possible
 
 Sanitize only dangerous content. Do not remove valid educational HTML unnecessarily.
 
@@ -618,24 +621,24 @@ References inside generated HTML must be rewritten.
 Example:
 
 ```html
-<img src="images/photo.jpg">
+<img src="images/photo.jpg" />
 ```
 
 becomes:
 
 ```html
-<img src="resources/h5p2elpx/activity-id/images/photo.jpg">
+<img src="resources/h5p2elpx/activity-id/images/photo.jpg" />
 ```
 
 or the correct relative path expected by eXeLearning.
 
 Handle at least:
 
-* images
-* audio
-* video
-* poster images
-* linked files if present
+- images
+- audio
+- video
+- poster images
+- linked files if present
 
 Avoid filename collisions by namespacing each H5P package.
 
@@ -647,41 +650,41 @@ Generate a detailed JSON report:
 
 ```ts
 export type ConversionReport = {
-    tool: "h5p2elpx";
-    version: string;
-    input: {
-        files: string[];
-    };
-    output: {
-        file?: string;
-        format: "elpx";
-    };
-    summary: {
-        totalActivities: number;
-        converted: number;
-        partiallyConverted: number;
-        unsupported: number;
-        warnings: number;
-        errors: number;
-    };
-    activities: ConversionActivityReport[];
+  tool: "h5p2elpx";
+  version: string;
+  input: {
+    files: string[];
+  };
+  output: {
+    file?: string;
+    format: "elpx";
+  };
+  summary: {
+    totalActivities: number;
+    converted: number;
+    partiallyConverted: number;
+    unsupported: number;
+    warnings: number;
+    errors: number;
+  };
+  activities: ConversionActivityReport[];
 };
 
 export type ConversionActivityReport = {
-    sourceFile: string;
-    title?: string;
-    mainLibrary: string;
-    status: "converted" | "partial" | "unsupported" | "error";
-    mappedTo?: string[];
-    unsupportedItems: UnsupportedItemReport[];
-    warnings: string[];
-    errors: string[];
+  sourceFile: string;
+  title?: string;
+  mainLibrary: string;
+  status: "converted" | "partial" | "unsupported" | "error";
+  mappedTo?: string[];
+  unsupportedItems: UnsupportedItemReport[];
+  warnings: string[];
+  errors: string[];
 };
 
 export type UnsupportedItemReport = {
-    sourceType: string;
-    path?: string;
-    reason: string;
+  sourceType: string;
+  path?: string;
+  reason: string;
 };
 ```
 
@@ -716,11 +719,12 @@ Features:
 2. File list.
 3. Options:
 
-   * layout: blocks/pages/preserve
-   * unsupported handling: keep/text/drop
-   * include original H5P: yes/no
-   * project title
-   * language
+   - layout: blocks/pages/preserve
+   - unsupported handling: keep/text/drop
+   - include original H5P: yes/no
+   - project title
+   - language
+
 4. Compatibility preview using the same `inspect` logic from the core package.
 5. Convert button.
 6. Download `.elpx`.
@@ -742,23 +746,23 @@ h5p2elpx validate output.elpx
 
 It should check:
 
-* file is a ZIP
-* `content.xml` exists
-* `content.dtd` exists if expected
-* required resource paths exist
-* all referenced resources exist
-* XML is well-formed
-* project has at least one page
-* each page has valid IDs
-* each iDevice has:
+- file is a ZIP
+- `content.xml` exists
+- `content.dtd` exists if expected
+- required resource paths exist
+- all referenced resources exist
+- XML is well-formed
+- project has at least one page
+- each page has valid IDs
+- each iDevice has:
 
-  * ID
-  * type name
-  * page ID
-  * block ID
-  * order
-  * htmlView
-  * jsonProperties
+  - ID
+  - type name
+  - page ID
+  - block ID
+  - order
+  - htmlView
+  - jsonProperties
 
 Full eXeLearning semantic validation can be added later.
 
@@ -843,15 +847,15 @@ Convert H5P activities into editable eXeLearning `.elpx` projects.
 
 ## Coding style
 
-* Use TypeScript.
-* Use strict mode.
-* Avoid `any` unless absolutely necessary.
-* Use zod for validating external JSON structures.
-* Prefer pure functions in `core`.
-* Do not mix CLI-specific filesystem logic into `core`.
-* Use English for code, comments, documentation, issues and pull requests.
-* Keep functions small and testable.
-* Add meaningful error messages.
+- Use TypeScript.
+- Use strict mode.
+- Avoid `any` unless absolutely necessary.
+- Use zod for validating external JSON structures.
+- Prefer pure functions in `core`.
+- Do not mix CLI-specific filesystem logic into `core`.
+- Use English for code, comments, documentation, issues and pull requests.
+- Keep functions small and testable.
+- Add meaningful error messages.
 
 ---
 
@@ -892,10 +896,10 @@ h5p2elpx convert activity.h5p -o activity.elpx --layout preserve --include-origi
 
 And get:
 
-* a valid `activity.elpx`;
-* converted text/media/slides where supported;
-* unsupported content represented visibly as warning iDevices;
-* all assets copied into the `.elpx`;
-* a JSON report explaining exactly what was converted, partially converted or unsupported.
+- a valid `activity.elpx`;
+- converted text/media/slides where supported;
+- unsupported content represented visibly as warning iDevices;
+- all assets copied into the `.elpx`;
+- a JSON report explaining exactly what was converted, partially converted or unsupported.
 
 The implementation should be clean, extensible and prepared for future mappers.

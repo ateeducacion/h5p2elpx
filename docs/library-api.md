@@ -84,14 +84,14 @@ type H5pImportResult = {
 
 Defaults (`H5P_IMPORT_DEFAULTS`) — **only** for this wrapper:
 
-| Field | Value |
-| --- | --- |
-| `layout` | `"preserve"` |
-| `unsupported` | `"keep"` |
-| `includeOriginalH5p` | `true` |
-| `strict` | `false` |
-| `enableSearch` | `false` |
-| `enableMathJax` | `false` |
+| Field                | Value        |
+| -------------------- | ------------ |
+| `layout`             | `"preserve"` |
+| `unsupported`        | `"keep"`     |
+| `includeOriginalH5p` | `true`       |
+| `strict`             | `false`      |
+| `enableSearch`       | `false`      |
+| `enableMathJax`      | `false`      |
 
 These do **not** change `DEFAULT_OPTIONS` used by `convert()` / CLI / web.
 
@@ -159,15 +159,15 @@ should do the same with their own versioned asset.
 
 `H5pImportError` carries:
 
-| Code | Meaning |
-| --- | --- |
-| `INVALID_H5P` | Not a readable H5P package (bad ZIP, missing `h5p.json` / `content.json`, …) |
-| `INVALID_OPTIONS` | Missing/empty `filename`, etc. |
-| `TEMPLATE_REQUIRED` | Missing or empty `templateElpx` |
-| `INVALID_TEMPLATE` | Template bytes are not a usable `.elpx` ZIP |
-| `UNSUPPORTED_CONTENT` | Strict mode hit unsupported/partial content |
-| `ELPX_WRITE_FAILED` | ZIP generation failed for other reasons |
-| `CONVERSION_FAILED` | Unexpected conversion failure |
+| Code                  | Meaning                                                                      |
+| --------------------- | ---------------------------------------------------------------------------- |
+| `INVALID_H5P`         | Not a readable H5P package (bad ZIP, missing `h5p.json` / `content.json`, …) |
+| `INVALID_OPTIONS`     | Missing/empty `filename`, etc.                                               |
+| `TEMPLATE_REQUIRED`   | Missing or empty `templateElpx`                                              |
+| `INVALID_TEMPLATE`    | Template bytes are not a usable `.elpx` ZIP                                  |
+| `UNSUPPORTED_CONTENT` | Strict mode hit unsupported/partial content                                  |
+| `ELPX_WRITE_FAILED`   | ZIP generation failed for other reasons                                      |
+| `CONVERSION_FAILED`   | Unexpected conversion failure                                                |
 
 Partial conversion in non-strict mode does **not** throw; inspect
 `result.report.summary` and `activities[].unsupportedItems`.
@@ -216,12 +216,12 @@ eXe-oriented defaults and mandatory template bytes.
 
 ## Compatibility
 
-| Consumer | API |
-| --- | --- |
-| eXeLearning H5P import | `importH5pAsElpx` |
-| Web app (H5P + ADC) | `convert` with `templateBytes` |
-| CLI | `convert` after reading files and optional `--template` |
-| Direct project integration (future) | `convertToElpxProject` → Yjs |
+| Consumer                            | API                                                     |
+| ----------------------------------- | ------------------------------------------------------- |
+| eXeLearning H5P import              | `importH5pAsElpx`                                       |
+| Web app (H5P + ADC)                 | `convert` with `templateBytes`                          |
+| CLI                                 | `convert` after reading files and optional `--template` |
+| Direct project integration (future) | `convertToElpxProject` → Yjs                            |
 
 ## Package build
 

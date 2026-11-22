@@ -16,13 +16,13 @@ check-bun:
 install: check-bun
 	bun install
 
-# Run biome lint (read-only — fails on issues)
+# Run bun lint and bun fmt --check (read-only — fails on issues)
 lint: check-bun
-	bunx biome check .
+	bun run lint
 
-# Auto-fix what biome can fix, then run typecheck
+# Auto-fix what bun lint and bun fmt can fix, then run typecheck
 fix: check-bun
-	bunx biome check --write .
+	bun run fix
 
 # Typecheck
 typecheck: check-bun
@@ -72,7 +72,7 @@ web-build: check-bun
 # CI / pre-push gate: typecheck + lint + tests + core package build
 ci: check-bun
 	bunx tsc --noEmit
-	bunx biome check .
+	bun run lint
 	bun run test
 	bun run --cwd packages/core build
 
@@ -80,7 +80,7 @@ help:
 	@echo "h5p2elpx — make targets"
 	@echo ""
 	@echo "  make install     Install dependencies"
-	@echo "  make lint        Run biome lint (read-only)"
+	@echo "  make lint        Run bun lint + bun fmt --check (read-only)"
 	@echo "  make fix         Auto-fix lint + formatting"
 	@echo "  make typecheck   Run tsc --noEmit"
 	@echo "  make core-build  Build packages/core to dist/ (ESM + .d.ts)"

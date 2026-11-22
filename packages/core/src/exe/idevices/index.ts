@@ -19,10 +19,7 @@ export type {
   IvSingleChoiceSlide,
   InteractiveVideoInput
 } from "./interactive-video.ts";
-export type {
-  TrueOrFalseQuestion,
-  TrueOrFalseInput
-} from "./trueorfalse.ts";
+export type { TrueOrFalseQuestion, TrueOrFalseInput } from "./trueorfalse.ts";
 export type {
   FormInput,
   FormQuestion,

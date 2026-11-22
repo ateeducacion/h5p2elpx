@@ -7,6 +7,8 @@ export function parseContentJson(text: string): unknown {
   try {
     return JSON.parse(text);
   } catch (err) {
-    throw new Error(`content/content.json is not valid JSON: ${(err as Error).message}`);
+    throw new Error(`content/content.json is not valid JSON: ${(err as Error).message}`, {
+      cause: err
+    });
   }
 }
