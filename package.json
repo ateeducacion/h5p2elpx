@@ -8,8 +8,8 @@
   ],
   "scripts": {
     "build": "bun run --filter '*' build",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "bun test --parallel",
+    "test:watch": "bun test --watch",
     "test:e2e": "bunx --bun playwright test",
     "test:e2e:ui": "bunx --bun playwright test --ui",
     "e2e:fetch-editor": "bun run scripts/fetch-exelearning-static.ts",
@@ -26,7 +26,6 @@
     "@playwright/test": "^1.65.1",
     "@types/bun": "latest",
     "jszip": "^3.10.1",
-    "typescript": "^7.0.2",
-    "vitest": "^5.0.0"
+    "typescript": "^7.0.2"
   }
 }

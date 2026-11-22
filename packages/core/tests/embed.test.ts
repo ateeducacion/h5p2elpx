@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { buildVideoEmbed } from "../src/utils/embed.ts";
 
 describe("buildVideoEmbed", () => {

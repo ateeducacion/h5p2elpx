@@ -20,7 +20,7 @@ jobs:
       - name: Typecheck
         run: bunx tsc --noEmit
       - name: Tests
-        run: bunx vitest run
+        run: bun run test
       - name: Build core package (ESM + declarations)
         run: bun run --cwd packages/core build
 

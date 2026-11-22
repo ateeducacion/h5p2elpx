@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { deflateSync } from "node:zlib";
 import { decompressNtxCaf, extractNtxCafBase64 } from "../src/adc/decompress-ntxcaf.ts";
 

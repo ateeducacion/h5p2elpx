@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { buildCpSlideHtml } from "../src/convert/cp-slide-html.ts";
 import { adapt as adaptCoursePresentation } from "../src/normalize/adapters/course-presentation.ts";
 import { adapt as adaptQuestionnaire } from "../src/normalize/adapters/questionnaire.ts";
