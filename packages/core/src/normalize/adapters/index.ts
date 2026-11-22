@@ -62,74 +62,81 @@ type AdapterModule = {
   adapt: (content: any) => NormalizedNode;
 };
 
-const REGISTRY: Record<string, AdapterModule> = Object.fromEntries(
-  (
-    [
-      text,
-      advancedText,
-      textInputField,
-      audioRecorder,
-      chart,
-      timeline,
-      personalityQuiz,
-      image,
-      audio,
-      video,
-      multichoice,
-      truefalse,
-      blanks,
-      column,
-      coursePresentation,
-      interactiveBook,
-      singleChoiceSet,
-      dialogcards,
-      memoryGame,
-      dragText,
-      dragQuestion,
-      markTheWords,
-      imageHotspots,
-      interactiveVideo,
-      summary,
-      table,
-      crossword,
-      multipleHotspotQuestion,
-      imageJuxtaposition,
-      iframeEmbed,
-      findTheWords,
-      flashcards,
-      imagePair,
-      accordion,
-      essay,
-      sortParagraphs,
-      imageSequencing,
-      imageSlider,
-      collage,
-      questionSet,
-      questionnaire,
-      simpleMultiChoice,
-      dictation,
-      imageHotspotQuestion,
-      guessTheAnswer,
-      adventCalendar,
-      informationWall,
-      openEndedQuestion,
-      multiMediaChoice,
-      arithmeticQuiz,
-      complexFillTheBlanks,
-      agamotto,
-      gameMap,
-      link,
-      documentationTool
-    ] as AdapterModule[]
-  ).map((m) => [m.machineName, m])
-);
+// Built on first use, not at module load: several adapters import adaptH5pSubContent from this module, so when one of
+// them is imported first, this module runs before that adapter's exports are initialised.
+let registry: Record<string, AdapterModule> | undefined;
 
-REGISTRY["H5P.InfoWall"] = informationWall;
-REGISTRY["H5P.ImageMultipleHotspotQuestion"] = multipleHotspotQuestion;
+function getRegistry(): Record<string, AdapterModule> {
+  if (registry) return registry;
+  registry = Object.fromEntries(
+    (
+      [
+        text,
+        advancedText,
+        textInputField,
+        audioRecorder,
+        chart,
+        timeline,
+        personalityQuiz,
+        image,
+        audio,
+        video,
+        multichoice,
+        truefalse,
+        blanks,
+        column,
+        coursePresentation,
+        interactiveBook,
+        singleChoiceSet,
+        dialogcards,
+        memoryGame,
+        dragText,
+        dragQuestion,
+        markTheWords,
+        imageHotspots,
+        interactiveVideo,
+        summary,
+        table,
+        crossword,
+        multipleHotspotQuestion,
+        imageJuxtaposition,
+        iframeEmbed,
+        findTheWords,
+        flashcards,
+        imagePair,
+        accordion,
+        essay,
+        sortParagraphs,
+        imageSequencing,
+        imageSlider,
+        collage,
+        questionSet,
+        questionnaire,
+        simpleMultiChoice,
+        dictation,
+        imageHotspotQuestion,
+        guessTheAnswer,
+        adventCalendar,
+        informationWall,
+        openEndedQuestion,
+        multiMediaChoice,
+        arithmeticQuiz,
+        complexFillTheBlanks,
+        agamotto,
+        gameMap,
+        link,
+        documentationTool
+      ] as AdapterModule[]
+    ).map((m) => [m.machineName, m])
+  );
+  registry["H5P.InfoWall"] = informationWall;
+  registry["H5P.ImageMultipleHotspotQuestion"] = multipleHotspotQuestion;
+  return registry;
+}
 
 export function adaptH5pSubContent(libraryName: string, params: unknown): NormalizedNode {
   const machine = machineNameOnly(libraryName);
-  const adapter = REGISTRY[machine];
+  const adapter = getRegistry()[machine];
   if (adapter) {
     try {
       return adapter.adapt(params);
@@ -141,5 +148,5 @@ export function adaptH5pSubContent(libraryName: string, params: unknown): Normal
 }
 
 export function listRegisteredMachines(): string[] {
-  return Object.keys(REGISTRY);
+  return Object.keys(getRegistry());
 }
