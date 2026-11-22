@@ -412,7 +412,7 @@ If a new ADC bundle surfaces an unmapped component, the workflow is:
 make install        # bun install
 make lint           # bun lint + bun fmt --check (read-only)
 make fix            # bun lint --fix + bun fmt (auto-fix lint + format)
-make typecheck      # tsc --noEmit
+make typecheck      # bun check
 make test           # bun test --parallel (packages/*/tests)
 make up             # Vite dev server
 make template       # rebuild fixtures/elpx/template.elpx from exelearning release
@@ -422,7 +422,7 @@ make ci             # the gate CI runs (lint + typecheck + tests)
 ## Before pushing or opening a PR (mandatory)
 
 CI runs `make ci` which is **lint + typecheck + tests**. The lint step (`bun lint` +
-`bun fmt --check`) fails on formatting drift, and tsc runs in strict mode. Always run this
+`bun fmt --check`) fails on formatting drift, and `bun check` runs in strict mode. Always run this
 sequence locally before `git push` / `gh pr create`:
 
 ```bash
@@ -430,7 +430,7 @@ make fix && make ci
 ```
 
 - `make fix` auto-fixes formatting and lint (`bun lint`, `bun fmt`) so the lint step in CI is clean.
-- `make ci` catches strict-TS issues that `tsc` in isolation would also miss
+- `make ci` catches strict-TS issues that `bun check` in isolation would also miss
   (e.g. `Object is possibly 'undefined'` on `array[0]` accesses in tests —
   use the `!` non-null assertion in tests where appropriate).
 - If anything fails, fix and re-run before pushing. Do not push expecting CI

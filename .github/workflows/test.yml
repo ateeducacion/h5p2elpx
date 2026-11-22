@@ -19,7 +19,7 @@ jobs:
       - name: Lint and format (bun lint, bun fmt)
         run: bun run lint
       - name: Typecheck
-        run: bunx tsc --noEmit
+        run: bun run typecheck
       - name: Tests
         run: bun run test
       - name: Build core package (ESM + declarations)

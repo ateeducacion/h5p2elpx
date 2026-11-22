@@ -304,7 +304,7 @@ the same as eXeLearning's:
 make install        # bun install
 make lint           # bun lint + bun fmt --check (read-only)
 make fix            # bun lint --fix + bun fmt (auto-fix lint + format)
-make typecheck      # tsc --noEmit
+make typecheck      # bun check
 make test           # bun test
 make test-watch     # bun test in watch mode
 make up             # start the Vite dev server (web app)
