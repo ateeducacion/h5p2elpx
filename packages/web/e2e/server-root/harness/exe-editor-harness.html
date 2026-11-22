@@ -35,8 +35,7 @@
         const params = new URLSearchParams(window.location.search);
         const editorUrl = params.get("editorUrl");
         if (!editorUrl) {
-          document.getElementById("status").textContent =
-            "missing ?editorUrl=...";
+          document.getElementById("status").textContent = "missing ?editorUrl=...";
           throw new Error("Missing editorUrl query parameter");
         }
 
@@ -60,8 +59,7 @@
         function waitForExeMessage(type, requestId, timeoutMs = 60000) {
           return new Promise((resolve, reject) => {
             const existing = window.__exeMessages.find(
-              (m) =>
-                m.type === type && (!requestId || m.requestId === requestId)
+              (m) => m.type === type && (!requestId || m.requestId === requestId)
             );
             if (existing) {
               resolve(existing);
@@ -71,17 +69,12 @@
               listeners.delete(fn);
               reject(
                 new Error(
-                  "Timed out waiting for " +
-                    type +
-                    (requestId ? " (" + requestId + ")" : "")
+                  "Timed out waiting for " + type + (requestId ? " (" + requestId + ")" : "")
                 )
               );
             }, timeoutMs);
             function fn(message) {
-              if (
-                message.type === type &&
-                (!requestId || message.requestId === requestId)
-              ) {
+              if (message.type === type && (!requestId || message.requestId === requestId)) {
                 window.clearTimeout(timer);
                 listeners.delete(fn);
                 resolve(message);
@@ -101,10 +94,7 @@
         async function openElpx(bytes, filename) {
           await waitForExeMessage("EXELEARNING_READY");
           const requestId = "open-" + Date.now();
-          const buffer =
-            bytes instanceof ArrayBuffer
-              ? bytes
-              : new Uint8Array(bytes).buffer;
+          const buffer = bytes instanceof ArrayBuffer ? bytes : new Uint8Array(bytes).buffer;
           sendExeMessage({
             type: "OPEN_FILE",
             requestId,
@@ -133,13 +123,11 @@
         window.waitForExeMessage = waitForExeMessage;
         window.sendExeMessage = sendExeMessage;
         window.openElpx = openElpx;
-        window.getProjectInfo = () =>
-          requestRoundtrip("GET_PROJECT_INFO", {}, "PROJECT_INFO");
+        window.getProjectInfo = () => requestRoundtrip("GET_PROJECT_INFO", {}, "PROJECT_INFO");
         window.getState = () => requestRoundtrip("GET_STATE", {}, "STATE");
         window.requestExport = (format) =>
           requestRoundtrip("REQUEST_EXPORT", { format }, "EXPORT_FILE");
-        window.requestSave = () =>
-          requestRoundtrip("REQUEST_SAVE", {}, "SAVE_FILE");
+        window.requestSave = () => requestRoundtrip("REQUEST_SAVE", {}, "SAVE_FILE");
 
         iframe.src = editorUrl;
       })();
