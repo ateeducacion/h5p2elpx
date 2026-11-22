@@ -13,10 +13,11 @@ jobs:
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          # bun lint only ships in Bun canary so far; bun fmt and bun test are in the stable release too.
+          bun-version: canary
       - run: bun install --frozen-lockfile
-      - name: Lint (biome)
-        run: bunx biome check .
+      - name: Lint and format (bun lint, bun fmt)
+        run: bun run lint
       - name: Typecheck
         run: bunx tsc --noEmit
       - name: Tests

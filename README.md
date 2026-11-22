@@ -13,8 +13,8 @@ Supported inputs:
 - **H5P** (`.h5p`) — 50+ content type adapters.
 - **ADC / Content** (`.zip`) — the legacy authoring tool used by the Aula
   Digital Canaria platform. All six export flavours are detected
-  automatically: *native*, plain *zip*, *SCORM 1.2*, *SCORM 2004*,
-  *xAPI/Tin Can*, and *local*. Bundles that omit `project.json` are recovered
+  automatically: _native_, plain _zip_, _SCORM 1.2_, _SCORM 2004_,
+  _xAPI/Tin Can_, and _local_. Bundles that omit `project.json` are recovered
   by deobfuscating the `ntxCafCompressed` blob in `index.html` (zlib + base64;
   no encryption).
 
@@ -89,16 +89,16 @@ From a cloned checkout, use `bun run cli -- <command>` instead.
 
 Options for `convert`:
 
-| Option | Values | Default |
-| --- | --- | --- |
-| `--layout` | `blocks`, `pages`, `preserve` | `preserve` |
-| `--unsupported` | `keep`, `text`, `drop` | `keep` |
-| `--include-original-h5p` | flag | off |
-| `--title <s>` | string | "Imported H5P content" |
-| `--lang <code>` | string | unset |
-| `--report <file>` | path | none |
-| `--template <file>` | path to a real eXe `.elpx` template | none |
-| `--strict` | flag | off (fails if anything is unsupported) |
+| Option                   | Values                              | Default                                |
+| ------------------------ | ----------------------------------- | -------------------------------------- |
+| `--layout`               | `blocks`, `pages`, `preserve`       | `preserve`                             |
+| `--unsupported`          | `keep`, `text`, `drop`              | `keep`                                 |
+| `--include-original-h5p` | flag                                | off                                    |
+| `--title <s>`            | string                              | "Imported H5P content"                 |
+| `--lang <code>`          | string                              | unset                                  |
+| `--report <file>`        | path                                | none                                   |
+| `--template <file>`      | path to a real eXe `.elpx` template | none                                   |
+| `--strict`               | flag                                | off (fails if anything is unsupported) |
 
 ## Web app
 
@@ -125,11 +125,7 @@ bun add @ateeducacion/h5p2elpx-core
 ```
 
 ```ts
-import {
-  importH5pAsElpx,
-  H5pImportError,
-  type H5pImportResult
-} from "@ateeducacion/h5p2elpx-core";
+import { importH5pAsElpx, H5pImportError, type H5pImportResult } from "@ateeducacion/h5p2elpx-core";
 
 // Host supplies a template matching its eXeLearning runtime version.
 const templateElpx = new Uint8Array(
@@ -138,15 +134,12 @@ const templateElpx = new Uint8Array(
 
 async function onH5pFile(file: File): Promise<void> {
   try {
-    const { elpx, report }: H5pImportResult = await importH5pAsElpx(
-      await file.arrayBuffer(),
-      {
-        filename: file.name,
-        templateElpx
-        // defaults: layout "preserve", unsupported "keep",
-        // includeOriginalH5p true, strict false, search/mathjax off
-      }
-    );
+    const { elpx, report }: H5pImportResult = await importH5pAsElpx(await file.arrayBuffer(), {
+      filename: file.name,
+      templateElpx
+      // defaults: layout "preserve", unsupported "keep",
+      // includeOriginalH5p true, strict false, search/mathjax off
+    });
 
     const blob = new Blob([elpx], { type: "application/zip" });
     // hand blob to eXeLearning's .elpx importer, or trigger a download
@@ -161,12 +154,12 @@ async function onH5pFile(file: File): Promise<void> {
 }
 ```
 
-| Piece | Role |
-| --- | --- |
-| `importH5pAsElpx(data, options)` | High-level H5P → `.elpx` bytes API for browsers |
-| `convertToElpxProject(inputs, options)` | Lower-level project build (H5P **and** ADC); no ZIP |
-| `convert(inputs, options)` | Full conversion (project + ZIP); CLI/web compatibility |
-| `writeElpx(project, options)` | Write an `.elpx` ZIP from a project (optional template) |
+| Piece                                   | Role                                                    |
+| --------------------------------------- | ------------------------------------------------------- |
+| `importH5pAsElpx(data, options)`        | High-level H5P → `.elpx` bytes API for browsers         |
+| `convertToElpxProject(inputs, options)` | Lower-level project build (H5P **and** ADC); no ZIP     |
+| `convert(inputs, options)`              | Full conversion (project + ZIP); CLI/web compatibility  |
+| `writeElpx(project, options)`           | Write an `.elpx` ZIP from a project (optional template) |
 
 **Template handling (required for `importH5pAsElpx`):** pass `templateElpx`
 bytes of an eXeLearning `.elpx` that matches the host runtime (themes, libs,
@@ -176,14 +169,14 @@ in eXeLearning. Rebuild the repo template with `make template` / see
 
 **Defaults for `importH5pAsElpx` only** (CLI/web keep their own defaults):
 
-| Option | Default |
-| --- | --- |
-| `layout` | `"preserve"` |
-| `unsupported` | `"keep"` |
-| `includeOriginalH5p` | `true` |
-| `strict` | `false` |
-| `enableSearch` | `false` |
-| `enableMathJax` | `false` |
+| Option               | Default      |
+| -------------------- | ------------ |
+| `layout`             | `"preserve"` |
+| `unsupported`        | `"keep"`     |
+| `includeOriginalH5p` | `true`       |
+| `strict`             | `false`      |
+| `enableSearch`       | `false`      |
+| `enableMathJax`      | `false`      |
 
 **Notes**
 
@@ -214,50 +207,50 @@ or shared download URL.
 
 ## Compatibility matrix
 
-| Phase | H5P type | Mapping |
-| --- | --- | --- |
-| 1 | `H5P.Text`, `H5P.AdvancedText` | text iDevice |
-| 1 | `H5P.Image` | text iDevice with `<img>` |
-| 1 | `H5P.Audio` | text iDevice with `<audio>` |
-| 1 | `H5P.Video` | text iDevice with `<video>` |
-| 1 | `H5P.InteractiveVideo` | `interactive-video` iDevice (text + single-choice slides preserved) |
-| 1 | `H5P.Column` | flattens children into iDevices |
-| 1 | `H5P.CoursePresentation` | one eXe page per slide (preserve mode) |
-| 1 | `H5P.InteractiveBook` | one eXe page per chapter |
-| 1 | `H5P.Table` | HTML `<table>` in a text iDevice |
-| 2 | `H5P.TrueFalse` | trueorfalse iDevice |
-| 2 | `H5P.MultiChoice` | form iDevice (`activityType: "selection"`) |
-| 2 | `H5P.SingleChoiceSet` | one form iDevice per choice |
-| 2 | `H5P.Blanks` | form iDevice |
-| 2 | `H5P.Dialogcards`, `H5P.MemoryGame` | flipcards iDevice |
-| 2 | `H5P.Summary` | form iDevices |
-| 3 | `H5P.DragText` | form iDevice |
-| 3 | `H5P.MarkTheWords` | text fallback |
-| 3 | `H5P.DragQuestion` | structured fallback (drag list + drop zones) |
-| 3 | `H5P.ImageHotspots` | `map` iDevice (info markers with rich popups on the background image) |
-| 3 | `H5P.MultipleHotspotQuestion` | `map` iDevice (rectangle hotspots, quiz mode) |
-| 3 | `H5P.Crossword` | `crossword` iDevice (native eXe `$eXeCrucigrama`) |
-| 3 | `H5P.ImageJuxtaposition` | `beforeafter` iDevice |
-| 3 | `H5P.IFrameEmbed` | `external-website` iDevice |
-| 3 | `H5P.FindTheWords` | `word-search` iDevice (encrypted DataGame) |
-| 3 | `H5P.Flashcards`, `H5P.ImagePair` | `flipcards` iDevice |
-| 3 | `H5P.Accordion` | text iDevice with `<details>` panels |
-| 3 | `H5P.Essay` | text iDevice with `<textarea>` placeholder |
-| 3 | `H5P.QuestionSet`, `H5P.Questionnaire` | flatten children into iDevices |
-| 3 | `H5P.Dictation` | form iDevice (`activityType: "fill"`, drops audio) |
-| 3 | `H5P.SortParagraphs`, `H5P.ImageSequencing` | ordered text iDevice (author re-scrambles in eXe) |
-| 3 | `H5P.ImageSlider`, `H5P.Collage` | text iDevice with sequential figures |
-| 3 | `H5P.ImageHotspotQuestion` | `map` iDevice (rectangle hotspots, quiz mode) |
-| 4 | `H5P.GuessTheAnswer` | `flipcards` iDevice (image+question front, solution back) |
-| 4 | `H5P.AdventCalendar` | `flipcards` iDevice (one door per card) |
-| 4 | `H5P.InformationWall` | `flipcards` iDevice (one panel per card) |
-| 4 | `H5P.MultiMediaChoice` | form iDevice (`activityType: "selection"`, image options) |
-| 4 | `H5P.ArithmeticQuiz` | expanded into N form (selection) iDevices with deterministic problems |
-| 4 | `H5P.AdvancedBlanks` (Complex Fill the Blanks) | form iDevice (`activityType: "fill"`) |
-| 4 | `H5P.Agamotto` | `beforeafter` iDevice for two frames, sequential text iDevice otherwise |
-| 4 | `H5P.GameMap` | `map` iDevice (markers parsed from `telemetry`) |
-| 4 | `H5P.Link` | text iDevice with `<a href>` |
-| 4 | `H5P.DocumentationTool` | one eXe page per `H5P.StandardPage` |
+| Phase         | H5P type                                              | Mapping                                                                 |
+| ------------- | ----------------------------------------------------- | ----------------------------------------------------------------------- |
+| 1             | `H5P.Text`, `H5P.AdvancedText`                        | text iDevice                                                            |
+| 1             | `H5P.Image`                                           | text iDevice with `<img>`                                               |
+| 1             | `H5P.Audio`                                           | text iDevice with `<audio>`                                             |
+| 1             | `H5P.Video`                                           | text iDevice with `<video>`                                             |
+| 1             | `H5P.InteractiveVideo`                                | `interactive-video` iDevice (text + single-choice slides preserved)     |
+| 1             | `H5P.Column`                                          | flattens children into iDevices                                         |
+| 1             | `H5P.CoursePresentation`                              | one eXe page per slide (preserve mode)                                  |
+| 1             | `H5P.InteractiveBook`                                 | one eXe page per chapter                                                |
+| 1             | `H5P.Table`                                           | HTML `<table>` in a text iDevice                                        |
+| 2             | `H5P.TrueFalse`                                       | trueorfalse iDevice                                                     |
+| 2             | `H5P.MultiChoice`                                     | form iDevice (`activityType: "selection"`)                              |
+| 2             | `H5P.SingleChoiceSet`                                 | one form iDevice per choice                                             |
+| 2             | `H5P.Blanks`                                          | form iDevice                                                            |
+| 2             | `H5P.Dialogcards`, `H5P.MemoryGame`                   | flipcards iDevice                                                       |
+| 2             | `H5P.Summary`                                         | form iDevices                                                           |
+| 3             | `H5P.DragText`                                        | form iDevice                                                            |
+| 3             | `H5P.MarkTheWords`                                    | text fallback                                                           |
+| 3             | `H5P.DragQuestion`                                    | structured fallback (drag list + drop zones)                            |
+| 3             | `H5P.ImageHotspots`                                   | `map` iDevice (info markers with rich popups on the background image)   |
+| 3             | `H5P.MultipleHotspotQuestion`                         | `map` iDevice (rectangle hotspots, quiz mode)                           |
+| 3             | `H5P.Crossword`                                       | `crossword` iDevice (native eXe `$eXeCrucigrama`)                       |
+| 3             | `H5P.ImageJuxtaposition`                              | `beforeafter` iDevice                                                   |
+| 3             | `H5P.IFrameEmbed`                                     | `external-website` iDevice                                              |
+| 3             | `H5P.FindTheWords`                                    | `word-search` iDevice (encrypted DataGame)                              |
+| 3             | `H5P.Flashcards`, `H5P.ImagePair`                     | `flipcards` iDevice                                                     |
+| 3             | `H5P.Accordion`                                       | text iDevice with `<details>` panels                                    |
+| 3             | `H5P.Essay`                                           | text iDevice with `<textarea>` placeholder                              |
+| 3             | `H5P.QuestionSet`, `H5P.Questionnaire`                | flatten children into iDevices                                          |
+| 3             | `H5P.Dictation`                                       | form iDevice (`activityType: "fill"`, drops audio)                      |
+| 3             | `H5P.SortParagraphs`, `H5P.ImageSequencing`           | ordered text iDevice (author re-scrambles in eXe)                       |
+| 3             | `H5P.ImageSlider`, `H5P.Collage`                      | text iDevice with sequential figures                                    |
+| 3             | `H5P.ImageHotspotQuestion`                            | `map` iDevice (rectangle hotspots, quiz mode)                           |
+| 4             | `H5P.GuessTheAnswer`                                  | `flipcards` iDevice (image+question front, solution back)               |
+| 4             | `H5P.AdventCalendar`                                  | `flipcards` iDevice (one door per card)                                 |
+| 4             | `H5P.InformationWall`                                 | `flipcards` iDevice (one panel per card)                                |
+| 4             | `H5P.MultiMediaChoice`                                | form iDevice (`activityType: "selection"`, image options)               |
+| 4             | `H5P.ArithmeticQuiz`                                  | expanded into N form (selection) iDevices with deterministic problems   |
+| 4             | `H5P.AdvancedBlanks` (Complex Fill the Blanks)        | form iDevice (`activityType: "fill"`)                                   |
+| 4             | `H5P.Agamotto`                                        | `beforeafter` iDevice for two frames, sequential text iDevice otherwise |
+| 4             | `H5P.GameMap`                                         | `map` iDevice (markers parsed from `telemetry`)                         |
+| 4             | `H5P.Link`                                            | text iDevice with `<a href>`                                            |
+| 4             | `H5P.DocumentationTool`                               | one eXe page per `H5P.StandardPage`                                     |
 | anything else | visible warning iDevice (unless `--unsupported drop`) |
 
 ## Roadmap — H5P types still on the text fallback
@@ -304,13 +297,13 @@ and in the browser.
 
 ## Development
 
-We use [Bun](https://bun.sh) and [Biome](https://biomejs.dev) — verbs are
+We use [Bun](https://bun.sh) for everything (`bun test`, `bun lint`, `bun fmt`) — verbs are
 the same as eXeLearning's:
 
 ```bash
 make install        # bun install
-make lint           # biome check . (read-only)
-make fix            # biome check --write . (auto-fix lint + format)
+make lint           # bun lint + bun fmt --check (read-only)
+make fix            # bun lint --fix + bun fmt (auto-fix lint + format)
 make typecheck      # tsc --noEmit
 make test           # bun test
 make test-watch     # bun test in watch mode
@@ -325,16 +318,16 @@ CI: `.github/workflows/test.yml` runs typecheck + tests on every push and PR.
 
 ## Known limitations
 
-* The generated `content.xml` targets the real eXeLearning ODE v2.0 format.
+- The generated `content.xml` targets the real eXeLearning ODE v2.0 format.
   `h5p2elpx` rewrites `content.xml`/`content.dtd` on every conversion while
   preserving the runtime assets from the bundled template (or a custom one
   passed via `--template`).
-* H5P.InteractiveVideo preserves `H5P.Text` / `H5P.AdvancedText` overlays and
+- H5P.InteractiveVideo preserves `H5P.Text` / `H5P.AdvancedText` overlays and
   `H5P.MultiChoice` / `H5P.SingleChoiceSet` questions as eXe interactive-video
   slides. Other interaction types (drag, hotspots, summaries, …) are dropped
   with a warning in the report.
-* H5P.DragQuestion loses geometric positions (becomes a descriptive list).
-* `H5P.ImageHotspots`, `H5P.MultipleHotspotQuestion` and
+- H5P.DragQuestion loses geometric positions (becomes a descriptive list).
+- `H5P.ImageHotspots`, `H5P.MultipleHotspotQuestion` and
   `H5P.ImageHotspotQuestion` are pinned on the native eXe `map`
   iDevice, but informational content (links, embedded media) inside
   H5P.ImageHotspots panels is rendered into the popup body as static
