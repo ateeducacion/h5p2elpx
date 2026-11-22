@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { parseLibraryRef, libraryRefString, machineNameOnly } from "../src/h5p/library-ref.ts";
 
 describe("library-ref", () => {

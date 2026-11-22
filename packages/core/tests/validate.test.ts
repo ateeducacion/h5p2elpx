@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import JSZip from "jszip";
 import { validateElpx } from "../src/exe/validate.ts";
 import { convert } from "../src/convert/convert.ts";
