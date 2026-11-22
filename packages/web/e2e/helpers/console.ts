@@ -5,7 +5,10 @@ const DEFAULT_ALLOWLIST: Array<string | RegExp> = [
   "Failed to load resource: the server responded with a status of 404",
   // The pinned eXeLearning bundle logs benign init noise on first paint.
   /Yjs.*deprecated/i,
-  /WebSocket connection.*failed/i
+  /WebSocket connection.*failed/i,
+  // The pinned bundle registers `unload` listeners (YjsDocumentManager, exe_export), which current Chromium blocks by
+  // default; nothing this project generates depends on them.
+  "Permissions policy violation: unload is not allowed in this document."
 ];
 
 export type ConsoleCollector = {
