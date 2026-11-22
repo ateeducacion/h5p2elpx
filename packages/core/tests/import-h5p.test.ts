@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import JSZip from "jszip";
 import { H5P_IMPORT_DEFAULTS, H5pImportError, importH5pAsElpx } from "../src/convert/import-h5p.ts";
 import { DEFAULT_OPTIONS } from "../src/convert/conversion-options.ts";

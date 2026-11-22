@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { convert } from "../src/convert/convert.ts";
 import { makeH5pZip } from "./_helpers.ts";
 

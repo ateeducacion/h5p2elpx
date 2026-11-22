@@ -34,11 +34,11 @@ core-build: check-bun
 
 # Run the test suite once
 test: check-bun
-	bunx vitest run
+	bun run test
 
 # Watch-mode tests
 test-watch: check-bun
-	bunx vitest
+	bun run test:watch
 
 # Fetch the pinned eXeLearning static editor used by the e2e compat test
 fetch-editor: check-bun
@@ -73,7 +73,7 @@ web-build: check-bun
 ci: check-bun
 	bunx tsc --noEmit
 	bunx biome check .
-	bunx vitest run
+	bun run test
 	bun run --cwd packages/core build
 
 help:
@@ -84,8 +84,8 @@ help:
 	@echo "  make fix         Auto-fix lint + formatting"
 	@echo "  make typecheck   Run tsc --noEmit"
 	@echo "  make core-build  Build packages/core to dist/ (ESM + .d.ts)"
-	@echo "  make test        Run vitest once"
-	@echo "  make test-watch  Run vitest in watch mode"
+	@echo "  make test        Run bun test once"
+	@echo "  make test-watch  Run bun test in watch mode"
 	@echo "  make fetch-editor   Download pinned eXeLearning static editor for e2e"
 	@echo "  make test-e2e       Run Playwright editor-compat e2e (skips without editor)"
 	@echo "  make test-e2e-smoke Run only the fast OPEN_FILE smoke spec"

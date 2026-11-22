@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { readH5p } from "../src/h5p/read-h5p.ts";
 import { makeH5pZip } from "./_helpers.ts";
 

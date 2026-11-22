@@ -312,8 +312,8 @@ make install        # bun install
 make lint           # biome check . (read-only)
 make fix            # biome check --write . (auto-fix lint + format)
 make typecheck      # tsc --noEmit
-make test           # vitest run
-make test-watch     # vitest in watch mode
+make test           # bun test
+make test-watch     # bun test in watch mode
 make up             # start the Vite dev server (web app)
 make web-build      # build the production web bundle
 make template       # rebuild fixtures/elpx/template.elpx from upstream

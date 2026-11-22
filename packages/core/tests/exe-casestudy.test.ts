@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { buildCaseStudyIdevice } from "../src/exe/idevices/casestudy.ts";
 import { buildContentXml } from "../src/exe/content-xml.ts";
 import type { ElpxProject } from "../src/exe/model.ts";

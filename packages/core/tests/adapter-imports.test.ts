@@ -7,7 +7,7 @@ import { execFile } from "node:child_process";
 import { readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { promisify } from "node:util";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 
 const execFileAsync = promisify(execFile);
 const ADAPTERS = resolve(__dirname, "../src/normalize/adapters");

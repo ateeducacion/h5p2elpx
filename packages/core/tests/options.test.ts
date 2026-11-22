@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import JSZip from "jszip";
 import { convert } from "../src/convert/convert.ts";
 import { makeH5pZip } from "./_helpers.ts";

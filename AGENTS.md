@@ -411,7 +411,7 @@ make install        # bun install
 make lint           # biome check . (read-only)
 make fix            # biome check --write . (auto-fix lint + format)
 make typecheck      # tsc --noEmit
-make test           # vitest run (12 files, 46 tests)
+make test           # bun test --parallel (packages/*/tests)
 make up             # Vite dev server
 make template       # rebuild fixtures/elpx/template.elpx from exelearning release
 make ci             # the gate CI runs (lint + typecheck + tests)
