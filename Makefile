@@ -26,7 +26,7 @@ fix: check-bun
 
 # Typecheck
 typecheck: check-bun
-	bunx tsc --noEmit
+	bun run typecheck
 
 # Build the browser-consumable core package (ESM + declarations)
 core-build: check-bun
@@ -71,7 +71,7 @@ web-build: check-bun
 
 # CI / pre-push gate: typecheck + lint + tests + core package build
 ci: check-bun
-	bunx tsc --noEmit
+	bun run typecheck
 	bun run lint
 	bun run test
 	bun run --cwd packages/core build
@@ -82,7 +82,7 @@ help:
 	@echo "  make install     Install dependencies"
 	@echo "  make lint        Run bun lint + bun fmt --check (read-only)"
 	@echo "  make fix         Auto-fix lint + formatting"
-	@echo "  make typecheck   Run tsc --noEmit"
+	@echo "  make typecheck   Run bun check"
 	@echo "  make core-build  Build packages/core to dist/ (ESM + .d.ts)"
 	@echo "  make test        Run bun test once"
 	@echo "  make test-watch  Run bun test in watch mode"
