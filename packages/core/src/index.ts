@@ -4,19 +4,12 @@ export { readH5p } from "./h5p/read-h5p.ts";
 export { parseH5pJson } from "./h5p/parse-h5p-json.ts";
 export { parseContentJson } from "./h5p/parse-content-json.ts";
 export { detectMainLibrary } from "./h5p/detect-library.ts";
-export {
-  AssetCollector,
-  buildUrlRewriters,
-  extractAssets
-} from "./h5p/asset-extractor.ts";
+export { AssetCollector, buildUrlRewriters, extractAssets } from "./h5p/asset-extractor.ts";
 export type { AssetPlanEntry } from "./h5p/asset-extractor.ts";
 
 export * from "./normalize/nodes.ts";
 export { normalizePackage } from "./normalize/normalize.ts";
-export {
-  adaptH5pSubContent,
-  listRegisteredMachines
-} from "./normalize/adapters/index.ts";
+export { adaptH5pSubContent, listRegisteredMachines } from "./normalize/adapters/index.ts";
 
 export type { AdcPackage, AdcFlavor, AdcComponent, AdcAsset } from "./adc/types.ts";
 export { readAdc } from "./adc/read-adc.ts";
@@ -37,21 +30,9 @@ export * from "./exe/idevices/index.ts";
 export { newOdeId } from "./exe/ids.ts";
 
 export * from "./convert/conversion-options.ts";
-export {
-  convert,
-  convertToElpxProject,
-  convertH5pToElpxProject
-} from "./convert/convert.ts";
-export type {
-  ConvertInput,
-  ConvertResult,
-  ConvertToProjectResult
-} from "./convert/convert.ts";
-export {
-  importH5pAsElpx,
-  H5pImportError,
-  H5P_IMPORT_DEFAULTS
-} from "./convert/import-h5p.ts";
+export { convert, convertToElpxProject, convertH5pToElpxProject } from "./convert/convert.ts";
+export type { ConvertInput, ConvertResult, ConvertToProjectResult } from "./convert/convert.ts";
+export { importH5pAsElpx, H5pImportError, H5P_IMPORT_DEFAULTS } from "./convert/import-h5p.ts";
 export type {
   H5pImportOptions,
   H5pImportResult,
